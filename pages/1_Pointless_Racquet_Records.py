@@ -27,16 +27,9 @@ with show_me_the_list:
     # Process the data
     df_sheet["date"] = df_sheet["date"].astype(str)
     list_of_available_dates = list(set(df_sheet["date"].tolist()))
-    df_tmp = df_sheet[["First Name", "First Score", "Second Name", "Second Score", "date"]].reset_index(drop=True).copy()
-    df_tmp = df_tmp.rename(columns={
-        "First Name": "Player1", 
-        "Second Name": "Player2", 
-        "First Score": "Score1", 
-        "Second Score": "Score2", 
-    }).copy()
-    st.dataframe(df_tmp)
+    st.dataframe(df_sheet)
 
-    df = df_tmp.copy()
+    df_sheet = df_tmp.copy()
 
     # Expander for Inserting Rows
     with st.expander("Insert Row"):
