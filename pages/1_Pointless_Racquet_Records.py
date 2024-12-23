@@ -6,7 +6,7 @@ from datetime import date
 # Create GSheets connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-worksheet_name = "Sheet1"
+worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
 (
