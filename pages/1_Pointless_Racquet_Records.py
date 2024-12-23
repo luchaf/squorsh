@@ -9,10 +9,9 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
+player_names = conn.read(worksheet="player_names")["player_names"].tolist()
 
-players_df = conn.read(worksheet="player_names")
-list_of_players = players_df["player_names"].tolist()
-st.write(list_of_players)
+
 
 (
     online_form,
@@ -21,8 +20,6 @@ st.write(list_of_players)
 
 
 with online_form:
-    player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
-
 
     def reset_session_state():
         """Helper function to reset session state."""
