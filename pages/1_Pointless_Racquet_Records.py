@@ -7,74 +7,13 @@ from datetime import date
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 worksheet_name = "Sheet1"
-df_sheet = conn.read(worksheet=worksheet_name)
+df = conn.read(worksheet=worksheet_name)
 
 (
     online_form,
     show_me_the_list,
 ) = st.tabs(["Online form", "List of recorded matches"])
 
-with show_me_the_list:
-    st.dataframe(df_sheet)
-    df = df_sheet.copy()
-
-    # Expander for Inserting Rows
-    with st.expander("Insert Row"):
-        insert_index = st.text_input('Enter index to insert the row (e.g., "5"):')
-        new_row = {col: st.text_input(f"Enter value for {col}:") for col in df.columns}
-
-        if st.button("Insert Row"):
-            try:
-                index_to_insert = int(insert_index)
-                if index_to_insert < 0:
-                    st.error("Invalid index. Please enter a non-negative index.")
-                else:
-                    upper_half = df.iloc[:index_to_insert]
-                    lower_half = df.iloc[index_to_insert:]
-                    new_df = pd.concat([upper_half, pd.DataFrame([new_row]), lower_half], ignore_index=True)
-                    df = new_df
-                    st.dataframe(df)
-                    # Update worksheet
-                    conn.update(worksheet=worksheet_name, data=df)
-                    st.cache_data.clear()
-                    st.success("Row inserted and data updated in Google Sheet.")
-            except ValueError:
-                st.error("Please enter a valid numeric index.")
-
-    # Expander for Deleting Rows
-    with st.expander("Delete Row"):
-        delete_index = st.text_input('Enter row index to delete:')
-        if st.button("Delete Row"):
-            try:
-                index_to_delete = int(delete_index)
-                if 0 <= index_to_delete < len(df):
-                    df = df.drop(index_to_delete).reset_index(drop=True)
-                    st.dataframe(df)
-                    # Update worksheet
-                    conn.update(worksheet=worksheet_name, data=df)
-                    st.cache_data.clear()
-                    st.success("Row deleted and data updated in Google Sheet.")
-                else:
-                    st.error("Invalid index. Please enter a valid row index.")
-            except ValueError:
-                st.error("Please enter a valid numeric index.")
-
-    # Expander for Updating Values
-    with st.expander("Update Values"):
-        selected_row = st.selectbox("Select a row to update:", range(len(df)))
-        column_to_update = st.selectbox("Select a column to update:", df.columns)
-        new_value = st.text_input(f"Enter a new value for {column_to_update}:")
-        if st.button("Update Value"):
-            try:
-                df.at[selected_row, column_to_update] = new_value
-                st.dataframe(df)
-                # Update worksheet
-                conn.update(worksheet=worksheet_name, data=df)
-                st.cache_data.clear()
-                st.success("Value updated and data saved to Google Sheet.")
-            except Exception as e:
-                st.error(f"Error updating value: {str(e)}")
-                
 
 with online_form:
     player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
@@ -166,5 +105,8 @@ with online_form:
 
     
     display_enter_match_results(df)
+
+with show_me_the_list:
+    st.dataframe(df)
 
 
