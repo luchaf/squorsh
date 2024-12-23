@@ -89,13 +89,29 @@ with online_form:
     
             # Submit button to save the match result
             if st.button("Submit Match Result"):
+                # Calculate match_number_total
+                if not df.empty:
+                    match_number_total = df["match_number_total"].max() + 1
+                else:
+                    match_number_total = 1
+            
+                # Calculate match_number_day
+                current_date = matchday_input.strftime('%Y-%m-%d')
+                if current_date in df["date"].values:
+                    match_number_day = df[df["date"] == current_date]["match_number_day"].max() + 1
+                else:
+                    match_number_day = 1
+            
                 new_data = {
                     "Player1": player1_name,
                     "Score1": player1_score,
                     "Player2": player2_name,
                     "Score2": player2_score,
-                    "date": matchday_input.strftime('%Y-%m-%d'),
+                    "date": current_date,
+                    "match_number_total": match_number_total,
+                    "match_number_day": match_number_day,
                 }
+            
                 updated_df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
                 # Update worksheet
                 conn.update(worksheet=worksheet_name, data=updated_df)
@@ -103,7 +119,6 @@ with online_form:
                 st.session_state['data_written'] = True
                 st.rerun()  # Rerun to show the success message
 
-    
     display_enter_match_results(df)
 
 with show_me_the_list:
