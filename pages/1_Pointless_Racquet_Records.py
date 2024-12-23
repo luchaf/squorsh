@@ -10,6 +10,9 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
+for i in ['match_number_total', 'match_number_day', 'Player1', 'Score1', 'Player2', 'Score2']:
+    df[i] = df[i].astype(int)
+
 player_names = conn.read(worksheet="player_names")["player_names"].tolist()
 
 (
