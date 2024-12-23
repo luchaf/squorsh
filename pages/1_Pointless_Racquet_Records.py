@@ -9,6 +9,11 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
+
+players_df = conn.read(worksheet="player_names")
+list_of_players = players_df["player_names"].tolist()
+st.write(list_of_players)
+
 (
     online_form,
     show_me_the_list,
