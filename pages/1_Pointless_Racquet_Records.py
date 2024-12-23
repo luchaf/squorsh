@@ -99,7 +99,7 @@ with online_form:
         if 'player1_score' not in st.session_state:
             st.session_state['player1_score'] = 0
         if 'player2_name' not in st.session_state:
-            st.session_state['player2_name'] = player_names[0]  # Default to the first player
+            st.session_state['player2_name'] = player_names[3]  # Default to the first player
         if 'player2_score' not in st.session_state:
             st.session_state['player2_score'] = 0
         if 'matchday_input' not in st.session_state:
