@@ -27,11 +27,7 @@ with show_me_the_list:
     # Process the data
     df_sheet["date"] = df_sheet["date"].astype(str)
     list_of_available_dates = list(set(df_sheet["date"].tolist()))
-    df_sheet['parsed_sheet_df'] = df_sheet.apply(lambda x: extract_data_from_games(x["games"], x["date"]), axis=1)
-    df_tmp = pd.DataFrame()
-    for _, row in df_sheet.iterrows():
-        df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
-    df_tmp = df_tmp[["First Name", "First Score", "Second Name", "Second Score", "date"]].reset_index(drop=True).copy()
+    df_tmp = df_sheet[["First Name", "First Score", "Second Name", "Second Score", "date"]].reset_index(drop=True).copy()
     df_tmp = df_tmp.rename(columns={
         "First Name": "Player1", 
         "Second Name": "Player2", 
