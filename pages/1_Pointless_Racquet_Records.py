@@ -84,37 +84,75 @@ with online_form:
         for key in keys:
             st.session_state[key] = None
 
-    def display_enter_match_results(df):
-        if 'data_written' not in st.session_state:
-            st.session_state['data_written'] = False
-    
-        if st.session_state['data_written']:
-            st.success("Match result saved! Enter another?")
-            if st.button("Add Another Match"):
-                reset_session_state()
-                st.rerun()  # Rerun to reset the form
-        else:
-            st.title("Log Your Match Results")
-            player1_name = st.selectbox("Player 1", player_names, key='player1_name')
-            player1_score = st.number_input("Player 1 Score", min_value=0, step=1, key='player1_score')
-            player2_name = st.selectbox("Player 2", player_names, key='player2_name')
-            player2_score = st.number_input("Player 2 Score", min_value=0, step=1, key='player2_score')
-            matchday_input = st.date_input("Matchday", date.today(), key='matchday_input')
-    
-            if st.button("Submit Match Result"):
-                new_data = {
-                    "Player1": player1_name,
-                    "Score1": player1_score,
-                    "Player2": player2_name,
-                    "Score2": player2_score,
-                    "date": matchday_input.strftime('%Y-%m-%d'),
-                }
-                updated_df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
-                # Update worksheet
-                conn.update(worksheet=worksheet_name, data=updated_df)
-                st.cache_data.clear()
-                st.session_state['data_written'] = True
-                st.rerun()  # Rerun to show the success message
+def display_enter_match_results(df):
+    # Initialize session state variables if not already set
+    if 'data_written' not in st.session_state:
+        st.session_state['data_written'] = False
+    if 'player1_name' not in st.session_state:
+        st.session_state['player1_name'] = None
+    if 'player1_score' not in st.session_state:
+        st.session_state['player1_score'] = 0
+    if 'player2_name' not in st.session_state:
+        st.session_state['player2_name'] = None
+    if 'player2_score' not in st.session_state:
+        st.session_state['player2_score'] = 0
+    if 'matchday_input' not in st.session_state:
+        st.session_state['matchday_input'] = date.today()
+
+    if st.session_state['data_written']:
+        st.success("Match result saved! Enter another?")
+        if st.button("Add Another Match"):
+            reset_session_state()
+            st.rerun()  # Rerun to reset the form
+    else:
+        st.title("Log Your Match Results")
+        player1_name = st.selectbox(
+            "Player 1",
+            player_names,
+            index=player_names.index(st.session_state['player1_name']) if st.session_state['player1_name'] else 0,
+            key='player1_name'
+        )
+        player1_score = st.number_input(
+            "Player 1 Score",
+            min_value=0,
+            step=1,
+            value=st.session_state['player1_score'],
+            key='player1_score'
+        )
+        player2_name = st.selectbox(
+            "Player 2",
+            player_names,
+            index=player_names.index(st.session_state['player2_name']) if st.session_state['player2_name'] else 0,
+            key='player2_name'
+        )
+        player2_score = st.number_input(
+            "Player 2 Score",
+            min_value=0,
+            step=1,
+            value=st.session_state['player2_score'],
+            key='player2_score'
+        )
+        matchday_input = st.date_input(
+            "Matchday",
+            value=st.session_state['matchday_input'],
+            key='matchday_input'
+        )
+
+        if st.button("Submit Match Result"):
+            new_data = {
+                "Player1": player1_name,
+                "Score1": player1_score,
+                "Player2": player2_name,
+                "Score2": player2_score,
+                "date": matchday_input.strftime('%Y-%m-%d'),
+            }
+            updated_df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
+            # Update worksheet
+            conn.update(worksheet=worksheet_name, data=updated_df)
+            st.cache_data.clear()
+            st.session_state['data_written'] = True
+            st.rerun()  # Rerun to show the success message
+
 
 
     display_enter_match_results(df)
