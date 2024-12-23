@@ -4,10 +4,6 @@ pandas
 pydeck
 streamlit
 matplotlib
-gspread
-google-auth 
-google-auth-oauthlib 
-google-auth-httplib2
 langchain 
 langchainhub 
 huggingface_hub 
