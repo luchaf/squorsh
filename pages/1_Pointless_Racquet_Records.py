@@ -87,20 +87,20 @@ with online_form:
     def display_enter_match_results(df):
         if 'data_written' not in st.session_state:
             st.session_state['data_written'] = False
-
+    
         if st.session_state['data_written']:
             st.success("Match result saved! Enter another?")
             if st.button("Add Another Match"):
                 reset_session_state()
-                st.rerun()
+                st.experimental_rerun()  # Rerun to reset the form
         else:
             st.title("Log Your Match Results")
-            player1_name = st.selectbox("Player 1", player_names)
-            player1_score = st.number_input("Player 1 Score", min_value=0, step=1)
-            player2_name = st.selectbox("Player 2", player_names)
-            player2_score = st.number_input("Player 2 Score", min_value=0, step=1)
-            matchday_input = st.date_input("Matchday", date.today())
-
+            player1_name = st.selectbox("Player 1", player_names, key='player1_name')
+            player1_score = st.number_input("Player 1 Score", min_value=0, step=1, key='player1_score')
+            player2_name = st.selectbox("Player 2", player_names, key='player2_name')
+            player2_score = st.number_input("Player 2 Score", min_value=0, step=1, key='player2_score')
+            matchday_input = st.date_input("Matchday", date.today(), key='matchday_input')
+    
             if st.button("Submit Match Result"):
                 new_data = {
                     "Player1": player1_name,
@@ -113,7 +113,8 @@ with online_form:
                 # Update worksheet
                 conn.update(worksheet=worksheet_name, data=updated_df)
                 st.cache_data.clear()
-                st.success("Match result saved!")
                 st.session_state['data_written'] = True
+                st.experimental_rerun()  # Rerun to show the success message
+
 
     display_enter_match_results(df)
