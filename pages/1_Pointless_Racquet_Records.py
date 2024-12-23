@@ -26,7 +26,7 @@ with online_form:
         st.session_state['player1_score'] = 0
         st.session_state['player2_name'] = player_names[3]  # Default to the first player
         st.session_state['player2_score'] = 0
-        st.session_state['matchday_input'] = date.today().strftime('%Y%m%d')
+        st.session_state['matchday_input'] = date.today()
         st.session_state['data_written'] = False
 
 
@@ -43,7 +43,7 @@ with online_form:
         if 'player2_score' not in st.session_state:
             st.session_state['player2_score'] = 0
         if 'matchday_input' not in st.session_state:
-            st.session_state['matchday_input'] = date.today().strftime('%Y%m%d')
+            st.session_state['matchday_input'] = date.today()
     
         if st.session_state['data_written']:
             # Display the success message and allow adding another match
