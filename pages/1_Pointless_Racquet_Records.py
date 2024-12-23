@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from pointless_utils import extract_data_from_games
+from datetime import date
 
 # Create a connection object.
 conn = st.connection("gsheets", type=GSheetsConnection)
