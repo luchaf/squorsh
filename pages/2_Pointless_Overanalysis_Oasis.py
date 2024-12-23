@@ -30,6 +30,9 @@ df_tmp = conn.read(worksheet=worksheet_name)
 name_list = conn.read(worksheet="player_names")["player_names"].tolist()
 df_tmp = correct_names_in_dataframe(df_tmp, ['Player1', 'Player2'], name_list)
 
+for i in ['match_number_total', 'match_number_day', 'Player1', 'Score1', 'Player2', 'Score2']:
+    df_tmp[i] = df_tmp[i].astype(int)
+    
 # Streamlit app
 st.title('Overanalysis Oasis')
 
