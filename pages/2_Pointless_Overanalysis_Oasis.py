@@ -22,7 +22,6 @@ import pandas as pd
 from datetime import date
 import matplotlib.pyplot as plt
 
-
 # Create GSheets connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
