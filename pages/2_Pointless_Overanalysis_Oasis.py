@@ -28,6 +28,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 worksheet_name = "match_results"
 df_tmp = conn.read(worksheet=worksheet_name)
 name_list = conn.read(worksheet="player_names")["player_names"].tolist()
+df_tmp = correct_names_in_dataframe(df_tmp, ['Player1', 'Player2'], name_list)
 
 # Streamlit app
 st.title('Overanalysis Oasis')
