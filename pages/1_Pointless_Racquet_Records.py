@@ -79,11 +79,16 @@ with show_me_the_list:
 with online_form:
     player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
 
+
     def reset_session_state():
         """Helper function to reset session state."""
-        keys = ['player1_name', 'player1_score', 'player2_name', 'player2_score', 'matchday_input', 'data_written']
-        for key in keys:
-            st.session_state[key] = None
+        st.session_state['player1_name'] = player_names[0]  # Default to the first player
+        st.session_state['player1_score'] = 0
+        st.session_state['player2_name'] = player_names[3]  # Default to the first player
+        st.session_state['player2_score'] = 0
+        st.session_state['matchday_input'] = date.today()
+        st.session_state['data_written'] = False
+
 
     def display_enter_match_results(df):
         # Initialize session state variables if not already set
