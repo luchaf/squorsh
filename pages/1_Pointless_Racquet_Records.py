@@ -114,7 +114,7 @@ with online_form:
                 conn.update(worksheet=worksheet_name, data=updated_df)
                 st.cache_data.clear()
                 st.session_state['data_written'] = True
-                st.experimental_rerun()  # Rerun to show the success message
+                st.rerun()  # Rerun to show the success message
 
 
     display_enter_match_results(df)
