@@ -29,7 +29,7 @@ worksheet_name = "match_results"
 df_tmp = conn.read(worksheet=worksheet_name)
 name_list = conn.read(worksheet="player_names")["player_names"].tolist()
 df_tmp = correct_names_in_dataframe(df_tmp, ['Player1', 'Player2'], name_list)
-
+df_tmp["date"] = df_tmp["date"].astype(int).astype(str)
 for i in ['match_number_total', 'match_number_day', 'Score1', 'Score2']:
     df_tmp[i] = df_tmp[i].astype(int)
     

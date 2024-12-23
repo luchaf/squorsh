@@ -10,7 +10,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
-df["date"] = df["date"].astype(str)
+df["date"] = df["date"].astype(int).astype(str)
 for i in ['match_number_total', 'match_number_day', 'Score1', 'Score2']:
     df[i] = df[i].astype(int)
 
