@@ -200,11 +200,3 @@ with online_form:
 
     display_enter_match_results()
 
-with upload_page:
-    st.title("Upload stuff")
-
-with email:
-    st.title("Send an Email")
-
-with voice:
-    st.title("Tell me the result")
