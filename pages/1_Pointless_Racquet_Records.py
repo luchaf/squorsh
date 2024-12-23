@@ -3,6 +3,7 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import date
 
+
 # Create GSheets connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -10,8 +11,6 @@ worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
 player_names = conn.read(worksheet="player_names")["player_names"].tolist()
-
-
 
 (
     online_form,
