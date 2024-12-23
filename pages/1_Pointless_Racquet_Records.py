@@ -98,7 +98,7 @@ with online_form:
                     match_number_total = 1
             
                 # Calculate match_number_day
-                current_date = matchday_input.strftime('%Y-%m-%d')
+                current_date = matchday_input.strftime('%Y%m%d')
                 if current_date in df["date"].values:
                     match_number_day = df[df["date"] == current_date]["match_number_day"].max() + 1
                 else:
