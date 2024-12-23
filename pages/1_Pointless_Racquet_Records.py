@@ -12,7 +12,7 @@ df_sheet = conn.read(worksheet=worksheet_name)
 (
     online_form,
     show_me_the_list,
-) = st.tabs(["List of recorded matches", "Online form"])
+) = st.tabs(["Online form", "List of recorded matches"])
 
 with show_me_the_list:
     st.dataframe(df_sheet)
