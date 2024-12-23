@@ -19,4 +19,4 @@ numexpr
 Pillow
 pytesseract
 fuzzywuzzy
-streamlit_gsheets
+st-gsheets-connection
