@@ -29,8 +29,6 @@ with show_me_the_list:
     list_of_available_dates = list(set(df_sheet["date"].tolist()))
     st.dataframe(df_sheet)
 
-    df_sheet = df_tmp.copy()
-
     # Expander for Inserting Rows
     with st.expander("Insert Row"):
         insert_index = st.text_input('Enter index to insert the row (e.g., "5"):')
