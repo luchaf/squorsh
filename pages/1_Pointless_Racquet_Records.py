@@ -92,7 +92,7 @@ with online_form:
             st.success("Match result saved! Enter another?")
             if st.button("Add Another Match"):
                 reset_session_state()
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.title("Log Your Match Results")
             player1_name = st.selectbox("Player 1", player_names)
