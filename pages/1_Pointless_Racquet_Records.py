@@ -96,10 +96,10 @@ with online_form:
         for key in ['player1_name', 'player1_score', 'player2_name', 'player2_score', 'matchday_input', 'show_confirm', 'data_written']:
             st.session_state[key] = None
 
-    def display_enter_match_results():
+    def display_enter_match_results(df):
         if 'data_written' not in st.session_state:
             st.session_state['data_written'] = False
-
+    
         if st.session_state['data_written']:
             st.success("Successfully wrote match result to database. Do you want to enter a new match result?")
             if st.button("Enter New Match Result"):
@@ -107,13 +107,13 @@ with online_form:
                 st.experimental_rerun()
         else:
             st.title("Racquet Records: Document your match results")
-
+    
             player1_name = st.selectbox("Player 1 Name", [''] + player_names)
             player1_score = st.number_input("Player 1 Score", min_value=0, step=1)
             player2_name = st.selectbox("Player 2 Name", [''] + player_names)
             player2_score = st.number_input("Player 2 Score", min_value=0, step=1)
             matchday_input = st.date_input("Matchday", date.today())
-
+    
             if st.button("Submit"):
                 new_data = {
                     "Player1": player1_name,
@@ -122,10 +122,12 @@ with online_form:
                     "Score2": player2_score,
                     "date": matchday_input.strftime('%Y-%m-%d')
                 }
-                df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
+                updated_df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
                 # Write the new data to the Google Sheet
-                conn.write(df)
+                conn.write(updated_df)
                 st.success("Match result saved!")
                 st.session_state['data_written'] = True
+    
+    # Pass df to the function
+    display_enter_match_results(df)
 
-    display_enter_match_results()
