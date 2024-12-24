@@ -149,7 +149,7 @@ with settings_tab:
         df = df.reset_index()
 
         # For nerves of steel stats, only consider matches with a 2-point difference
-        if nerves_of_steel_bool
+        if nerves_of_steel_bool:
             df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
 
         # Derive player and combination stats
