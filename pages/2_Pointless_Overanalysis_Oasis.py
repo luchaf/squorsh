@@ -152,6 +152,8 @@ with settings_tab:
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
 
+        st.dataframe(df)
+
         # Calculate individual stats
         players_stats = (
             df.groupby("Name")
