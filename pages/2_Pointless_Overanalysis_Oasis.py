@@ -373,7 +373,6 @@ with settings_tab:
                             ["absolut", "relative"]
                         )
                         with wins_ftf_abs_all_time:
-                            st.dataframe(combination_stats)
                             plot_player_combo_graph(
                                 combination_stats_nerves_of_steel, player_colors, "Wins", relative=False
                             )
@@ -387,7 +386,6 @@ with settings_tab:
                         )
                         with wins_ftf_abs_over_time:
                             # plot_player_combo_graph(combination_stats, player_colors, "Wins")
-                            st.dataframe(df_nerves_of_steel)
                             entities_face_to_face_over_time_abs(
                                 df_nerves_of_steel, player_colors, title_color, "Wins"
                             )
