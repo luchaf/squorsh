@@ -1112,7 +1112,7 @@ def count_close_matches(df):
     :param df: The DataFrame containing match data.
     :return: DataFrame with the count of close matches for each player.
     """
-    close_matches = df[np.abs(df["First Score"] - df["Second Score"]) == 2]
+    close_matches = df[np.abs(df["Player Score"] - df["Opponent Score"]) == 2]
     close_matches_count = (
         close_matches.groupby("Name").size().reset_index(name="Close Matches")
     )
