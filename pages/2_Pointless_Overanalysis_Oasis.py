@@ -152,7 +152,11 @@ with settings_tab:
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
 
+        st.write("df")
         st.dataframe(df)
+
+        st.write("combination_stats")
+        st.dataframe(combination_stats)
 
         # Calculate individual stats
         players_stats = (
