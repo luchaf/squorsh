@@ -34,4 +34,4 @@ But what if there's a question the provided stats didn't quite answer? Or perhap
 st.write("""
 Step into "Pointless Squash Stats", where numbers narrate the nonsense and amusement is always ace.
 """)
-st.write("👈 Explore by clicking on the chevron on the top of your screen to unfold the sidebar!")
+st.write("👈 Explore by clicking on the chevron on the top of your screen to unfold the sidebar!!")
