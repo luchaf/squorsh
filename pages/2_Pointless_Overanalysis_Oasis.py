@@ -204,6 +204,7 @@ with settings_tab:
                             ["absolut", "relative"]
                         )
                         with wins_abs_all_time:
+                            st.dataframe(players_stats)
                             plot_bars(players_stats, title_color, player_colors, "Wins")
                         with wins_rel_all_time:
                             plot_bars(
@@ -215,6 +216,7 @@ with settings_tab:
                             ["absolut", "relative"]
                         )
                         with wins_abs_over_time:
+                            st.dataframe(df)
                             cumulative_wins_over_time(
                                 df, player_colors, title_color, "Wins"
                             )
@@ -233,6 +235,7 @@ with settings_tab:
                             ["absolut", "relative"]
                         )
                         with wins_ftf_abs_all_time:
+                            st.dataframe(combination_stats)
                             plot_player_combo_graph(
                                 combination_stats, player_colors, "Wins", relative=False
                             )
@@ -246,6 +249,7 @@ with settings_tab:
                         )
                         with wins_ftf_abs_over_time:
                             # plot_player_combo_graph(combination_stats, player_colors, "Wins")
+                            st.dataframe(df)
                             entities_face_to_face_over_time_abs(
                                 df, player_colors, title_color, "Wins"
                             )
