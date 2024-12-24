@@ -15,7 +15,6 @@ from pointless_utils import (
     entities_face_to_face_over_time_rel,
     closeness_of_matches_over_time,
     correct_names_in_dataframe,
-    count_close_matches,  # Add this line
 )
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
