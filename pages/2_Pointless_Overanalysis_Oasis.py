@@ -148,6 +148,10 @@ with settings_tab:
         df = df.reset_index(drop=True).copy()
         df = df.reset_index()
 
+        st.write("df")
+        st.dataframe(df)
+
+
         # Derive player and combination stats
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
