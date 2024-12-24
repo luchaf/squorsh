@@ -1106,14 +1106,44 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
             )
 
 
-def count_close_matches(df):
+def count_close_matches(df, player_colors, title_color):
     """
-    Count the number of matches with a score difference of exactly 2 points.
+    Count the number of matches with a score difference of exactly 2 points and plot the results.
     :param df: The DataFrame containing match data.
-    :return: DataFrame with the count of close matches for each player.
+    :param player_colors: Dictionary mapping player names to their respective colors.
+    :param title_color: Color for the plot titles and labels.
     """
-    close_matches = df[np.abs(df["Player Score"] - df["Opponent Score"]) == 2]
-    close_matches_count = (
-        close_matches.groupby("Name").size().reset_index(name="Close Matches")
+    # Calculate the score difference
+    df["Score Difference"] = np.abs(df["Player Score"] - df["Opponent Score"])
+
+    # Filter matches with a score difference of exactly 2 points
+    close_matches = df[df["Score Difference"] == 2]
+
+    # Count the number of close matches for each player
+    close_matches_count = close_matches.groupby("Name").size().reset_index(name="Close Matches")
+
+    # Plot the results
+    fig = go.Figure()
+
+    for idx, row in close_matches_count.iterrows():
+        fig.add_trace(
+            go.Bar(
+                x=[row["Name"]],
+                y=[row["Close Matches"]],
+                marker=dict(color=player_colors.get(row["Name"], "#333")),
+                name=row["Name"],
+            )
+        )
+
+    fig.update_layout(
+        title="Number of Close Matches (Score Difference of 2 Points)",
+        xaxis=dict(title="Players", color=title_color, fixedrange=True),
+        yaxis=dict(title="Close Matches", color=title_color, fixedrange=True),
+        plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
+        paper_bgcolor="rgba(0,0,0,0)",  # Transparent background
+        font=dict(color=title_color),
+        hovermode="closest",
+        showlegend=False,
     )
-    return close_matches_count
+
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
