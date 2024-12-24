@@ -198,9 +198,8 @@ with settings_tab:
                 Number_of_Wins_tab,
                 Win_Streaks_tab,
                 Total_Points_Scored_tab,
-                Nerves_of_Steel_tab,
             ) = st.tabs(
-                ["Wins", "Win Streaks", "Points Scored", "Nerves of steel"]
+                ["Wins", "Win Streaks", "Points Scored"]
             )  # Add new tab
             with Number_of_Wins_tab:
                 # st.info(f"How many wins did each player collect...", icon="❓")
@@ -320,87 +319,4 @@ with settings_tab:
                     with competitiveness_tab:
                         closeness_of_matches_over_time(df, player_colors, title_color)
 
-            with Nerves_of_Steel_tab:
-                st.info(f"Count of matches with exactly 2 points difference", icon="❓")
-                close_matches_count = count_close_matches(df, player_colors=player_colors, title_color=title_color)
-
-                total_close_matches_tab, face_to_face_close_matches_tab = st.tabs(
-                    ["Total", "Face-to-Face-Feud"]
-                )
-                with total_close_matches_tab:
-                    close_matches_all_time_tab, close_matches_over_time_tab = st.tabs(
-                        ["static", "over time"]
-                    )
-                    with close_matches_all_time_tab:
-                        close_matches_abs_all_time, close_matches_rel_all_time = (
-                            st.tabs(["absolut", "relative"])
-                        )
-                        with close_matches_abs_all_time:
-                            plot_bars(
-                                close_matches_count,
-                                title_color,
-                                player_colors,
-                                "Close Matches",
-                            )
-                        with close_matches_rel_all_time:
-                            close_matches_count["Close Matches Ratio"] = (
-                                close_matches_count["Close Matches"]
-                                / close_matches_count["Close Matches"].sum()
-                            )
-                            plot_bars(
-                                close_matches_count,
-                                title_color,
-                                player_colors,
-                                "Close Matches Ratio",
-                            )
-
-                    with close_matches_over_time_tab:
-                        close_matches_abs_over_time, close_matches_rel_over_time = (
-                            st.tabs(["absolut", "relative"])
-                        )
-                        with close_matches_abs_over_time:
-                            cumulative_wins_over_time(
-                                df, player_colors, title_color, "Close Matches"
-                            )
-                        with close_matches_rel_over_time:
-                            cumulative_win_ratio_over_time(
-                                df, player_colors, title_color
-                            )
-
-                with face_to_face_close_matches_tab:
-                    (
-                        close_matches_face_to_face_all_time_tab,
-                        close_matches_face_to_face_over_time_tab,
-                    ) = st.tabs(["static", "over time"])
-                    with close_matches_face_to_face_all_time_tab:
-                        (
-                            close_matches_ftf_abs_all_time,
-                            close_matches_ftf_rel_all_time,
-                        ) = st.tabs(["absolut", "relative"])
-                        with close_matches_ftf_abs_all_time:
-                            plot_player_combo_graph(
-                                combination_stats,
-                                player_colors,
-                                "Close Matches",
-                                relative=False,
-                            )
-                        with close_matches_ftf_rel_all_time:
-                            plot_player_combo_graph(
-                                combination_stats,
-                                player_colors,
-                                "Close Matches",
-                                relative=True,
-                            )
-                    with close_matches_face_to_face_over_time_tab:
-                        (
-                            close_matches_ftf_abs_over_time,
-                            close_matches_ftf_rel_over_time,
-                        ) = st.tabs(["absolut", "relative"])
-                        with close_matches_ftf_abs_over_time:
-                            entities_face_to_face_over_time_abs(
-                                df, player_colors, title_color, "Close Matches"
-                            )
-                        with close_matches_ftf_rel_over_time:
-                            entities_face_to_face_over_time_rel(
-                                df, player_colors, title_color, "Close Matches"
-                            )
+            
