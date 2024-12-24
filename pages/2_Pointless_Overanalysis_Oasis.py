@@ -145,7 +145,7 @@ with settings_tab:
     else:
         with basic_metrics_tab:
             nerves_of_steel_bool = st.checkbox("only nerve of steel matches", value=False)
-            go_the_distance_bool = st.checkbox("only nerve of steel matches", value=False)
+            go_the_distance_bool = st.checkbox("only overtime matches", value=False)
             
             df = df.reset_index(drop=True).copy()
             df = df.reset_index()
