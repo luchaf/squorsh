@@ -305,7 +305,7 @@ with settings_tab:
 
             with Nerves_of_Steel_tab:
                 st.info(f"Count of matches with exactly 2 points difference", icon="❓")
-                close_matches_count = count_close_matches(df)
+                close_matches_count = count_close_matches(df, player_colors=player_colors, title_color=title_color)
 
                 total_close_matches_tab, face_to_face_close_matches_tab = st.tabs(
                     ["Total", "Face-to-Face-Feud"]
