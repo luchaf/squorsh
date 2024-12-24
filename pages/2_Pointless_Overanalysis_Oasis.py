@@ -148,17 +148,18 @@ with settings_tab:
         df = df.reset_index(drop=True).copy()
         df = df.reset_index()
 
-        #df_only_two_points_difference = df[abs(df["Score Difference"]) == 2].copy()
-
-        #st.write("two points difference")
-        #st.dataframe(df_only_two_points_difference)
-
         # Derive player and combination stats
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
 
+        df_only_two_points_difference = df[abs(df["Score Difference"]) == 2].copy()
+
+        st.write("two points difference")
+        st.dataframe(df_only_two_points_difference)
+
         st.write("df")
         st.dataframe(df)
+
 
         st.write("combination_stats")
         st.dataframe(combination_stats)
