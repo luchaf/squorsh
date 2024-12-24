@@ -151,7 +151,8 @@ with settings_tab:
         st.write("df")
         st.dataframe(df)
 
-        df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
+        # For nerves of steel stats, only consider matches with a 2-point difference
+        # df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
 
 
         # Derive player and combination stats
