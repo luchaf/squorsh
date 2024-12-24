@@ -145,6 +145,7 @@ with settings_tab:
     else:
         with basic_metrics_tab:
             nerves_of_steel_bool = st.checkbox("only nerve of steel matches", value=False)
+            go_the_distance_bool = st.checkbox("only nerve of steel matches", value=False)
             
             df = df.reset_index(drop=True).copy()
             df = df.reset_index()
@@ -152,6 +153,8 @@ with settings_tab:
             # For nerves of steel stats, only consider matches with a 2-point difference
             if nerves_of_steel_bool:
                 df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
+            if go_the_distance_bool:
+                df = df[(df["Score1"]+df["Score2"]) > 20].copy()
 
             # Derive player and combination stats
             combination_stats = calculate_combination_stats(df)
