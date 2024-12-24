@@ -151,7 +151,7 @@ with settings_tab:
         st.write("df")
         st.dataframe(df)
 
-        df = df[abs(df["score1"]-df["score2"]) == 2].copy()
+        df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
 
 
         # Derive player and combination stats
