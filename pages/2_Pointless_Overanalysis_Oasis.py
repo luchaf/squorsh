@@ -143,28 +143,15 @@ with settings_tab:
     if df.empty:
         st.warning("Please select at least one valid matchday.")
     else:
-        # Dominance Scores
         df = df.reset_index(drop=True).copy()
         df = df.reset_index()
 
-        st.write("df")
-        st.dataframe(df)
-
         # For nerves of steel stats, only consider matches with a 2-point difference
-        # df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
-
+        df_nerves_of_steel = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
 
         # Derive player and combination stats
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
-
-
-        st.write("df")
-        st.dataframe(df)
-
-
-        st.write("combination_stats")
-        st.dataframe(combination_stats)
 
         # Calculate individual stats
         players_stats = (
@@ -192,13 +179,35 @@ with settings_tab:
             ["longest_win_streak", "longest_loss_streak"], ascending=False
         )
 
+        # Derive player and combination stats for nerves of steel
+        combination_stats_nerves_of_steel = calculate_combination_stats(df_nerves_of_steel)
+        df_nerves_of_steel = get_name_opponent_name_df(df_nerves_of_steel)
+
+        # Calculate individual stats
+        players_stats_nerves_of_steel = (
+            df_nerves_of_steel.groupby("Name")
+            .agg({"Wins": "sum", "Player Score": "sum", "PlayerGameNumber": "max"})
+            .rename(columns={"Player Score": "Total Score"})
+            .sort_values("Wins", ascending=False)
+        )
+
+        # Calculate the relative win ratio (Wins / Games Played)
+        players_stats_nerves_of_steel["Win Ratio"] = (
+            players_stats_nerves_of_steel["Wins"] / players_stats_nerves_of_steel["PlayerGameNumber"]
+        )
+
+        # Replace any potential NaN values with 0 (in case of division by zero)
+        players_stats_nerves_of_steel["Win Ratio"].fillna(0, inplace=True)
+
+
         with basic_metrics_tab:
             (
                 Number_of_Wins_tab,
                 Win_Streaks_tab,
                 Total_Points_Scored_tab,
+                Nerves_of_Steel_tab,
             ) = st.tabs(
-                ["Wins", "Win Streaks", "Points Scored"]
+                ["Wins", "Win Streaks", "Points Scored", "Nerves of Steel"]
             )  # Add new tab
             with Number_of_Wins_tab:
                 # st.info(f"How many wins did each player collect...", icon="❓")
@@ -318,4 +327,72 @@ with settings_tab:
                     with competitiveness_tab:
                         closeness_of_matches_over_time(df, player_colors, title_color)
 
+            with Nerves_of_Steel_tab:
+                # st.info(f"How many wins did each player collect...", icon="❓")
+                total_wins_tab, face_to_face_wins_tab = st.tabs(
+                    ["Total", "Face-to-Face-Feud"]
+                )
+                with total_wins_tab:
+                    # st.info(f"...in total: static or over time", icon="❓")
+                    wins_all_time_tab, wins_over_time_tab = st.tabs(
+                        ["static", "over time"]
+                    )
+                    with wins_all_time_tab:
+                        wins_abs_all_time, wins_rel_all_time = st.tabs(
+                            ["absolut", "relative"]
+                        )
+                        with wins_abs_all_time:
+                            st.dataframe(players_stats_nerves_of_steel)
+                            plot_bars(players_stats_nerves_of_steel, title_color, player_colors, "Wins")
+                        with wins_rel_all_time:
+                            plot_bars(
+                                players_stats_nerves_of_steel, title_color, player_colors, "Win Ratio"
+                            )
+
+                    with wins_over_time_tab:
+                        wins_abs_over_time, wins_rel_over_time = st.tabs(
+                            ["absolut", "relative"]
+                        )
+                        with wins_abs_over_time:
+                            st.dataframe(df)
+                            cumulative_wins_over_time(
+                                df_nerves_of_steel, player_colors, title_color, "Wins"
+                            )
+                        with wins_rel_over_time:
+                            cumulative_win_ratio_over_time(
+                                df_nerves_of_steel, player_colors, title_color
+                            )
+
+                with face_to_face_wins_tab:
+                    # st.info(f"...against specific opponents: static or over time", icon="❓")
+                    wins_face_to_face_all_time_tab, wins_face_to_face_over_time_tab = (
+                        st.tabs(["static", "over time"])
+                    )
+                    with wins_face_to_face_all_time_tab:
+                        wins_ftf_abs_all_time, wins_ftf_rel_all_time = st.tabs(
+                            ["absolut", "relative"]
+                        )
+                        with wins_ftf_abs_all_time:
+                            st.dataframe(combination_stats)
+                            plot_player_combo_graph(
+                                combination_stats_nerves_of_steel, player_colors, "Wins", relative=False
+                            )
+                        with wins_ftf_rel_all_time:
+                            plot_player_combo_graph(
+                                combination_stats_nerves_of_steel, player_colors, "Wins", relative=True
+                            )
+                    with wins_face_to_face_over_time_tab:
+                        wins_ftf_abs_over_time, wins_ftf_rel_over_time = st.tabs(
+                            ["absolut", "relative"]
+                        )
+                        with wins_ftf_abs_over_time:
+                            # plot_player_combo_graph(combination_stats, player_colors, "Wins")
+                            st.dataframe(df_nerves_of_steel)
+                            entities_face_to_face_over_time_abs(
+                                df_nerves_of_steel, player_colors, title_color, "Wins"
+                            )
+                        with wins_ftf_rel_over_time:
+                            entities_face_to_face_over_time_rel(
+                                df_nerves_of_steel, player_colors, title_color, "Wins"
+                            )
             
