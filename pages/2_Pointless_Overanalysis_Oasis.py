@@ -151,15 +151,13 @@ with settings_tab:
         st.write("df")
         st.dataframe(df)
 
+        df = df[abs(df["score1"]-df["score2"]) == 2].copy()
+
 
         # Derive player and combination stats
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
 
-        df_only_two_points_difference = df[abs(df["Score Difference"]) == 2].copy()
-
-        st.write("two points difference")
-        st.dataframe(df_only_two_points_difference)
 
         st.write("df")
         st.dataframe(df)
