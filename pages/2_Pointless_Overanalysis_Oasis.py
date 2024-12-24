@@ -143,46 +143,46 @@ with settings_tab:
     if df.empty:
         st.warning("Please select at least one valid matchday.")
     else:
-        nerves_of_steel_bool = st.checkbox("only nerve of steel matches", value=False)
-        
-        df = df.reset_index(drop=True).copy()
-        df = df.reset_index()
-
-        # For nerves of steel stats, only consider matches with a 2-point difference
-        if nerves_of_steel_bool:
-            df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
-
-        # Derive player and combination stats
-        combination_stats = calculate_combination_stats(df)
-        df = get_name_opponent_name_df(df)
-
-        # Calculate individual stats
-        players_stats = (
-            df.groupby("Name")
-            .agg({"Wins": "sum", "Player Score": "sum", "PlayerGameNumber": "max"})
-            .rename(columns={"Player Score": "Total Score"})
-            .sort_values("Wins", ascending=False)
-        )
-
-        # Calculate the relative win ratio (Wins / Games Played)
-        players_stats["Win Ratio"] = (
-            players_stats["Wins"] / players_stats["PlayerGameNumber"]
-        )
-
-        # Replace any potential NaN values with 0 (in case of division by zero)
-        players_stats["Win Ratio"].fillna(0, inplace=True)
-
-        # Derive results
-        results = derive_results(df)
-
-        # Calculate win and loss streaks
-        # streaks = calculate_streaks(results)
-        streaks = get_name_streaks_df(df)
-        streaks = streaks.sort_values(
-            ["longest_win_streak", "longest_loss_streak"], ascending=False
-        )
-
         with basic_metrics_tab:
+            nerves_of_steel_bool = st.checkbox("only nerve of steel matches", value=False)
+            
+            df = df.reset_index(drop=True).copy()
+            df = df.reset_index()
+
+            # For nerves of steel stats, only consider matches with a 2-point difference
+            if nerves_of_steel_bool:
+                df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
+
+            # Derive player and combination stats
+            combination_stats = calculate_combination_stats(df)
+            df = get_name_opponent_name_df(df)
+
+            # Calculate individual stats
+            players_stats = (
+                df.groupby("Name")
+                .agg({"Wins": "sum", "Player Score": "sum", "PlayerGameNumber": "max"})
+                .rename(columns={"Player Score": "Total Score"})
+                .sort_values("Wins", ascending=False)
+            )
+
+            # Calculate the relative win ratio (Wins / Games Played)
+            players_stats["Win Ratio"] = (
+                players_stats["Wins"] / players_stats["PlayerGameNumber"]
+            )
+
+            # Replace any potential NaN values with 0 (in case of division by zero)
+            players_stats["Win Ratio"].fillna(0, inplace=True)
+
+            # Derive results
+            results = derive_results(df)
+
+            # Calculate win and loss streaks
+            # streaks = calculate_streaks(results)
+            streaks = get_name_streaks_df(df)
+            streaks = streaks.sort_values(
+                ["longest_win_streak", "longest_loss_streak"], ascending=False
+            )
+
             (
                 Number_of_Wins_tab,
                 Win_Streaks_tab,
