@@ -144,6 +144,7 @@ with settings_tab:
         st.warning("Please select at least one valid matchday.")
     else:
         with basic_metrics_tab:
+            match_number_day = st.number_input("number of played matches on this day")
             nerves_of_steel_bool = st.checkbox("Balls of steel matches only", value=False)
             go_the_distance_bool = st.checkbox("Balls of adamantium matches only (extra point games)", value=False)
             
@@ -155,6 +156,10 @@ with settings_tab:
                 df = df[abs(df["Score1"]-df["Score2"]) == 2].copy()
             if go_the_distance_bool:
                 df = df[(df["Score1"]+df["Score2"]) > 20].copy()
+
+            df = df[df["match_number_day"]<match_number_day].copy()
+
+
 
             # Derive player and combination stats
             combination_stats = calculate_combination_stats(df)
