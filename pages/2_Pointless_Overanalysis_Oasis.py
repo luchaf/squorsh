@@ -144,7 +144,7 @@ with settings_tab:
         st.warning("Please select at least one valid matchday.")
     else:
         with basic_metrics_tab:
-            match_number_day = st.number_input("number of played matches on this day", value=100)
+            match_number_day = st.slider("number of played matches on this day",max_value=30, step=1, value=30)
             nerves_of_steel_bool = st.checkbox("Balls of steel matches only", value=False)
             go_the_distance_bool = st.checkbox("Balls of adamantium matches only (extra point games)", value=False)
             
