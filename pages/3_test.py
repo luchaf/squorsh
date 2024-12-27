@@ -33,58 +33,46 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
-# Ensure date column is cast as datetime
+# 1) Ensure date column is parsed as datetime
 df['date'] = pd.to_datetime(df['date'], format="%Y%m%d", errors='coerce')
 
-# ----- BASIC CLEANUP -----
-# Sometimes, multiple names or typos appear for the same person (like "Friede" vs "Friedemann").
-# You can do some basic unify logic if needed:
-# Example: unify "Friede" into "Friedemann"
+# 2) Basic cleanup or name-unification if needed:
+# (Example: unify "Friede" -> "Friedemann", in case your data has that mismatch)
 df['Player1'] = df['Player1'].replace("Friede", "Friedemann")
 df['Player2'] = df['Player2'].replace("Friede", "Friedemann")
 
-# ----- ADD COLUMNS FOR WINNER/LOSER -----
-def find_winner(row):
-    return row['Player1'] if row['Score1'] > row['Score2'] else row['Player2']
-
-def find_loser(row):
-    return row['Player2'] if row['Score1'] > row['Score2'] else row['Player1']
-
-df['Winner'] = df.apply(find_winner, axis=1)
-df['Loser'] = df.apply(find_loser, axis=1)
+# 3) Determine Winner, Loser, and additional columns
+df['Winner'] = df.apply(lambda row: row['Player1'] if row['Score1'] > row['Score2'] else row['Player2'], axis=1)
+df['Loser'] = df.apply(lambda row: row['Player2'] if row['Score1'] > row['Score2'] else row['Player1'], axis=1)
 df['WinnerScore'] = df[['Score1','Score2']].max(axis=1)
 df['LoserScore'] = df[['Score1','Score2']].min(axis=1)
 df['PointDiff'] = df['WinnerScore'] - df['LoserScore']
 
-# ----- SIDEBAR OPTIONS -----
+# 4) Sidebar filter
 st.sidebar.header("Filters")
-all_players = sorted(list(set(df['Player1']).union(set(df['Player2']))))
-selected_players = st.sidebar.multiselect("Filter by Player(s)", all_players, default=all_players)
+all_players = sorted(set(df['Player1']) | set(df['Player2']))
+selected_players = st.sidebar.multiselect("Select Player(s) to Include", all_players, default=all_players)
 
-# Filter the DataFrame by selected players (only keep matches where at least one selected player took part)
-df_filtered = df[(df['Player1'].isin(selected_players)) | (df['Player2'].isin(selected_players))]
+# Filter only matches where at least one selected player participated
+df_filtered = df[
+    (df['Player1'].isin(selected_players)) |
+    (df['Player2'].isin(selected_players))
+]
 
 # ----- KEY METRICS -----
 st.subheader("Key Performance Metrics")
 col1, col2, col3 = st.columns(3)
+col1.metric("Total Matches in View", len(df_filtered))
+col2.metric("Players Selected", len(selected_players))
+col3.metric("Unique Players (Filtered)", df_filtered[['Player1','Player2']].stack().nunique())
 
-total_matches = len(df_filtered)
-total_players_in_view = len(selected_players)
-total_unique_players = df_filtered[['Player1','Player2']].stack().nunique()
-
-col1.metric("Total Matches in View", total_matches)
-col2.metric("Players Selected", total_players_in_view)
-col3.metric("Unique Players in Filtered Data", total_unique_players)
-
-# ----- WINS & POINTS PER PLAYER -----
+# ----- WINS & TOTAL POINTS PER PLAYER -----
 st.subheader("Overall Wins & Total Points per Player")
 
-# Total Wins
+# Calculate total wins
 wins_df = df_filtered.groupby('Winner').size().reset_index(name='Wins')
 
-# Total Points Scored
-# We'll sum up points from either Score1 or Score2. A quick way is to group
-# by Player1 summing Score1 plus group by Player2 summing Score2, then merge.
+# Calculate total points scored
 points_p1 = df_filtered.groupby('Player1')['Score1'].sum().reset_index()
 points_p1.columns = ['Player', 'Points']
 points_p2 = df_filtered.groupby('Player2')['Score2'].sum().reset_index()
@@ -92,60 +80,88 @@ points_p2.columns = ['Player', 'Points']
 total_points = pd.concat([points_p1, points_p2], ignore_index=True)
 total_points = total_points.groupby('Player')['Points'].sum().reset_index()
 
-# Merge the two metrics
+# Merge the two metrics into one summary
 summary_df = pd.merge(wins_df, total_points, left_on='Winner', right_on='Player', how='outer').drop(columns='Player')
 summary_df.rename(columns={'Winner': 'Player'}, inplace=True)
-
-# Some players may have never won but still appear in total_points, so let's combine carefully
-# We'll do a full outer merge of (Wins table) and (Points table) to ensure nobody is lost:
-# We already did it, but let's finalize it properly:
-# If someone doesn't appear in 'Winner', then 'Wins' is NaN => fill with 0
 summary_df['Wins'] = summary_df['Wins'].fillna(0).astype(int)
 
-# Now check if there are players in total_points who never appear as winners. 
-# Actually, the code above should handle that. If we still need them, we handle them. 
-# But let's see if the final summary covers all players. 
-# We do an outer join with total_points again to ensure coverage:
-final_summary = pd.merge(
-    total_points, 
-    summary_df[['Player','Wins']], 
-    on='Player', how='outer'
-)
+# Make sure we include players who never won but appear in total_points
+final_summary = pd.merge(total_points, summary_df[['Player','Wins']], on='Player', how='outer')
 final_summary['Wins'] = final_summary['Wins'].fillna(0).astype(int)
 
-# Sort by Wins desc
+# Sort by number of wins descending
 final_summary.sort_values(by='Wins', ascending=False, inplace=True)
 final_summary.reset_index(drop=True, inplace=True)
 
-# Display in Streamlit
-st.dataframe(final_summary.style.format({"Points": "{:.0f}", "Wins": "{:.0f}"}), use_container_width=True)
+st.dataframe(final_summary.style.format({"Points":"{:.0f}","Wins":"{:.0f}"}), use_container_width=True)
 
-# ----- HEAD-TO-HEAD MATCHUPS -----
-st.subheader("Head-to-Head Matchups")
-st.markdown("See how players perform against each other (win count).")
+# ----- HEAD-TO-HEAD: WINS COUNT -----
+st.subheader("Head-to-Head Wins")
+st.markdown("Shows how many times a player (row) has **defeated** another player (column).")
 
-# We can create a pivot table counting how many times a player has beaten another
 h2h_df = df_filtered.groupby(['Winner','Loser']).size().reset_index(name='Wins_against')
-pivot_h2h = h2h_df.pivot(index='Winner', columns='Loser', values='Wins_against').fillna(0)
+pivot_h2h = h2h_df.pivot(index='Winner', columns='Loser', values='Wins_against').fillna(0).astype(int)
+st.dataframe(pivot_h2h, use_container_width=True)
 
-st.dataframe(pivot_h2h.astype(int), use_container_width=True)
+# ----- AVERAGE MARGIN OF VICTORY & DEFEAT PER PLAYER -----
+st.subheader("Average Margin of Victory & Defeat (Per Player)")
 
-# ----- DOMINATION METRICS -----
-st.subheader("Domination Metrics")
-st.markdown("**Average Margin of Victory** (among the selected filters).")
+# Add a column from the loser's perspective
+df_filtered['LoserPointDiff'] = df_filtered['LoserScore'] - df_filtered['WinnerScore']
 
-domination = df_filtered.groupby('Winner')['PointDiff'].mean().reset_index()
-domination.columns = ['Player','Avg_Point_Diff']
-domination.sort_values(by='Avg_Point_Diff', ascending=False, inplace=True)
+# Average margin of victory
+df_margin_vic = df_filtered.groupby('Winner')['PointDiff'].mean().reset_index()
+df_margin_vic.columns = ['Player', 'Avg_margin_victory']
 
-st.dataframe(domination.style.format({"Avg_Point_Diff": "{:.2f}"}), use_container_width=True)
+# Average margin of defeat
+df_margin_def = df_filtered.groupby('Loser')['LoserPointDiff'].mean().reset_index()
+df_margin_def.columns = ['Player', 'Avg_margin_defeat']
 
-# ----- TIME-SERIES VIEW -----
+# Merge the two sets
+df_margin_summary = pd.merge(df_margin_vic, df_margin_def, on='Player', how='outer')
+df_margin_summary[['Avg_margin_victory','Avg_margin_defeat']] = df_margin_summary[
+    ['Avg_margin_victory','Avg_margin_defeat']
+].fillna(0)
+df_margin_summary.sort_values(by='Player', inplace=True)
+
+st.dataframe(
+    df_margin_summary.style.format({"Avg_margin_victory":"{:.2f}", "Avg_margin_defeat":"{:.2f}"}),
+    use_container_width=True
+)
+
+# ----- HEAD-TO-HEAD: AVERAGE MARGINS -----
+st.subheader("Head-to-Head: Average Margin of Victory")
+
+df_matchup_margin = (
+    df_filtered
+    .groupby(['Winner','Loser'])['PointDiff']
+    .mean()
+    .reset_index(name='Avg_margin_of_victory')
+)
+
+matchup_pivot_vic = df_matchup_margin.pivot(index='Winner', columns='Loser', values='Avg_margin_of_victory').fillna(0)
+matchup_pivot_vic = matchup_pivot_vic.round(2)
+st.dataframe(matchup_pivot_vic, use_container_width=True)
+
+st.subheader("Head-to-Head: Average Margin of Defeat")
+
+df_matchup_loss = (
+    df_filtered
+    .groupby(['Loser','Winner'])['LoserPointDiff']
+    .mean()
+    .reset_index(name='Avg_margin_of_defeat')
+)
+
+matchup_pivot_def = df_matchup_loss.pivot(index='Loser', columns='Winner', values='Avg_margin_of_defeat').fillna(0)
+matchup_pivot_def = matchup_pivot_def.round(2)
+st.dataframe(matchup_pivot_def, use_container_width=True)
+
+# ----- MATCHES OVER TIME -----
 st.subheader("Matches Over Time")
-st.markdown("Number of matches played on each date (filtered by player selection).")
 
+# Count how many matches happened on each date in the filtered set
 matches_over_time = df_filtered.groupby('date').size().reset_index(name='Matches')
-c = alt.Chart(matches_over_time).mark_bar().encode(
+chart = alt.Chart(matches_over_time).mark_bar().encode(
     x='date:T',
     y='Matches:Q',
     tooltip=['date:T','Matches:Q']
@@ -153,13 +169,14 @@ c = alt.Chart(matches_over_time).mark_bar().encode(
     width='container',
     height=300
 )
-st.altair_chart(c, use_container_width=True)
+st.altair_chart(chart, use_container_width=True)
 
 st.markdown("---")
 st.markdown("""
-**Ideas to extend**:
-- Show longest winning streak per player
-- Show best comeback (lowest to highest final difference)
-- Show distribution of scores (histogram of all match point totals)
-- More advanced visualizations!
+**Possible Extensions**  
+- Display winning streaks per player.  
+- Show distribution of total points scored in matches.  
+- Identify the 'closest' matches (smallest margin).  
+- Calculate more advanced stats like Elo ratings, etc.  
 """)
+
