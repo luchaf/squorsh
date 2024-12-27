@@ -157,7 +157,7 @@ with settings_tab:
             if go_the_distance_bool:
                 df = df[(df["Score1"]+df["Score2"]) > 20].copy()
 
-            df = df[df["match_number_day"]<match_number_day].copy()
+            df = df[df["match_number_day"]<int(match_number_day)].copy()
 
 
 
