@@ -350,21 +350,21 @@ with tab_extensions:
     regardless of the filtering above.
     """)
 
-    # === 5) Performance by "Nth Match of Day" (the meltdown approach) ===
+   # === 5) Performance by "Nth Match of Day" (the meltdown approach) ===
     st.subheader("Performance by Nth Match of Day")
-
+    
     def meltdown_day_matches(df_in):
         """
         For each row (one match), create two rows:
          - one for Player1
          - one for Player2
         Then we group by (date, player) to find how many matches they've
-        played that day (1st, 2nd, 3rd, etc.)
+        played that day (1st, 2nd, 3rd, etc.).
         We'll also track whether they won or not (did_win).
         """
         # Sort to keep chronological
         df_in = df_in.sort_values(['date','match_number_total','match_number_day'], ascending=True)
-
+    
         # Subset for Player1
         df_p1 = df_in[['date','Player1','Winner','Loser','Score1','Score2','match_number_total','match_number_day']]
         df_p1 = df_p1.rename(columns={
@@ -373,7 +373,7 @@ with tab_extensions:
             'Score2':'score_for_opponent'
         })
         df_p1['did_win'] = (df_p1['player'] == df_p1['Winner']).astype(int)
-
+    
         # Subset for Player2
         df_p2 = df_in[['date','Player2','Winner','Loser','Score1','Score2','match_number_total','match_number_day']]
         df_p2 = df_p2.rename(columns={
@@ -382,47 +382,86 @@ with tab_extensions:
             'Score1':'score_for_opponent'
         })
         df_p2['did_win'] = (df_p2['player'] == df_p2['Winner']).astype(int)
-
+    
         # Combine
         df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
-
+    
         # Group by date+player to find "which nth match of day"
-        # first, sort
         df_stacked = df_stacked.sort_values(['date','player','match_number_total','match_number_day'])
         df_stacked['MatchOfDay'] = df_stacked.groupby(['date','player']).cumcount() + 1
-
+    
         return df_stacked
-
-    # meltdown the FILTERED data
+    
+    # Melt down the FILTERED data
     df_daycount = meltdown_day_matches(df_filtered)
-
+    
     # We'll group by (player, MatchOfDay) to see how many matches and how many wins
-    df_day_agg = df_daycount.groupby(['player','MatchOfDay'])['did_win'].agg(['sum','count']).reset_index()
+    df_day_agg = (
+        df_daycount
+        .groupby(['player','MatchOfDay'])['did_win']
+        .agg(['sum','count'])
+        .reset_index()
+    )
     df_day_agg['win_rate'] = df_day_agg['sum'] / df_day_agg['count']
-
-    # Let's do a chart with x=MatchOfDay, y=win_rate, color=player
-    # You can also filter out players with few data points if you want
-    chart_match_of_day = (
-        alt.Chart(df_day_agg)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X('MatchOfDay:O', title='Nth Match of the Day', sort=None),  # Treat as ordinal or numeric
-            y=alt.Y('win_rate:Q', title='Win Rate'),
-            color='player:N',
-            tooltip=['player:N','MatchOfDay:O','win_rate:Q','sum','count']
+    
+    # Let user select which players to show in the chart
+    available_players = sorted(df_day_agg['player'].unique())
+    players_for_nth_chart = st.multiselect(
+        "Select which players to display in the Nth-Match-of-Day chart",
+        options=available_players,
+        default=available_players  # or pick some subset
+    )
+    
+    if players_for_nth_chart:
+        df_day_agg_display = df_day_agg[df_day_agg['player'].isin(players_for_nth_chart)]
+        # We'll treat MatchOfDay as numeric so the regression can work.
+        # If some players have only 1 data point, the regression won't show meaningfully; that's okay.
+    
+        base = alt.Chart(df_day_agg_display).encode(
+            x=alt.X('MatchOfDay:Q', title='Nth Match of the Day'),
+            y=alt.Y('win_rate:Q', title='Win Rate (0-1)'),
+            color=alt.Color('player:N', title='Player'),
+            tooltip=[
+                alt.Tooltip('player:N'),
+                alt.Tooltip('MatchOfDay:Q'),
+                alt.Tooltip('win_rate:Q', format='.2f'),
+                alt.Tooltip('sum:Q', title='Wins'),
+                alt.Tooltip('count:Q', title='Matches')
+            ]
         )
-        .properties(width='container', height=400)
-    )
-    st.altair_chart(chart_match_of_day, use_container_width=True)
-
-    st.markdown("**Table**: Win Rate by Nth Match of Day (Filtered)")
-    st.dataframe(
-        df_day_agg[['player','MatchOfDay','sum','count','win_rate']].style.format({'win_rate':'{:.2f}'}),
-        use_container_width=True
-    )
-
+    
+        # 1) The actual data lines with points
+        lines_layer = base.mark_line(point=True)
+    
+        # 2) The linear regression trend line for each player
+        trend_layer = (
+            base
+            .transform_regression(
+                'MatchOfDay', 'win_rate', groupby=['player']
+            )
+            .mark_line(strokeDash=[4,4])   # dashed line for the trend
+            .encode(opacity=alt.value(0.7))
+        )
+    
+        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+            width='container',
+            height=400
+        )
+    
+        st.altair_chart(chart_match_of_day, use_container_width=True)
+    
+        st.markdown("**Table**: Win Rate by Nth Match of Day (Filtered)")
+        st.dataframe(
+            df_day_agg_display[['player','MatchOfDay','sum','count','win_rate']]
+            .sort_values(['player','MatchOfDay'])
+            .reset_index(drop=True)
+            .style.format({'win_rate':'{:.2f}'}),
+            use_container_width=True
+        )
+    else:
+        st.info("No players selected for the Nth-match-of-day chart.")
+    
     st.markdown("""
-    This chart & table show how each player performs in the 1st, 2nd, 3rd, etc. match they play **per day**.  
-    For example, if a player struggles in later matches, you might see a lower win rate at higher 'MatchOfDay' values.
+    This chart & table show how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**. 
+    The **solid line** represents the actual data points, and the **dashed line** is a **linear trend** for each player's performance.
     """)
-
