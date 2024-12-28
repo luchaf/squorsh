@@ -44,7 +44,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 from collections import defaultdict
-
+from itertools import combinations
 from streamlit_gsheets import GSheetsConnection
 
 # Create GSheets connection
@@ -66,8 +66,6 @@ df['Loser'] = df.apply(lambda row: row['Player2'] if row['Score1'] > row['Score2
 df['WinnerScore'] = df[['Score1','Score2']].max(axis=1)
 df['LoserScore'] = df[['Score1','Score2']].min(axis=1)
 df['PointDiff'] = df['WinnerScore'] - df['LoserScore']
-
-# For margin of defeat calculations:
 df['LoserPointDiff'] = df['LoserScore'] - df['WinnerScore']  # typically negative
 
 # ---- Sidebar Filters ----
@@ -210,14 +208,12 @@ with tab_extensions:
     # === 1) Display longest winning/losing streak (filtered data) ===
     st.subheader("Longest Winning/Losing Streaks per Player")
 
-    # We'll sort df_filtered by date & match_number_total to ensure chronological order
     df_sorted = df_filtered.sort_values(
         ['date', 'match_number_total', 'match_number_day'], 
         ascending=True, na_position='last'
     )
 
     def compute_longest_win_streak(df_input, player):
-        """Compute the longest consecutive-win streak for a given player."""
         df_player = df_input[(df_input['Player1'] == player) | (df_input['Player2'] == player)]
         df_player = df_player.sort_values(['date', 'match_number_total', 'match_number_day'],
                                           ascending=True, na_position='last')
@@ -234,7 +230,6 @@ with tab_extensions:
         return longest
 
     def compute_longest_loss_streak(df_input, player):
-        """Compute the longest consecutive-loss streak for a given player."""
         df_player = df_input[(df_input['Player1'] == player) | (df_input['Player2'] == player)]
         df_player = df_player.sort_values(['date', 'match_number_total', 'match_number_day'],
                                           ascending=True, na_position='last')
@@ -259,7 +254,6 @@ with tab_extensions:
         streaks.append((p, w_streak, l_streak))
 
     df_streaks = pd.DataFrame(streaks, columns=['Player','Longest_Win_Streak','Longest_Loss_Streak'])
-    # Sort by the longest win streak primarily (you could also sort by a combined metric)
     df_streaks.sort_values('Longest_Win_Streak', ascending=False, inplace=True)
     df_streaks.reset_index(drop=True, inplace=True)
 
@@ -268,23 +262,23 @@ with tab_extensions:
     # === 2) Show distribution of match results (Filtered) ===
     st.subheader("Distribution of Match Results (Filtered)")
 
-    # Create a new column that sorts the two scores, e.g. (Score1, Score2) => (min, max)
-    # Then convert to a "X:Y" string so that 11:9 and 9:11 become the same category "9:11"
     def normalize_result(row):
+        """We invert (max:min) to unify 11:9 vs. 9:11 
+           But you previously wanted 9:11 distinct from 11:9.
+           So if you still want them unified, keep max/min;
+           otherwise remove or adapt. We'll keep your version that unifies it.
+        """
         s1, s2 = row['Score1'], row['Score2']
         mn, mx = int(min(s1, s2)), int(max(s1, s2))
         return f"{mx}:{mn}"
 
     df_filtered['ResultPair'] = df_filtered.apply(normalize_result, axis=1)
-
-    # Count the frequency of each result pair
     pair_counts = df_filtered['ResultPair'].value_counts().reset_index()
     pair_counts.columns = ['ResultPair', 'Count']
 
-    # Let's use Altair to plot these categories
     results_chart = alt.Chart(pair_counts).mark_bar().encode(
         x=alt.X('Count:Q', title='Number of Matches'),
-        y=alt.Y('ResultPair:N', sort='-x', title='Score Category'),  # sort descending by frequency
+        y=alt.Y('ResultPair:N', sort='-x', title='Score Category'),
         tooltip=['ResultPair','Count']
     ).properties(width='container', height=500)
 
@@ -293,18 +287,14 @@ with tab_extensions:
     # === 3) Identify the 'closest' matches (smallest margin) ===
     st.subheader("Closest Matches (Filtered)")
 
-    # Sort ascending by 'PointDiff' so the smallest margins appear first,
-    # then take top N, then sort that subset by total points descending
     n_closest = st.slider("Number of closest matches to display", min_value=1, max_value=20, value=10)
-
-    # First, define total points for each match
     df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
 
-    closest_subset = df_filtered.sort_values(
-        ['PointDiff', 'TotalPoints'],
-        ascending=[True, False]
-    ).head(n_closest)
-
+    # Sort by margin ascending, then by total points descending to break ties
+    # so that if multiple matches have the same margin, the highest total points appear first
+    # Then pick the top n
+    df_closest_sorted = df_filtered.sort_values(['PointDiff','TotalPoints'], ascending=[True, False])
+    closest_subset = df_closest_sorted.head(n_closest)
 
     st.dataframe(
         closest_subset[[
@@ -324,14 +314,10 @@ with tab_extensions:
     - Sorted by date, then match_number_total (and match_number_day).  
     """)
 
-    # We'll do Elo across the entire df (not just df_filtered), so it's consistent
-    df_all_sorted = df.sort_values(['date','match_number_total','match_number_day'], 
-                                   ascending=True, na_position='last')
-
-    # Dictionary to hold Elo ratings
+    df_all_sorted = df.sort_values(['date','match_number_total','match_number_day'], ascending=True, na_position='last')
     elo_ratings = defaultdict(lambda: 1500)
+    K = 20
 
-    K = 30  # or whatever factor you prefer
     for _, row in df_all_sorted.iterrows():
         p1, p2 = row['Player1'], row['Player2']
         r1, r2 = elo_ratings[p1], elo_ratings[p2]
@@ -340,19 +326,18 @@ with tab_extensions:
         exp1 = 1 / (1 + 10 ** ((r2 - r1)/400))
         exp2 = 1 / (1 + 10 ** ((r1 - r2)/400))
 
-        # Actual scores
+        # Actual
         if row['Score1'] > row['Score2']:
             a1, a2 = 1, 0
         else:
             a1, a2 = 0, 1
 
-        # Update ratings
+        # Update
         elo_ratings[p1] = r1 + K * (a1 - exp1)
         elo_ratings[p2] = r2 + K * (a2 - exp2)
 
-    # Convert final Elo ratings to a DataFrame
-    elo_list = [(player, rating) for player, rating in elo_ratings.items()]
-    df_elo = pd.DataFrame(elo_list, columns=['Player','Elo_Rating'])
+    df_elo = pd.DataFrame([(p, rating) for p, rating in elo_ratings.items()],
+                          columns=['Player','Elo_Rating'])
     df_elo.sort_values('Elo_Rating', ascending=False, inplace=True, ignore_index=True)
 
     st.dataframe(
@@ -365,77 +350,79 @@ with tab_extensions:
     regardless of the filtering above.
     """)
 
-    from itertools import combinations
-    import altair as alt
-    
-    import streamlit as st
-    import altair as alt
-    import pandas as pd
-    from itertools import combinations
-    
-    st.subheader("Distribution of Match Results by Player Combination (Detailed)")
-    
-    # 1) Get the list of unique players in the FILTERED data
-    unique_players = sorted(set(df_filtered['Player1']) | set(df_filtered['Player2']))
-    
-    # 2) Generate all 2-player combinations (p1, p2) ignoring order
-    player_combos = list(combinations(unique_players, 2))
-    if not player_combos:
-        st.warning("No player combinations found in the current filter.")
-    else:
-        # Prepare a label for each combo
-        tab_labels = [f"{c[0]} vs {c[1]}" for c in player_combos]
-    
-        # 3) Create a separate Streamlit tab for each combination
-        combo_tabs = st.tabs(tab_labels)
-    
-        for (p1, p2), combo_tab in zip(player_combos, combo_tabs):
-            with combo_tab:
-                st.markdown(f"### Matches: {p1} vs. {p2}")
-    
-                # 4) Filter the DataFrame to matches involving these two players in either order
-                df_pair = df_filtered[
-                    ((df_filtered['Player1'] == p1) & (df_filtered['Player2'] == p2)) |
-                    ((df_filtered['Player1'] == p2) & (df_filtered['Player2'] == p1))
-                ].copy()
-    
-                # If no matches, skip
-                if df_pair.empty:
-                    st.info(f"No matches found for {p1} vs {p2}.")
-                    continue
-    
-                # 5) Create a new column that clearly shows who got which points
-                #    Example: "Alice(11) - Bob(9)"
-                #    This preserves the orientation from the CSV: Player1(Score1) - Player2(Score2)
-                df_pair['ScoreStrDetailed'] = df_pair.apply(
-                    lambda row: f"{row['Player1']}({int(row['Score1'])}) - {row['Player2']}({int(row['Score2'])})",
-                    axis=1
-                )
-    
-                # Count how many times each exact score occurred
-                score_counts = df_pair.groupby(
-                    ['ScoreStrDetailed','Winner'], dropna=False
-                ).size().reset_index(name='Count')
-    
-                # Build an Altair bar chart
-                # We'll put the "ScoreStrDetailed" on the y-axis, the "Count" on the x-axis,
-                # and color by "Winner" so you can see directly which player typically wins that result.
-                chart = (
-                    alt.Chart(score_counts)
-                    .mark_bar()
-                    .encode(
-                        x=alt.X('Count:Q', title='Number of Matches'),
-                        y=alt.Y('ScoreStrDetailed:N', sort='-x', title='Exact Score'),
-                        color=alt.Color('Winner:N', title='Winner'),
-                        tooltip=[
-                            alt.Tooltip('ScoreStrDetailed:N', title='Score'),
-                            alt.Tooltip('Count:Q', title='Count'),
-                            alt.Tooltip('Winner:N', title='Winner')
-                        ]
-                    )
-                    .properties(width='container', height=500)
-                )
-    
-                st.altair_chart(chart, use_container_width=True)
+    # === 5) Performance by "Nth Match of Day" (the meltdown approach) ===
+    st.subheader("Performance by Nth Match of Day")
 
+    def meltdown_day_matches(df_in):
+        """
+        For each row (one match), create two rows:
+         - one for Player1
+         - one for Player2
+        Then we group by (date, player) to find how many matches they've
+        played that day (1st, 2nd, 3rd, etc.)
+        We'll also track whether they won or not (did_win).
+        """
+        # Sort to keep chronological
+        df_in = df_in.sort_values(['date','match_number_total','match_number_day'], ascending=True)
+
+        # Subset for Player1
+        df_p1 = df_in[['date','Player1','Winner','Loser','Score1','Score2','match_number_total','match_number_day']]
+        df_p1 = df_p1.rename(columns={
+            'Player1':'player',
+            'Score1':'score_for_this_player',
+            'Score2':'score_for_opponent'
+        })
+        df_p1['did_win'] = (df_p1['player'] == df_p1['Winner']).astype(int)
+
+        # Subset for Player2
+        df_p2 = df_in[['date','Player2','Winner','Loser','Score1','Score2','match_number_total','match_number_day']]
+        df_p2 = df_p2.rename(columns={
+            'Player2':'player',
+            'Score2':'score_for_this_player',
+            'Score1':'score_for_opponent'
+        })
+        df_p2['did_win'] = (df_p2['player'] == df_p2['Winner']).astype(int)
+
+        # Combine
+        df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
+
+        # Group by date+player to find "which nth match of day"
+        # first, sort
+        df_stacked = df_stacked.sort_values(['date','player','match_number_total','match_number_day'])
+        df_stacked['MatchOfDay'] = df_stacked.groupby(['date','player']).cumcount() + 1
+
+        return df_stacked
+
+    # meltdown the FILTERED data
+    df_daycount = meltdown_day_matches(df_filtered)
+
+    # We'll group by (player, MatchOfDay) to see how many matches and how many wins
+    df_day_agg = df_daycount.groupby(['player','MatchOfDay'])['did_win'].agg(['sum','count']).reset_index()
+    df_day_agg['win_rate'] = df_day_agg['sum'] / df_day_agg['count']
+
+    # Let's do a chart with x=MatchOfDay, y=win_rate, color=player
+    # You can also filter out players with few data points if you want
+    chart_match_of_day = (
+        alt.Chart(df_day_agg)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X('MatchOfDay:O', title='Nth Match of the Day', sort=None),  # Treat as ordinal or numeric
+            y=alt.Y('win_rate:Q', title='Win Rate'),
+            color='player:N',
+            tooltip=['player:N','MatchOfDay:O','win_rate:Q','sum','count']
+        )
+        .properties(width='container', height=400)
+    )
+    st.altair_chart(chart_match_of_day, use_container_width=True)
+
+    st.markdown("**Table**: Win Rate by Nth Match of Day (Filtered)")
+    st.dataframe(
+        df_day_agg[['player','MatchOfDay','sum','count','win_rate']].style.format({'win_rate':'{:.2f}'}),
+        use_container_width=True
+    )
+
+    st.markdown("""
+    This chart & table show how each player performs in the 1st, 2nd, 3rd, etc. match they play **per day**.  
+    For example, if a player struggles in later matches, you might see a lower win rate at higher 'MatchOfDay' values.
+    """)
 
