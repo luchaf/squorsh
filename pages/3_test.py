@@ -39,14 +39,24 @@ import numpy as np
 import altair as alt
 from collections import defaultdict
 
+import streamlit as st
+import pandas as pd
+import numpy as np
+import altair as alt
+from collections import defaultdict
 
+from streamlit_gsheets import GSheetsConnection
+
+# Create GSheets connection
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+worksheet_name = "match_results"
+df = conn.read(worksheet=worksheet_name)
 
 # ---- Convert date column to datetime ----
-# Expecting dates in YYYYMMDD or something similar
 df['date'] = pd.to_datetime(df['date'], format="%Y%m%d", errors='coerce')
 
 # ---- Basic data cleanup / unify names if needed ----
-# Example: unify "Friede" -> "Friedemann"
 df['Player1'] = df['Player1'].replace("Friede", "Friedemann")
 df['Player2'] = df['Player2'].replace("Friede", "Friedemann")
 
@@ -197,18 +207,17 @@ with tab_main:
 with tab_extensions:
     st.header("Extended Stats & Fun Analyses")
 
-    # === 1) Display longest winning streak (filtered data) ===
-    st.subheader("Longest Winning Streak per Player")
+    # === 1) Display longest winning/losing streak (filtered data) ===
+    st.subheader("Longest Winning/Losing Streaks per Player")
 
     # We'll sort df_filtered by date & match_number_total to ensure chronological order
-    # Then compute each player's consecutive-win streak
-    df_sorted = df_filtered.sort_values(['date', 'match_number_total', 'match_number_day'], 
-                                        ascending=True, na_position='last')
+    df_sorted = df_filtered.sort_values(
+        ['date', 'match_number_total', 'match_number_day'], 
+        ascending=True, na_position='last'
+    )
 
-    def compute_longest_streak_for_player(df_input, player):
-        """Compute the longest consecutive-win streak for a given player,
-        based on the filtered+sorted DataFrame."""
-        # Filter only matches that the player played in, sorted by date
+    def compute_longest_win_streak(df_input, player):
+        """Compute the longest consecutive-win streak for a given player."""
         df_player = df_input[(df_input['Player1'] == player) | (df_input['Player2'] == player)]
         df_player = df_player.sort_values(['date', 'match_number_total', 'match_number_day'],
                                           ascending=True, na_position='last')
@@ -224,40 +233,80 @@ with tab_extensions:
                 current = 0
         return longest
 
+    def compute_longest_loss_streak(df_input, player):
+        """Compute the longest consecutive-loss streak for a given player."""
+        df_player = df_input[(df_input['Player1'] == player) | (df_input['Player2'] == player)]
+        df_player = df_player.sort_values(['date', 'match_number_total', 'match_number_day'],
+                                          ascending=True, na_position='last')
+
+        longest = 0
+        current = 0
+
+        for _, row in df_player.iterrows():
+            if row['Loser'] == player:
+                current += 1
+                longest = max(longest, current)
+            else:
+                current = 0
+        return longest
+
     # Compute for all players in the filter
     streaks = []
-    for p in sorted(set(df_filtered['Player1']) | set(df_filtered['Player2'])):
-        longest_streak = compute_longest_streak_for_player(df_sorted, p)
-        streaks.append((p, longest_streak))
-    df_streaks = pd.DataFrame(streaks, columns=['Player','Longest_Win_Streak'])
+    unique_players_in_filtered = sorted(set(df_filtered['Player1']) | set(df_filtered['Player2']))
+    for p in unique_players_in_filtered:
+        w_streak = compute_longest_win_streak(df_sorted, p)
+        l_streak = compute_longest_loss_streak(df_sorted, p)
+        streaks.append((p, w_streak, l_streak))
+
+    df_streaks = pd.DataFrame(streaks, columns=['Player','Longest_Win_Streak','Longest_Loss_Streak'])
+    # Sort by the longest win streak primarily (you could also sort by a combined metric)
     df_streaks.sort_values('Longest_Win_Streak', ascending=False, inplace=True)
     df_streaks.reset_index(drop=True, inplace=True)
 
     st.dataframe(df_streaks, use_container_width=True)
 
-    # === 2) Show distribution of total points scored in matches ===
-    st.subheader("Distribution of Total Points in a Match (Filtered)")
-    df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
+    # === 2) Show distribution of match results (Filtered) ===
+    st.subheader("Distribution of Match Results (Filtered)")
 
-    # We can plot a histogram with Altair
-    hist_chart = alt.Chart(df_filtered).mark_bar().encode(
-        alt.X('TotalPoints:Q', bin=alt.Bin(maxbins=30), title='Total Points'),
-        alt.Y('count()', title='Number of Matches'),
-        tooltip=[alt.Tooltip('count()', title='Matches')]
-    ).properties(width='container', height=300)
+    # Create a new column that sorts the two scores, e.g. (Score1, Score2) => (min, max)
+    # Then convert to a "X:Y" string so that 11:9 and 9:11 become the same category "9:11"
+    def normalize_result(row):
+        s1, s2 = row['Score1'], row['Score2']
+        mn, mx = min(s1, s2), max(s1, s2)
+        return f"{mn}:{mx}"
 
-    st.altair_chart(hist_chart, use_container_width=True)
+    df_filtered['ResultPair'] = df_filtered.apply(normalize_result, axis=1)
+
+    # Count the frequency of each result pair
+    pair_counts = df_filtered['ResultPair'].value_counts().reset_index()
+    pair_counts.columns = ['ResultPair', 'Count']
+
+    # Let's use Altair to plot these categories
+    results_chart = alt.Chart(pair_counts).mark_bar().encode(
+        x=alt.X('Count:Q', title='Number of Matches'),
+        y=alt.Y('ResultPair:N', sort='-x', title='Score Category'),  # sort descending by frequency
+        tooltip=['ResultPair','Count']
+    ).properties(width='container', height=500)
+
+    st.altair_chart(results_chart, use_container_width=True)
 
     # === 3) Identify the 'closest' matches (smallest margin) ===
     st.subheader("Closest Matches (Filtered)")
 
-    # Sort ascending by 'PointDiff' so the smallest margins appear first
+    # Sort ascending by 'PointDiff' so the smallest margins appear first,
+    # then take top N, then sort that subset by total points descending
     n_closest = st.slider("Number of closest matches to display", min_value=1, max_value=20, value=10)
-    closest_matches = df_filtered.sort_values('PointDiff', ascending=True).head(n_closest)
+
+    # First, define total points for each match
+    df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
+
+    closest_subset = df_filtered.sort_values('PointDiff', ascending=True).head(n_closest)
+    # Now re-sort just that subset by total points descending
+    closest_subset = closest_subset.sort_values('TotalPoints', ascending=False)
 
     st.dataframe(
-        closest_matches[[
-            'match_number_total','date','Player1','Score1','Player2','Score2','PointDiff'
+        closest_subset[[
+            'match_number_total','date','Player1','Score1','Player2','Score2','PointDiff','TotalPoints'
         ]].reset_index(drop=True),
         use_container_width=True
     )
@@ -280,9 +329,7 @@ with tab_extensions:
     # Dictionary to hold Elo ratings
     elo_ratings = defaultdict(lambda: 1500)
 
-    # We could also track rating history if we want, but let's just compute final
-    K = 20
-
+    K = 20  # or whatever factor you prefer
     for _, row in df_all_sorted.iterrows():
         p1, p2 = row['Player1'], row['Player2']
         r1, r2 = elo_ratings[p1], elo_ratings[p2]
@@ -293,10 +340,8 @@ with tab_extensions:
 
         # Actual scores
         if row['Score1'] > row['Score2']:
-            # p1 is the winner
             a1, a2 = 1, 0
         else:
-            # p2 is the winner
             a1, a2 = 0, 1
 
         # Update ratings
@@ -315,6 +360,6 @@ with tab_extensions:
 
     st.markdown("""
     **Note**: This Elo rating is computed across the *entire* dataset in chronological order, 
-    regardless of the filtering above.  
+    regardless of the filtering above.
     """)
 
