@@ -300,9 +300,11 @@ with tab_extensions:
     # First, define total points for each match
     df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
 
-    closest_subset = df_filtered.sort_values('PointDiff', ascending=True).head(n_closest)
-    # Now re-sort just that subset by total points descending
-    closest_subset = closest_subset.sort_values('TotalPoints', ascending=False)
+    closest_subset = df_filtered.sort_values(
+        ['PointDiff', 'TotalPoints'],
+        ascending=[True, False]
+    ).head(n_closest)
+
 
     st.dataframe(
         closest_subset[[
