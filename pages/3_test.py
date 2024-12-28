@@ -368,69 +368,74 @@ with tab_extensions:
     from itertools import combinations
     import altair as alt
     
-    # ...
+    import streamlit as st
+    import altair as alt
+    import pandas as pd
+    from itertools import combinations
     
-    # In your Extended Stats tab (or as a new section), add something like:
-
-    # 5) One Distribution Chart PER Player-Combination
-    st.subheader("Distribution of Match Results by Player Combination")
+    st.subheader("Distribution of Match Results by Player Combination (Detailed)")
     
-    # Let's get all unique players from the *filtered* data
-    unique_players_in_filtered = sorted(set(df_filtered['Player1']) | set(df_filtered['Player2']))
+    # 1) Get the list of unique players in the FILTERED data
+    unique_players = sorted(set(df_filtered['Player1']) | set(df_filtered['Player2']))
     
-    # Generate all 2-player combinations (e.g. ("Alice", "Bob"))
-    player_combos = list(combinations(unique_players_in_filtered, 2))
-    # Example: [("Alice","Bob"), ("Alice","Charlie"), ...]
-    
-    # Create tab labels for each combo. For instance, "Alice vs Bob"
-    tab_labels = [f"{p1} vs {p2}" for p1, p2 in player_combos]
-    
-    # Create the tabs
-    if len(player_combos) == 0:
-        st.warning("No 2-player combinations found in the current filter.")
+    # 2) Generate all 2-player combinations (p1, p2) ignoring order
+    player_combos = list(combinations(unique_players, 2))
+    if not player_combos:
+        st.warning("No player combinations found in the current filter.")
     else:
+        # Prepare a label for each combo
+        tab_labels = [f"{c[0]} vs {c[1]}" for c in player_combos]
+    
+        # 3) Create a separate Streamlit tab for each combination
         combo_tabs = st.tabs(tab_labels)
     
-        # Now iterate over each tab & each combination
         for (p1, p2), combo_tab in zip(player_combos, combo_tabs):
-            # In each tab, filter matches that involve p1 and p2 in either order
             with combo_tab:
-                st.markdown(f"### {p1} vs {p2}")
+                st.markdown(f"### Matches: {p1} vs. {p2}")
     
-                # Filter the DataFrame to matches that are exactly p1 vs p2 (or p2 vs p1)
+                # 4) Filter the DataFrame to matches involving these two players in either order
                 df_pair = df_filtered[
                     ((df_filtered['Player1'] == p1) & (df_filtered['Player2'] == p2)) |
                     ((df_filtered['Player1'] == p2) & (df_filtered['Player2'] == p1))
                 ].copy()
     
-                # If no matches found for this pair (unlikely but can happen if someone had no matches)
+                # If no matches, skip
                 if df_pair.empty:
-                    st.info("No matches found for this combination.")
+                    st.info(f"No matches found for {p1} vs {p2}.")
                     continue
     
-                # Create a column with "Score1:Score2" exactly as played, 
-                # so that 11:9 is different from 9:11.
-                df_pair['ScoreStr'] = df_pair.apply(
-                    lambda row: f"{row['Score1']}:{row['Score2']}", 
+                # 5) Create a new column that clearly shows who got which points
+                #    Example: "Alice(11) - Bob(9)"
+                #    This preserves the orientation from the CSV: Player1(Score1) - Player2(Score2)
+                df_pair['ScoreStrDetailed'] = df_pair.apply(
+                    lambda row: f"{row['Player1']}({int(row['Score1'])}) - {row['Player2']}({int(row['Score2'])})",
                     axis=1
                 )
     
-                # Count the frequency of each exact result
-                score_counts = df_pair['ScoreStr'].value_counts().reset_index()
-                score_counts.columns = ['ScoreStr', 'Count']
+                # Count how many times each exact score occurred
+                score_counts = df_pair.groupby(
+                    ['ScoreStrDetailed','Winner'], dropna=False
+                ).size().reset_index(name='Count')
     
-                # Create an Altair bar chart 
-                # x-axis = Count, y-axis = ScoreStr, sorted descending by Count
-                chart_pair = (
+                # Build an Altair bar chart
+                # We'll put the "ScoreStrDetailed" on the y-axis, the "Count" on the x-axis,
+                # and color by "Winner" so you can see directly which player typically wins that result.
+                chart = (
                     alt.Chart(score_counts)
                     .mark_bar()
                     .encode(
                         x=alt.X('Count:Q', title='Number of Matches'),
-                        y=alt.Y('ScoreStr:N', sort='-x', title='Exact Score'),
-                        tooltip=['ScoreStr', 'Count']
+                        y=alt.Y('ScoreStrDetailed:N', sort='-x', title='Exact Score'),
+                        color=alt.Color('Winner:N', title='Winner'),
+                        tooltip=[
+                            alt.Tooltip('ScoreStrDetailed:N', title='Score'),
+                            alt.Tooltip('Count:Q', title='Count'),
+                            alt.Tooltip('Winner:N', title='Winner')
+                        ]
                     )
-                    .properties(width='container', height=400)
+                    .properties(width='container', height=500)
                 )
     
-                st.altair_chart(chart_pair, use_container_width=True)
+                st.altair_chart(chart, use_container_width=True)
+
 
