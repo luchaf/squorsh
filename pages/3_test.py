@@ -273,7 +273,7 @@ with tab_extensions:
     def normalize_result(row):
         s1, s2 = row['Score1'], row['Score2']
         mn, mx = int(min(s1, s2)), int(max(s1, s2))
-        return f"{mn}:{mx}"
+        return f"{mx}:{mn}"
 
     df_filtered['ResultPair'] = df_filtered.apply(normalize_result, axis=1)
 
