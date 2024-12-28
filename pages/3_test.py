@@ -2,54 +2,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
-
-from pointless_utils import (
-    extract_data_from_games,
-    get_name_opponent_name_df,
-    get_name_streaks_df,
-    calculate_combination_stats,
-    derive_results,
-    win_loss_trends_plot,
-    wins_and_losses_over_time_plot,
-    graph_win_and_loss_streaks,
-    plot_player_combo_graph,
-    plot_bars,
-    cumulative_wins_over_time,
-    cumulative_win_ratio_over_time,
-    entities_face_to_face_over_time_abs,
-    entities_face_to_face_over_time_rel,
-    closeness_of_matches_over_time,
-    correct_names_in_dataframe,
-)
-import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
-from datetime import date
-import matplotlib.pyplot as plt
-
-# Create GSheets connection
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-worksheet_name = "match_results"
-df = conn.read(worksheet=worksheet_name)
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-import altair as alt
-from collections import defaultdict
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-import altair as alt
 from collections import defaultdict
 from itertools import combinations
+
 from streamlit_gsheets import GSheetsConnection
 
 # Create GSheets connection
 conn = st.connection("gsheets", type=GSheetsConnection)
-
 worksheet_name = "match_results"
 df = conn.read(worksheet=worksheet_name)
 
@@ -68,9 +27,27 @@ df['LoserScore'] = df[['Score1','Score2']].min(axis=1)
 df['PointDiff'] = df['WinnerScore'] - df['LoserScore']
 df['LoserPointDiff'] = df['LoserScore'] - df['WinnerScore']  # typically negative
 
-# ---- Sidebar Filters ----
+# ---- Compute the Day of the Week for each match date ----
+# This will allow us to filter by Mondays, Tuesdays, etc.
+df['day_of_week'] = df['date'].dt.day_name()  # e.g. "Monday", "Tuesday", etc.
+
+# ---- SIDEBAR FILTERS ----
 st.sidebar.header("Filters")
-all_players = sorted(set(df['Player1']) | set(df['Player2']))
+
+# 1) Filter on days of the week
+all_days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+days_present_in_data = sorted(set(df['day_of_week']) & set(all_days))  # only days that appear in df
+selected_days = st.sidebar.multiselect(
+    "Select Day(s) of the Week to Include",
+    options=days_present_in_data,
+    default=days_present_in_data  # or pick a subset
+)
+
+# Filter the DataFrame by the chosen days
+df_day_filtered = df[df['day_of_week'].isin(selected_days)]
+
+# 2) Filter on players
+all_players = sorted(set(df_day_filtered['Player1']) | set(df_day_filtered['Player2']))
 selected_players = st.sidebar.multiselect(
     "Select Player(s) to Include", 
     options=all_players, 
@@ -78,9 +55,9 @@ selected_players = st.sidebar.multiselect(
 )
 
 # Filter only matches where at least one selected player participated
-df_filtered = df[
-    (df['Player1'].isin(selected_players)) |
-    (df['Player2'].isin(selected_players))
+df_filtered = df_day_filtered[
+    (df_day_filtered['Player1'].isin(selected_players)) |
+    (df_day_filtered['Player2'].isin(selected_players))
 ]
 
 # ---- TABS for organization ----
@@ -263,11 +240,8 @@ with tab_extensions:
     st.subheader("Distribution of Match Results (Filtered)")
 
     def normalize_result(row):
-        """We invert (max:min) to unify 11:9 vs. 9:11 
-           But you previously wanted 9:11 distinct from 11:9.
-           So if you still want them unified, keep max/min;
-           otherwise remove or adapt. We'll keep your version that unifies it.
-        """
+        # If you want to unify e.g. 11:9 and 9:11 into 9:11, you can do so.
+        # Otherwise, keep them distinct. We'll unify here by max/min:
         s1, s2 = row['Score1'], row['Score2']
         mn, mx = int(min(s1, s2)), int(max(s1, s2))
         return f"{mx}:{mn}"
@@ -290,9 +264,7 @@ with tab_extensions:
     n_closest = st.slider("Number of closest matches to display", min_value=1, max_value=20, value=10)
     df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
 
-    # Sort by margin ascending, then by total points descending to break ties
-    # so that if multiple matches have the same margin, the highest total points appear first
-    # Then pick the top n
+    # Sort by margin ascending, then by total points descending
     df_closest_sorted = df_filtered.sort_values(['PointDiff','TotalPoints'], ascending=[True, False])
     closest_subset = df_closest_sorted.head(n_closest)
 
@@ -350,22 +322,12 @@ with tab_extensions:
     regardless of the filtering above.
     """)
 
-   # === 5) Performance by "Nth Match of Day" (the meltdown approach) ===
+    # === 5) Performance by "Nth Match of Day" (the meltdown approach) ===
     st.subheader("Performance by Nth Match of Day")
-    
+
     def meltdown_day_matches(df_in):
-        """
-        For each row (one match), create two rows:
-         - one for Player1
-         - one for Player2
-        Then we group by (date, player) to find how many matches they've
-        played that day (1st, 2nd, 3rd, etc.).
-        We'll also track whether they won or not (did_win).
-        """
-        # Sort to keep chronological
         df_in = df_in.sort_values(['date','match_number_total','match_number_day'], ascending=True)
-    
-        # Subset for Player1
+
         df_p1 = df_in[['date','Player1','Winner','Loser','Score1','Score2','match_number_total','match_number_day']]
         df_p1 = df_p1.rename(columns={
             'Player1':'player',
@@ -373,8 +335,7 @@ with tab_extensions:
             'Score2':'score_for_opponent'
         })
         df_p1['did_win'] = (df_p1['player'] == df_p1['Winner']).astype(int)
-    
-        # Subset for Player2
+
         df_p2 = df_in[['date','Player2','Winner','Loser','Score1','Score2','match_number_total','match_number_day']]
         df_p2 = df_p2.rename(columns={
             'Player2':'player',
@@ -382,20 +343,16 @@ with tab_extensions:
             'Score1':'score_for_opponent'
         })
         df_p2['did_win'] = (df_p2['player'] == df_p2['Winner']).astype(int)
-    
-        # Combine
+
         df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
-    
-        # Group by date+player to find "which nth match of day"
+
         df_stacked = df_stacked.sort_values(['date','player','match_number_total','match_number_day'])
         df_stacked['MatchOfDay'] = df_stacked.groupby(['date','player']).cumcount() + 1
-    
+
         return df_stacked
-    
-    # Melt down the FILTERED data
+
     df_daycount = meltdown_day_matches(df_filtered)
-    
-    # We'll group by (player, MatchOfDay) to see how many matches and how many wins
+
     df_day_agg = (
         df_daycount
         .groupby(['player','MatchOfDay'])['did_win']
@@ -403,20 +360,18 @@ with tab_extensions:
         .reset_index()
     )
     df_day_agg['win_rate'] = df_day_agg['sum'] / df_day_agg['count']
-    
+
     # Let user select which players to show in the chart
     available_players = sorted(df_day_agg['player'].unique())
     players_for_nth_chart = st.multiselect(
         "Select which players to display in the Nth-Match-of-Day chart",
         options=available_players,
-        default=available_players  # or pick some subset
+        default=available_players
     )
-    
+
     if players_for_nth_chart:
         df_day_agg_display = df_day_agg[df_day_agg['player'].isin(players_for_nth_chart)]
-        # We'll treat MatchOfDay as numeric so the regression can work.
-        # If some players have only 1 data point, the regression won't show meaningfully; that's okay.
-    
+
         base = alt.Chart(df_day_agg_display).encode(
             x=alt.X('MatchOfDay:Q', title='Nth Match of the Day'),
             y=alt.Y('win_rate:Q', title='Win Rate (0-1)'),
@@ -429,27 +384,27 @@ with tab_extensions:
                 alt.Tooltip('count:Q', title='Matches')
             ]
         )
-    
-        # 1) The actual data lines with points
+
+        # 1) Actual data line with points
         lines_layer = base.mark_line(point=True)
-    
-        # 2) The linear regression trend line for each player
+
+        # 2) Regression line
         trend_layer = (
             base
             .transform_regression(
                 'MatchOfDay', 'win_rate', groupby=['player']
             )
-            .mark_line(strokeDash=[4,4])   # dashed line for the trend
+            .mark_line(strokeDash=[4,4])
             .encode(opacity=alt.value(0.7))
         )
-    
+
         chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
             width='container',
             height=400
         )
-    
+
         st.altair_chart(chart_match_of_day, use_container_width=True)
-    
+
         st.markdown("**Table**: Win Rate by Nth Match of Day (Filtered)")
         st.dataframe(
             df_day_agg_display[['player','MatchOfDay','sum','count','win_rate']]
@@ -460,8 +415,9 @@ with tab_extensions:
         )
     else:
         st.info("No players selected for the Nth-match-of-day chart.")
-    
+
     st.markdown("""
-    This chart & table show how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**. 
-    The **solid line** represents the actual data points, and the **dashed line** is a **linear trend** for each player's performance.
+    This chart & table show how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
+    The **solid line** is their actual data, and the **dashed line** is a linear trend line.  
     """)
+
