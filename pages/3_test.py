@@ -365,3 +365,72 @@ with tab_extensions:
     regardless of the filtering above.
     """)
 
+    from itertools import combinations
+    import altair as alt
+    
+    # ...
+    
+    # In your Extended Stats tab (or as a new section), add something like:
+
+    # 5) One Distribution Chart PER Player-Combination
+    st.subheader("Distribution of Match Results by Player Combination")
+    
+    # Let's get all unique players from the *filtered* data
+    unique_players_in_filtered = sorted(set(df_filtered['Player1']) | set(df_filtered['Player2']))
+    
+    # Generate all 2-player combinations (e.g. ("Alice", "Bob"))
+    player_combos = list(combinations(unique_players_in_filtered, 2))
+    # Example: [("Alice","Bob"), ("Alice","Charlie"), ...]
+    
+    # Create tab labels for each combo. For instance, "Alice vs Bob"
+    tab_labels = [f"{p1} vs {p2}" for p1, p2 in player_combos]
+    
+    # Create the tabs
+    if len(player_combos) == 0:
+        st.warning("No 2-player combinations found in the current filter.")
+    else:
+        combo_tabs = st.tabs(tab_labels)
+    
+        # Now iterate over each tab & each combination
+        for (p1, p2), combo_tab in zip(player_combos, combo_tabs):
+            # In each tab, filter matches that involve p1 and p2 in either order
+            with combo_tab:
+                st.markdown(f"### {p1} vs {p2}")
+    
+                # Filter the DataFrame to matches that are exactly p1 vs p2 (or p2 vs p1)
+                df_pair = df_filtered[
+                    ((df_filtered['Player1'] == p1) & (df_filtered['Player2'] == p2)) |
+                    ((df_filtered['Player1'] == p2) & (df_filtered['Player2'] == p1))
+                ].copy()
+    
+                # If no matches found for this pair (unlikely but can happen if someone had no matches)
+                if df_pair.empty:
+                    st.info("No matches found for this combination.")
+                    continue
+    
+                # Create a column with "Score1:Score2" exactly as played, 
+                # so that 11:9 is different from 9:11.
+                df_pair['ScoreStr'] = df_pair.apply(
+                    lambda row: f"{row['Score1']}:{row['Score2']}", 
+                    axis=1
+                )
+    
+                # Count the frequency of each exact result
+                score_counts = df_pair['ScoreStr'].value_counts().reset_index()
+                score_counts.columns = ['ScoreStr', 'Count']
+    
+                # Create an Altair bar chart 
+                # x-axis = Count, y-axis = ScoreStr, sorted descending by Count
+                chart_pair = (
+                    alt.Chart(score_counts)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X('Count:Q', title='Number of Matches'),
+                        y=alt.Y('ScoreStr:N', sort='-x', title='Exact Score'),
+                        tooltip=['ScoreStr', 'Count']
+                    )
+                    .properties(width='container', height=400)
+                )
+    
+                st.altair_chart(chart_pair, use_container_width=True)
+
