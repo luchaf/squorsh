@@ -272,7 +272,7 @@ with tab_extensions:
     # Then convert to a "X:Y" string so that 11:9 and 9:11 become the same category "9:11"
     def normalize_result(row):
         s1, s2 = row['Score1'], row['Score2']
-        mn, mx = min(s1, s2), max(s1, s2)
+        mn, mx = int(min(s1, s2)), int(max(s1, s2))
         return f"{mn}:{mx}"
 
     df_filtered['ResultPair'] = df_filtered.apply(normalize_result, axis=1)
