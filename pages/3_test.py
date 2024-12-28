@@ -331,7 +331,7 @@ with tab_extensions:
     # Dictionary to hold Elo ratings
     elo_ratings = defaultdict(lambda: 1500)
 
-    K = 60  # or whatever factor you prefer
+    K = 100  # or whatever factor you prefer
     for _, row in df_all_sorted.iterrows():
         p1, p2 = row['Player1'], row['Player2']
         r1, r2 = elo_ratings[p1], elo_ratings[p2]
