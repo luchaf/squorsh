@@ -292,6 +292,9 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
@@ -435,6 +438,11 @@ with tab_head_to_head:
                     with pair_tab:
 
                         # Combine data for the specific player pairing
+                        pair_data = df_filtered[
+                            ((df_filtered['Player1'] == player1) & (df_filtered['Player2'] == player2)) |
+                            ((df_filtered['Player1'] == player2) & (df_filtered['Player2'] == player1))
+                        ]
+
                         combined_data = pd.concat([
                             pair_data.assign(Player=pair_data['Player1'], Points=pair_data['Score1']),
                             pair_data.assign(Player=pair_data['Player2'], Points=pair_data['Score2'])
@@ -506,7 +514,6 @@ with tab_head_to_head:
                                 )
 
                                 st.altair_chart(cumulative_chart, use_container_width=True)
-
 
 
 
