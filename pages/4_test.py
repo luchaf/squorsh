@@ -252,8 +252,8 @@ with tab_summary:
     # Compute the tick intervals
     wins_max = max(wins)
     points_max = max(points)
-    ax1_step = wins_max / tick_count
-    ax2_step = points_max / tick_count
+    ax1_step = int(wins_max / tick_count)
+    ax2_step = int(points_max / tick_count)
     
     # Set matching tick ranges
     ax1.set_yticks(np.arange(0, wins_max + ax1_step, ax1_step))
