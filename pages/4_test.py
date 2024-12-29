@@ -95,43 +95,48 @@ with tab_summary:
 
 
 
-    # Prepare data
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    # Sort players by Wins
     final_summary.sort_values(by='Wins', ascending=False, inplace=True)
     
-    # Base chart for Wins
-    chart_wins = alt.Chart(final_summary).mark_bar().encode(
-        x=alt.X('Player:N', sort=list(final_summary['Player']), title='Player'),
-        y=alt.Y('Wins:Q', axis=alt.Axis(title='Number of Wins'), title='Wins'),
-        color=alt.value('#1f77b4')  # Blue color for Wins
-    ).properties(
-        width=800,
-        height=400
-    )
+    # Data preparation
+    players = final_summary['Player']
+    wins = final_summary['Wins']
+    points = final_summary['Points']
     
-    # Base chart for Points
-    chart_points = alt.Chart(final_summary).mark_bar().encode(
-        x=alt.X('Player:N', sort=list(final_summary['Player']), title=None),
-        y=alt.Y('Points:Q', axis=alt.Axis(title='Total Points', orient='right'), title='Points'),
-        color=alt.value('#ff7f0e')  # Orange color for Points
-    ).properties(
-        width=800,
-        height=400
-    ).transform_calculate(
-        offset='datum.Points'  # Offset the Points slightly to simulate side-by-side bars
-    )
+    # Bar positions
+    x = np.arange(len(players))  # the label locations
+    width = 0.4  # the width of the bars
     
-    # Combine the two charts
-    combined_chart = alt.layer(
-        chart_wins,
-        chart_points
-    ).resolve_scale(
-        y='independent'  # Use independent scales for y-axes
-    ).configure_axis(
-        labelFontSize=12,
-        titleFontSize=14
-    )
+    # Create the figure and axes
+    fig, ax1 = plt.subplots(figsize=(12, 6))
     
-    st.altair_chart(combined_chart, use_container_width=True)
+    # Plot Wins on the left y-axis
+    bars1 = ax1.bar(x - width/2, wins, width, label='Wins', color='blue')
+    ax1.set_xlabel('Players')
+    ax1.set_ylabel('Number of Wins', color='blue')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(players, rotation=45, ha='right')
+    ax1.tick_params(axis='y', labelcolor='blue')
+    
+    # Create a second y-axis for Points
+    ax2 = ax1.twinx()
+    bars2 = ax2.bar(x + width/2, points, width, label='Points', color='orange')
+    ax2.set_ylabel('Total Points', color='orange')
+    ax2.tick_params(axis='y', labelcolor='orange')
+    
+    # Add a legend
+    fig.legend(loc='upper left', bbox_to_anchor=(0.1, 1), bbox_transform=ax1.transAxes)
+    
+    # Add gridlines and adjust layout
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+    fig.tight_layout()
+    
+    # Show the plot
+    st.pyplot(fig)
+
 
 
 
