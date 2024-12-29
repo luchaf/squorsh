@@ -289,6 +289,9 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
@@ -431,8 +434,8 @@ with tab_head_to_head:
                     pair_tab = st.tabs([f"{player1} vs {player2}"])[0]
                     with pair_tab:
 
-                        # Filter data for the specific player pairing
-                        pair_data = pd.concat([
+                        # Combine data for the specific player pairing
+                        combined_data = pd.concat([
                             pair_data.assign(Player=pair_data['Player1'], Points=pair_data['Score1']),
                             pair_data.assign(Player=pair_data['Player2'], Points=pair_data['Score2'])
                         ], ignore_index=True)
@@ -445,7 +448,7 @@ with tab_head_to_head:
                             st.subheader(f"Current Standings: {player1} vs {player2}")
 
                             # Points chart for head-to-head
-                            total_points = pair_data.groupby('Player')['Points'].sum().reset_index()
+                            total_points = combined_data.groupby('Player')['Points'].sum().reset_index()
 
                             points_chart = alt.Chart(total_points).mark_bar().encode(
                                 x=alt.X('Player:N', title='Player'),
@@ -469,7 +472,7 @@ with tab_head_to_head:
                             with subtab_non_cumulative:
                                 st.subheader(f"Non-Cumulative Points: {player1} vs {player2}")
 
-                                points_non_cumulative = pair_data.groupby(['date', 'Player'])['Points'].sum().reset_index()
+                                points_non_cumulative = combined_data.groupby(['date', 'Player'])['Points'].sum().reset_index()
 
                                 non_cumulative_chart = alt.Chart(points_non_cumulative).mark_line().encode(
                                     x=alt.X('date:T', title='Date'),
@@ -503,7 +506,6 @@ with tab_head_to_head:
                                 )
 
                                 st.altair_chart(cumulative_chart, use_container_width=True)
-
 
 
 
