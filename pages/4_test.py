@@ -247,7 +247,7 @@ with tab_match_stats:
     # === 3) Identify the 'closest' matches (smallest margin) ===
     st.subheader("Closest Matches (Filtered)")
 
-    n_closest = st.slider("Number of closest matches to display", min_value=1, max_value=50, value=1)
+    n_closest = st.slider("Number of closest matches to display", min_value=1, max_value=50, value=20)
     df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
 
     # Sort by margin ascending, then by total points descending
