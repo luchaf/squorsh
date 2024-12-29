@@ -95,9 +95,10 @@ with tab_summary:
 
     import altair as alt
     import streamlit as st
-
-    final_summary_wins = final_summary.sort_values(by='Wins', ascending=False, inplace=True)
-    final_summary_points = final_summary.sort_values(by='Points', ascending=False, inplace=True)
+    final_summary_wins = final_summary.copy()
+    final_summary_points = final_summary.copy()
+    final_summary_wins.sort_values(by='Wins', ascending=False, inplace=True)
+    final_summary_points.sort_values(by='Points', ascending=False, inplace=True)
     
     # Data preparation
     players = final_summary['Player']
