@@ -247,7 +247,7 @@ with tab_summary:
     
     # Align gridlines for both axes
     # Define tick count
-    tick_count = 10
+    tick_count = 6
     
     # Compute the tick intervals
     wins_max = max(wins)
