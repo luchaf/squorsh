@@ -133,6 +133,75 @@ with tab_summary:
         st.subheader("Points per Player")
         st.altair_chart(points_chart, use_container_width=True)
 
+# ---- Data Preparation for Over Time Analysis ----
+# Filtered Data: Aggregate Wins and Points by Date
+wins_over_time = df_filtered.groupby(['date', 'Winner']).size().reset_index(name='Wins')
+points_p1_over_time = df_filtered.groupby(['date', 'Player1'])['Score1'].sum().reset_index()
+points_p2_over_time = df_filtered.groupby(['date', 'Player2'])['Score2'].sum().reset_index()
+
+# Combine Points Over Time
+points_over_time = pd.concat(
+    [points_p1_over_time.rename(columns={'Player1': 'Player', 'Score1': 'Points'}),
+     points_p2_over_time.rename(columns={'Player2': 'Player', 'Score2': 'Points'})],
+    ignore_index=True
+)
+
+# Aggregate Points by Date and Player
+points_over_time = points_over_time.groupby(['date', 'Player'])['Points'].sum().reset_index()
+
+# Aggregate Wins by Date and Player
+wins_over_time = wins_over_time.groupby(['date', 'Winner'])['Wins'].sum().reset_index()
+wins_over_time.rename(columns={'Winner': 'Player'}, inplace=True)
+
+# ---- ORGANIZATION: CHARTS ----
+# Chart for Wins Over Time
+wins_over_time_chart = alt.Chart(wins_over_time).mark_line().encode(
+    x=alt.X('date:T', title='Date'),
+    y=alt.Y('Wins:Q', title='Cumulative Wins'),
+    color=alt.Color('Player:N', legend=alt.Legend(title="Player")),
+    tooltip=['date:T', 'Player:N', 'Wins:Q']
+).properties(
+    title='Wins Development Over Time',
+    width=700,
+    height=400
+)
+
+# Chart for Points Over Time
+points_over_time_chart = alt.Chart(points_over_time).mark_line().encode(
+    x=alt.X('date:T', title='Date'),
+    y=alt.Y('Points:Q', title='Cumulative Points'),
+    color=alt.Color('Player:N', legend=alt.Legend(title="Player")),
+    tooltip=['date:T', 'Player:N', 'Points:Q']
+).properties(
+    title='Points Development Over Time',
+    width=700,
+    height=400
+)
+
+# ---- ORGANIZATION: STREAMLIT TABS ----
+tab1, tab2 = st.tabs(["Wins Chart", "Points Chart"])
+
+# Wins Chart Tabs
+with tab1:
+    subtab1, subtab2 = st.tabs(["Static", "Over Time"])
+    with subtab1:
+        st.subheader("Static: Wins per Player")
+        st.altair_chart(wins_chart, use_container_width=True)
+    with subtab2:
+        st.subheader("Over Time: Wins Development")
+        st.altair_chart(wins_over_time_chart, use_container_width=True)
+
+# Points Chart Tabs
+with tab2:
+    subtab1, subtab2 = st.tabs(["Static", "Over Time"])
+    with subtab1:
+        st.subheader("Static: Points per Player")
+        st.altair_chart(points_chart, use_container_width=True)
+    with subtab2:
+        st.subheader("Over Time: Points Development")
+        st.altair_chart(points_over_time_chart, use_container_width=True)
+
+
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
