@@ -72,6 +72,29 @@ with tab_summary:
         df_filtered[['Player1', 'Player2']].stack().nunique()
     )
 
+    st.subheader("Elo Ratings")
+    df_sorted = df_filtered.sort_values(['date'], ascending=True)
+    elo_ratings = defaultdict(lambda: 1500)
+    K = 20
+
+    for _, row in df_sorted.iterrows():
+        p1, p2 = row['Player1'], row['Player2']
+        r1, r2 = elo_ratings[p1], elo_ratings[p2]
+        exp1 = 1 / (1 + 10 ** ((r2 - r1) / 400))
+        exp2 = 1 / (1 + 10 ** ((r1 - r2) / 400))
+
+        if row['Winner'] == p1:
+            elo_ratings[p1] += K * (1 - exp1)
+            elo_ratings[p2] += K * (0 - exp2)
+        else:
+            elo_ratings[p1] += K * (0 - exp1)
+            elo_ratings[p2] += K * (1 - exp2)
+
+    elo_df = pd.DataFrame([(player, rating) for player, rating in elo_ratings.items()], columns=['Player', 'Elo_Rating'])
+    elo_df.sort_values('Elo_Rating', ascending=False, inplace=True)
+
+    st.dataframe(elo_df, use_container_width=True)
+
     # Wins & Points Summary
     st.subheader("Wins & Points Per Player")
     wins_df = df_filtered.groupby('Winner').size().reset_index(name='Wins')
