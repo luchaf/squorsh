@@ -95,18 +95,18 @@ with tab_summary:
 
     import altair as alt
     import streamlit as st
-    
-    # Sort players by Wins
-    final_summary.sort_values(by='Wins', ascending=False, inplace=True)
+
+    final_summary_wins = final_summary.sort_values(by='Wins', ascending=False, inplace=True)
+    final_summary_points = final_summary.sort_values(by='Points', ascending=False, inplace=True)
     
     # Data preparation
     players = final_summary['Player']
-    wins = final_summary['Wins']
-    points = final_summary['Points']
+    wins = final_summary_wins['Wins']
+    points = final_summary_points['Points']
     
     # Create Altair charts
     # Chart for Wins
-    wins_chart = alt.Chart(final_summary).mark_bar(color='blue').encode(
+    wins_chart = alt.Chart(final_summary_wins).mark_bar(color='blue').encode(
         x=alt.X('Player:N', sort=list(players), title='Player'),
         y=alt.Y('Wins:Q', title='Number of Wins'),
         tooltip=['Player:N', 'Wins:Q']
@@ -117,7 +117,7 @@ with tab_summary:
     )
     
     # Chart for Points
-    points_chart = alt.Chart(final_summary).mark_bar(color='orange').encode(
+    points_chart = alt.Chart(final_summary_points).mark_bar(color='orange').encode(
         x=alt.X('Player:N', sort=list(players), title='Player'),
         y=alt.Y('Points:Q', title='Total Points'),
         tooltip=['Player:N', 'Points:Q']
