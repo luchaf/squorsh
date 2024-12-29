@@ -142,6 +142,92 @@ with tab_player_perf:
     streaks_df.sort_values('Longest_Win_Streak', ascending=False, inplace=True)
     st.dataframe(streaks_df, use_container_width=True)
 
+    st.subheader("Performance by Nth Match of Day")
+
+    def meltdown_day_matches(df_in):
+        df_in = df_in.sort_values(['date'], ascending=True)
+
+        df_p1 = df_in[['date', 'Player1', 'Winner', 'Loser', 'Score1', 'Score2']]
+        df_p1 = df_p1.rename(columns={
+            'Player1': 'player',
+            'Score1': 'score_for_this_player',
+            'Score2': 'score_for_opponent'
+        })
+        df_p1['did_win'] = (df_p1['player'] == df_p1['Winner']).astype(int)
+
+        df_p2 = df_in[['date', 'Player2', 'Winner', 'Loser', 'Score1', 'Score2']]
+        df_p2 = df_p2.rename(columns={
+            'Player2': 'player',
+            'Score2': 'score_for_this_player',
+            'Score1': 'score_for_opponent'
+        })
+        df_p2['did_win'] = (df_p2['player'] == df_p2['Winner']).astype(int)
+
+        df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
+        df_stacked['MatchOfDay'] = df_stacked.groupby(['date', 'player']).cumcount() + 1
+
+        return df_stacked
+
+    df_daycount = meltdown_day_matches(df_filtered)
+
+    df_day_agg = (
+        df_daycount
+        .groupby(['player', 'MatchOfDay'])['did_win']
+        .agg(['sum', 'count'])
+        .reset_index()
+    )
+    df_day_agg['win_rate'] = df_day_agg['sum'] / df_day_agg['count']
+
+    available_players = sorted(df_day_agg['player'].unique())
+    players_for_nth_chart = st.multiselect(
+        "Select which players to display in the Nth-Match-of-Day chart",
+        options=available_players,
+        default=available_players
+    )
+
+    if players_for_nth_chart:
+        df_day_agg_display = df_day_agg[df_day_agg['player'].isin(players_for_nth_chart)]
+
+        base = alt.Chart(df_day_agg_display).encode(
+            x=alt.X('MatchOfDay:Q', title='Nth Match of the Day'),
+            y=alt.Y('win_rate:Q', title='Win Rate (0-1)'),
+            color=alt.Color('player:N', title='Player'),
+            tooltip=[
+                alt.Tooltip('player:N'),
+                alt.Tooltip('MatchOfDay:Q'),
+                alt.Tooltip('win_rate:Q', format='.2f'),
+                alt.Tooltip('sum:Q', title='Wins'),
+                alt.Tooltip('count:Q', title='Matches')
+            ]
+        )
+
+        lines_layer = base.mark_line(point=True)
+        trend_layer = (
+            base
+            .transform_regression(
+                'MatchOfDay', 'win_rate', groupby=['player']
+            )
+            .mark_line(strokeDash=[4, 4])
+            .encode(opacity=alt.value(0.7))
+        )
+
+        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+            width='container',
+            height=400
+        )
+
+        st.altair_chart(chart_match_of_day, use_container_width=True)
+
+        st.dataframe(
+            df_day_agg_display[['player', 'MatchOfDay', 'sum', 'count', 'win_rate']]
+            .sort_values(['player', 'MatchOfDay'])
+            .reset_index(drop=True)
+            .style.format({'win_rate': '{:.2f}'}),
+            use_container_width=True
+        )
+    else:
+        st.info("No players selected for the Nth-match-of-day chart.")
+
 # =========================
 #   TAB: MATCH STATISTICS
 # =========================
