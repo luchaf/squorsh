@@ -178,28 +178,95 @@ points_over_time_chart = alt.Chart(points_over_time).mark_line().encode(
     height=400
 )
 
+# ---- Data Preparation for Cumulative Analysis ----
+# Calculate cumulative Wins over time
+wins_over_time['CumulativeWins'] = wins_over_time.groupby('Player')['Wins'].cumsum()
+
+# Calculate cumulative Points over time
+points_over_time['CumulativePoints'] = points_over_time.groupby('Player')['Points'].cumsum()
+
+# ---- ORGANIZATION: CHARTS ----
+# Chart for Non-Cumulative Wins Over Time
+non_cumulative_wins_chart = alt.Chart(wins_over_time).mark_line().encode(
+    x=alt.X('date:T', title='Date'),
+    y=alt.Y('Wins:Q', title='Wins Per Match'),
+    color=alt.Color('Player:N', legend=alt.Legend(title="Player")),
+    tooltip=['date:T', 'Player:N', 'Wins:Q']
+).properties(
+    title='Non-Cumulative Wins Development Over Time',
+    width=700,
+    height=400
+)
+
+# Chart for Cumulative Wins Over Time
+cumulative_wins_chart = alt.Chart(wins_over_time).mark_line().encode(
+    x=alt.X('date:T', title='Date'),
+    y=alt.Y('CumulativeWins:Q', title='Cumulative Wins'),
+    color=alt.Color('Player:N', legend=alt.Legend(title="Player")),
+    tooltip=['date:T', 'Player:N', 'CumulativeWins:Q']
+).properties(
+    title='Cumulative Wins Development Over Time',
+    width=700,
+    height=400
+)
+
+# Chart for Non-Cumulative Points Over Time
+non_cumulative_points_chart = alt.Chart(points_over_time).mark_line().encode(
+    x=alt.X('date:T', title='Date'),
+    y=alt.Y('Points:Q', title='Points Per Match'),
+    color=alt.Color('Player:N', legend=alt.Legend(title="Player")),
+    tooltip=['date:T', 'Player:N', 'Points:Q']
+).properties(
+    title='Non-Cumulative Points Development Over Time',
+    width=700,
+    height=400
+)
+
+# Chart for Cumulative Points Over Time
+cumulative_points_chart = alt.Chart(points_over_time).mark_line().encode(
+    x=alt.X('date:T', title='Date'),
+    y=alt.Y('CumulativePoints:Q', title='Cumulative Points'),
+    color=alt.Color('Player:N', legend=alt.Legend(title="Player")),
+    tooltip=['date:T', 'Player:N', 'CumulativePoints:Q']
+).properties(
+    title='Cumulative Points Development Over Time',
+    width=700,
+    height=400
+)
+
 # ---- ORGANIZATION: STREAMLIT TABS ----
-tab1, tab2 = st.tabs(["Wins Chart", "Points Chart"])
+tab1, tab2 = st.tabs(["Wins", "Points"])
 
 # Wins Chart Tabs
 with tab1:
-    subtab1, subtab2 = st.tabs(["Static", "Over Time"])
+    subtab1, subtab2 = st.tabs(["Current Standings", "Trends Over Time"])
     with subtab1:
-        st.subheader("Static: Wins per Player")
+        st.subheader("Current Standings: Wins per Player")
         st.altair_chart(wins_chart, use_container_width=True)
     with subtab2:
-        st.subheader("Over Time: Wins Development")
-        st.altair_chart(wins_over_time_chart, use_container_width=True)
+        subtab2a, subtab2b = st.tabs(["Non-Cumulative", "Cumulative"])
+        with subtab2a:
+            st.subheader("Trends Over Time: Non-Cumulative Wins")
+            st.altair_chart(non_cumulative_wins_chart, use_container_width=True)
+        with subtab2b:
+            st.subheader("Trends Over Time: Cumulative Wins")
+            st.altair_chart(cumulative_wins_chart, use_container_width=True)
 
 # Points Chart Tabs
 with tab2:
-    subtab1, subtab2 = st.tabs(["Static", "Over Time"])
+    subtab1, subtab2 = st.tabs(["Current Standings", "Trends Over Time"])
     with subtab1:
-        st.subheader("Static: Points per Player")
+        st.subheader("Current Standings: Points per Player")
         st.altair_chart(points_chart, use_container_width=True)
     with subtab2:
-        st.subheader("Over Time: Points Development")
-        st.altair_chart(points_over_time_chart, use_container_width=True)
+        subtab2a, subtab2b = st.tabs(["Non-Cumulative", "Cumulative"])
+        with subtab2a:
+            st.subheader("Trends Over Time: Non-Cumulative Points")
+            st.altair_chart(non_cumulative_points_chart, use_container_width=True)
+        with subtab2b:
+            st.subheader("Trends Over Time: Cumulative Points")
+            st.altair_chart(cumulative_points_chart, use_container_width=True)
+
 
 
 # =========================
