@@ -268,6 +268,9 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
@@ -280,13 +283,13 @@ with tab_head_to_head:
     # Create top-level tabs for each player
     top_tabs = st.tabs([f"{player} vs ..." for player in unique_players])
 
-    for top_player, top_tab in zip(unique_players, top_tabs):
+    for i, (top_player, top_tab) in enumerate(zip(unique_players, top_tabs)):
         with top_tab:
 
-            # Filter player pairings involving the top-level player
+            # Filter player pairings involving the top-level player and avoid duplicate matchups
             player_pairs = [
                 (winner, loser) for winner, loser in zip(h2h_df['Winner'], h2h_df['Loser'])
-                if winner == top_player or loser == top_player
+                if (winner == top_player or loser == top_player) and unique_players.index(winner) <= i
             ]
 
             # Create sub-tabs for each player pairing
@@ -366,6 +369,7 @@ with tab_head_to_head:
                             )
 
                             st.altair_chart(cumulative_chart, use_container_width=True)
+
 
 
 
