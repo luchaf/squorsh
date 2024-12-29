@@ -141,6 +141,68 @@ with tab_summary:
 
 
 
+
+    import plotly.graph_objects as go
+    
+    # Sort players by Wins
+    final_summary.sort_values(by='Wins', ascending=False, inplace=True)
+    
+    # Data preparation
+    players = final_summary['Player']
+    wins = final_summary['Wins']
+    points = final_summary['Points']
+    
+    # Create a Plotly figure
+    fig = go.Figure()
+    
+    # Add Wins bars (left y-axis)
+    fig.add_trace(go.Bar(
+        x=players,
+        y=wins,
+        name='Wins',
+        marker_color='blue',
+        hovertemplate='Player: %{x}<br>Wins: %{y}<extra></extra>'
+    ))
+    
+    # Add Points bars (right y-axis)
+    fig.add_trace(go.Bar(
+        x=players,
+        y=points,
+        name='Points',
+        marker_color='orange',
+        yaxis='y2',
+        hovertemplate='Player: %{x}<br>Points: %{y}<extra></extra>'
+    ))
+    
+    # Update layout for dual y-axes
+    fig.update_layout(
+        title='Wins and Points Per Player',
+        xaxis=dict(title='Player'),
+        yaxis=dict(
+            title='Number of Wins',
+            titlefont=dict(color='blue'),
+            tickfont=dict(color='blue')
+        ),
+        yaxis2=dict(
+            title='Total Points',
+            titlefont=dict(color='orange'),
+            tickfont=dict(color='orange'),
+            anchor='x',
+            overlaying='y',
+            side='right'
+        ),
+        barmode='group',  # Ensures bars are side by side
+        legend=dict(title='Metric', orientation='h', x=0.5, xanchor='center'),
+        height=600,
+        width=1000
+    )
+    
+    # Show the figure in Streamlit
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
