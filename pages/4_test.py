@@ -286,6 +286,9 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
@@ -429,10 +432,10 @@ with tab_head_to_head:
                     with pair_tab:
 
                         # Filter data for the specific player pairing
-                        pair_data = df_filtered[
-                            ((df_filtered['Player1'] == player1) & (df_filtered['Player2'] == player2)) |
-                            ((df_filtered['Player1'] == player2) & (df_filtered['Player2'] == player1))
-                        ]
+                        pair_data = pd.concat([
+                            pair_data.assign(Player=pair_data['Player1'], Points=pair_data['Score1']),
+                            pair_data.assign(Player=pair_data['Player2'], Points=pair_data['Score2'])
+                        ], ignore_index=True)
 
                         # ---- Sub-tabs for the pairing ----
                         subtab_current, subtab_trends = st.tabs(["Current Standings", "Trends Over Time"])
@@ -442,11 +445,7 @@ with tab_head_to_head:
                             st.subheader(f"Current Standings: {player1} vs {player2}")
 
                             # Points chart for head-to-head
-                            points_p1 = pair_data.groupby('Player1')['Score1'].sum().reset_index()
-                            points_p1.columns = ['Player', 'Points']
-                            points_p2 = pair_data.groupby('Player2')['Score2'].sum().reset_index()
-                            points_p2.columns = ['Player', 'Points']
-                            total_points = pd.concat([points_p1, points_p2], ignore_index=True).groupby('Player')['Points'].sum().reset_index()
+                            total_points = pair_data.groupby('Player')['Points'].sum().reset_index()
 
                             points_chart = alt.Chart(total_points).mark_bar().encode(
                                 x=alt.X('Player:N', title='Player'),
@@ -470,17 +469,13 @@ with tab_head_to_head:
                             with subtab_non_cumulative:
                                 st.subheader(f"Non-Cumulative Points: {player1} vs {player2}")
 
-                                pair_data['match_date'] = pair_data['date']
-                                points_non_cumulative = pd.concat([
-                                    pair_data.groupby(['match_date', 'Player1'])['Score1'].sum().reset_index().rename(columns={'Player1': 'Player', 'Score1': 'Points'}),
-                                    pair_data.groupby(['match_date', 'Player2'])['Score2'].sum().reset_index().rename(columns={'Player2': 'Player', 'Score2': 'Points'})
-                                ], ignore_index=True)
+                                points_non_cumulative = pair_data.groupby(['date', 'Player'])['Points'].sum().reset_index()
 
                                 non_cumulative_chart = alt.Chart(points_non_cumulative).mark_line().encode(
-                                    x=alt.X('match_date:T', title='Date'),
+                                    x=alt.X('date:T', title='Date'),
                                     y=alt.Y('Points:Q', title='Points Per Match'),
                                     color=alt.Color('Player:N', title='Player'),
-                                    tooltip=['match_date:T', 'Player:N', 'Points:Q']
+                                    tooltip=['date:T', 'Player:N', 'Points:Q']
                                 ).properties(
                                     title=f'Non-Cumulative Points Over Time: {player1} vs {player2}',
                                     width=700,
@@ -493,13 +488,14 @@ with tab_head_to_head:
                             with subtab_cumulative:
                                 st.subheader(f"Cumulative Points: {player1} vs {player2}")
 
-                                points_non_cumulative['CumulativePoints'] = points_non_cumulative.groupby('Player')['Points'].cumsum()
+                                points_cumulative = points_non_cumulative.copy()
+                                points_cumulative['CumulativePoints'] = points_cumulative.groupby('Player')['Points'].cumsum()
 
-                                cumulative_chart = alt.Chart(points_non_cumulative).mark_line().encode(
-                                    x=alt.X('match_date:T', title='Date'),
+                                cumulative_chart = alt.Chart(points_cumulative).mark_line().encode(
+                                    x=alt.X('date:T', title='Date'),
                                     y=alt.Y('CumulativePoints:Q', title='Cumulative Points'),
                                     color=alt.Color('Player:N', title='Player'),
-                                    tooltip=['match_date:T', 'Player:N', 'CumulativePoints:Q']
+                                    tooltip=['date:T', 'Player:N', 'CumulativePoints:Q']
                                 ).properties(
                                     title=f'Cumulative Points Over Time: {player1} vs {player2}',
                                     width=700,
@@ -507,6 +503,7 @@ with tab_head_to_head:
                                 )
 
                                 st.altair_chart(cumulative_chart, use_container_width=True)
+
 
 
 
