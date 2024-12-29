@@ -233,7 +233,7 @@ with tab_player_perf:
 # =========================
 with tab_match_stats:
     st.subheader("Match Result Distribution")
-    df_filtered['ResultPair'] = df_filtered.apply(lambda row: f"{max(row['Score1'], row['Score2'])}:{min(row['Score1'], row['Score2'])}", axis=1)
+    df_filtered['ResultPair'] = df_filtered.apply(lambda row: f"{int(max(row['Score1'], row['Score2'])}:{int(min(row['Score1'], row['Score2']))}", axis=1)
     pair_counts = df_filtered['ResultPair'].value_counts().reset_index()
     pair_counts.columns = ['ResultPair', 'Count']
 
