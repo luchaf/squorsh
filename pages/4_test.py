@@ -95,7 +95,7 @@ with tab_summary:
 
 
     
-    # Sort players by number of wins
+    # Prepare data
     final_summary.sort_values(by='Wins', ascending=False, inplace=True)
     
     # Melt the dataframe to a long format for Altair
@@ -106,17 +106,19 @@ with tab_summary:
         value_name='Value'
     )
     
-    # Create the bar chart using Altair
+    # Create the bar chart
     bar_chart = alt.Chart(chart_data).mark_bar().encode(
         x=alt.X('Player:N', sort=list(final_summary['Player']), title='Player'),
-        y=alt.Y('Value:Q', title='Count'),
-        color='Metric:N',
-        column=alt.Column('Metric:N', title='Metric', header=alt.Header(labelOrient="bottom"))
+        y=alt.Y('Value:Q', title='Metric Value'),
+        color=alt.Color('Metric:N', title='Metric', legend=alt.Legend(title="Metric Type")),
+        tooltip=['Player:N', 'Metric:N', 'Value:Q']
     ).properties(
-        width=alt.Step(40)  # Adjust bar width
+        width=800,
+        height=400
     )
     
     st.altair_chart(bar_chart, use_container_width=True)
+
 
 
 # =========================
