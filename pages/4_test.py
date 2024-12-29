@@ -244,6 +244,25 @@ with tab_match_stats:
     )
     st.altair_chart(results_chart, use_container_width=True)
 
+    # === 3) Identify the 'closest' matches (smallest margin) ===
+    st.subheader("Closest Matches (Filtered)")
+
+    n_closest = st.slider("Number of closest matches to display", min_value=1, max_value=50, value=1)
+    df_filtered['TotalPoints'] = df_filtered['Score1'] + df_filtered['Score2']
+
+    # Sort by margin ascending, then by total points descending
+    df_closest_sorted = df_filtered.sort_values(['PointDiff','TotalPoints'], ascending=[True, False])
+    closest_subset = df_closest_sorted.head(n_closest)
+
+    st.dataframe(
+        closest_subset[[
+            'match_number_total','date','Player1','Score1','Player2','Score2','PointDiff','TotalPoints'
+        ]].reset_index(drop=True),
+        use_container_width=True
+    )
+
+
+
 # =========================
 #  TAB: ADVANCED ANALYTICS
 # =========================
