@@ -152,53 +152,64 @@ with tab_summary:
     wins = final_summary['Wins']
     points = final_summary['Points']
     
+    # Create x positions for side-by-side bars
+    x_positions = np.arange(len(players))  # Base positions for each player
+    bar_width = 0.4  # Width of each bar
+    
     # Create a Plotly figure
     fig = go.Figure()
     
     # Add Wins bars (left y-axis)
     fig.add_trace(go.Bar(
-        x=players,
+        x=x_positions - bar_width / 2,  # Shift to the left
         y=wins,
         name='Wins',
         marker_color='blue',
-        hovertemplate='Player: %{x}<br>Wins: %{y}<extra></extra>'
+        hovertemplate='Player: %{customdata}<br>Wins: %{y}<extra></extra>',
+        customdata=players  # Add player names for hover
     ))
     
     # Add Points bars (right y-axis)
     fig.add_trace(go.Bar(
-        x=players,
+        x=x_positions + bar_width / 2,  # Shift to the right
         y=points,
         name='Points',
         marker_color='orange',
-        yaxis='y2',
-        hovertemplate='Player: %{x}<br>Points: %{y}<extra></extra>'
+        hovertemplate='Player: %{customdata}<br>Points: %{y}<extra></extra>',
+        customdata=players,  # Add player names for hover
+        yaxis='y2'  # Assign to the second y-axis
     ))
     
-    # Update layout for dual y-axes
+    # Update layout for dual y-axes and side-by-side bars
     fig.update_layout(
         title='Wins and Points Per Player',
-        xaxis=dict(title='Player'),
+        xaxis=dict(
+            title='Player',
+            tickmode='array',
+            tickvals=x_positions,
+            ticktext=players,  # Display player names as x-axis labels
+        ),
         yaxis=dict(
             title='Number of Wins',
             titlefont=dict(color='blue'),
-            tickfont=dict(color='blue')
+            tickfont=dict(color='blue'),
         ),
         yaxis2=dict(
             title='Total Points',
             titlefont=dict(color='orange'),
             tickfont=dict(color='orange'),
-            anchor='x',
             overlaying='y',
-            side='right'
+            side='right',
         ),
-        barmode='group',  # Ensures bars are side by side
+        barmode='group',  # Group bars side by side
         legend=dict(title='Metric', orientation='h', x=0.5, xanchor='center'),
         height=600,
-        width=1000
+        width=1000,
     )
     
     # Show the figure in Streamlit
     st.plotly_chart(fig, use_container_width=True)
+
 
 
 
