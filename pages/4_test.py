@@ -94,30 +94,45 @@ with tab_summary:
     )
 
 
-    
+
     # Prepare data
     final_summary.sort_values(by='Wins', ascending=False, inplace=True)
     
-    # Melt the dataframe to a long format for Altair
-    chart_data = final_summary.melt(
-        id_vars='Player', 
-        value_vars=['Wins', 'Points'], 
-        var_name='Metric', 
-        value_name='Value'
-    )
-    
-    # Create the bar chart
-    bar_chart = alt.Chart(chart_data).mark_bar().encode(
+    # Base chart for Wins
+    chart_wins = alt.Chart(final_summary).mark_bar().encode(
         x=alt.X('Player:N', sort=list(final_summary['Player']), title='Player'),
-        y=alt.Y('Value:Q', title='Metric Value'),
-        color=alt.Color('Metric:N', title='Metric', legend=alt.Legend(title="Metric Type")),
-        tooltip=['Player:N', 'Metric:N', 'Value:Q']
+        y=alt.Y('Wins:Q', axis=alt.Axis(title='Number of Wins'), title='Wins'),
+        color=alt.value('#1f77b4')  # Blue color for Wins
     ).properties(
         width=800,
         height=400
     )
     
-    st.altair_chart(bar_chart, use_container_width=True)
+    # Base chart for Points
+    chart_points = alt.Chart(final_summary).mark_bar().encode(
+        x=alt.X('Player:N', sort=list(final_summary['Player']), title=None),
+        y=alt.Y('Points:Q', axis=alt.Axis(title='Total Points', orient='right'), title='Points'),
+        color=alt.value('#ff7f0e')  # Orange color for Points
+    ).properties(
+        width=800,
+        height=400
+    ).transform_calculate(
+        offset='datum.Points'  # Offset the Points slightly to simulate side-by-side bars
+    )
+    
+    # Combine the two charts
+    combined_chart = alt.layer(
+        chart_wins,
+        chart_points
+    ).resolve_scale(
+        y='independent'  # Use independent scales for y-axes
+    ).configure_axis(
+        labelFontSize=12,
+        titleFontSize=14
+    )
+    
+    st.altair_chart(combined_chart, use_container_width=True)
+
 
 
 
