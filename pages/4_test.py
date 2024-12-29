@@ -101,14 +101,15 @@ with tab_summary:
     final_summary_points.sort_values(by='Points', ascending=False, inplace=True)
     
     # Data preparation
-    players = final_summary['Player']
+    players_wins = final_summary_wins['Player']
+    players_points = final_summary_points['Player']
     wins = final_summary_wins['Wins']
     points = final_summary_points['Points']
     
     # Create Altair charts
     # Chart for Wins
     wins_chart = alt.Chart(final_summary_wins).mark_bar(color='blue').encode(
-        x=alt.X('Player:N', sort=list(players), title='Player'),
+        x=alt.X('Player:N', sort=list(players_wins), title='Player'),
         y=alt.Y('Wins:Q', title='Number of Wins'),
         tooltip=['Player:N', 'Wins:Q']
     ).properties(
@@ -119,7 +120,7 @@ with tab_summary:
     
     # Chart for Points
     points_chart = alt.Chart(final_summary_points).mark_bar(color='orange').encode(
-        x=alt.X('Player:N', sort=list(players), title='Player'),
+        x=alt.X('Player:N', sort=list(players_points), title='Player'),
         y=alt.Y('Points:Q', title='Total Points'),
         tooltip=['Player:N', 'Points:Q']
     ).properties(
