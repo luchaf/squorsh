@@ -295,7 +295,7 @@ with tab_head_to_head:
             # Filter player pairings involving the top-level player and avoid duplicate matchups
             player_pairs = [
                 (winner, loser) for winner, loser in zip(h2h_df['Winner'], h2h_df['Loser'])
-                if (winner == top_player or loser == top_player) and (winner <= loser if winner == top_player else loser <= winner)
+                #if (winner == top_player or loser == top_player) and (winner <= loser if winner == top_player else loser <= winner)
             ]
 
             # Create sub-tabs for each player pairing
