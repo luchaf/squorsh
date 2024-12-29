@@ -93,6 +93,51 @@ with tab_summary:
         use_container_width=True
     )
 
+    import altair as alt
+    import streamlit as st
+    
+    # Sort players by Wins
+    final_summary.sort_values(by='Wins', ascending=False, inplace=True)
+    
+    # Data preparation
+    players = final_summary['Player']
+    wins = final_summary['Wins']
+    points = final_summary['Points']
+    
+    # Create Altair charts
+    # Chart for Wins
+    wins_chart = alt.Chart(final_summary).mark_bar(color='blue').encode(
+        x=alt.X('Player:N', sort=list(players), title='Player'),
+        y=alt.Y('Wins:Q', title='Number of Wins'),
+        tooltip=['Player:N', 'Wins:Q']
+    ).properties(
+        title='Number of Wins by Player',
+        width=700,
+        height=400
+    )
+    
+    # Chart for Points
+    points_chart = alt.Chart(final_summary).mark_bar(color='orange').encode(
+        x=alt.X('Player:N', sort=list(players), title='Player'),
+        y=alt.Y('Points:Q', title='Total Points'),
+        tooltip=['Player:N', 'Points:Q']
+    ).properties(
+        title='Total Points by Player',
+        width=700,
+        height=400
+    )
+    
+    # Create tabs in Streamlit
+    tab1, tab2 = st.tabs(["Wins Chart", "Points Chart"])
+    
+    with tab1:
+        st.subheader("Wins per Player")
+        st.altair_chart(wins_chart, use_container_width=True)
+    
+    with tab2:
+        st.subheader("Points per Player")
+        st.altair_chart(points_chart, use_container_width=True)
+    
 
     import matplotlib.pyplot as plt
     import numpy as np
