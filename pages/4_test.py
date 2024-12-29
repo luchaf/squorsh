@@ -261,7 +261,44 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+
+# Prepare Data for Stacked Bar Chart
+h2h_stacked_df = df_filtered.groupby(['Winner', 'Loser']).size().reset_index(name='Wins_against')
+h2h_stacked_df['Pairing'] = h2h_stacked_df.apply(
+    lambda row: f"{row['Winner']} vs {row['Loser']}", axis=1
+)
+
+# Prepare "Loser Wins" to include both sides of the pairing
+loser_wins_df = df_filtered.groupby(['Loser', 'Winner']).size().reset_index(name='Wins_against')
+loser_wins_df.rename(columns={'Loser': 'Winner', 'Winner': 'Loser'}, inplace=True)
+loser_wins_df['Pairing'] = loser_wins_df.apply(
+    lambda row: f"{row['Winner']} vs {row['Loser']}", axis=1
+)
+
+# Combine Data
+h2h_combined_df = pd.concat([h2h_stacked_df, loser_wins_df])
+h2h_combined_df = h2h_combined_df.groupby(['Pairing', 'Winner'])['Wins_against'].sum().reset_index()
+
+# Create Stacked Bar Chart
+stacked_chart = alt.Chart(h2h_combined_df).mark_bar().encode(
+    x=alt.X('Pairing:N', sort='-y', title='Match Pairing'),
+    y=alt.Y('Wins_against:Q', title='Number of Wins'),
+    color=alt.Color('Winner:N', title='Player', legend=alt.Legend(title="Player Wins")),
+    tooltip=['Pairing:N', 'Winner:N', 'Wins_against:Q']
+).properties(
+    title='Head-to-Head Wins by Pairing',
+    width=800,
+    height=500
+).configure_axis(
+    labelAngle=-45
+)
+
+# Show in Streamlit
 with tab_head_to_head:
+    st.subheader("Head-to-Head Analysis")
+    st.altair_chart(stacked_chart, use_container_width=True)
+
+
     st.subheader("Head-to-Head Wins")
     h2h_df = df_filtered.groupby(['Winner', 'Loser']).size().reset_index(name='Wins_against')
     pivot_h2h = h2h_df.pivot(index='Winner', columns='Loser', values='Wins_against').fillna(0).astype(int)
