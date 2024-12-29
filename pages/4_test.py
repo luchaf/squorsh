@@ -88,11 +88,6 @@ with tab_summary:
     final_summary['Wins'] = final_summary['Wins'].fillna(0).astype(int)
     final_summary.sort_values('Wins', ascending=False, inplace=True, ignore_index=True)
 
-    st.dataframe(
-        final_summary.style.format({"Points": "{:.0f}", "Wins": "{:.0f}"}),
-        use_container_width=True
-    )
-
     final_summary_wins = final_summary.copy()
     final_summary_points = final_summary.copy()
     final_summary_wins.sort_values(by='Wins', ascending=False, inplace=True)
