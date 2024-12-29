@@ -271,6 +271,9 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
@@ -289,7 +292,7 @@ with tab_head_to_head:
             # Filter player pairings involving the top-level player and avoid duplicate matchups
             player_pairs = [
                 (winner, loser) for winner, loser in zip(h2h_df['Winner'], h2h_df['Loser'])
-                if (winner == top_player or loser == top_player) and unique_players.index(winner) <= i
+                if (winner == top_player or loser == top_player) and unique_players.index(winner) <= unique_players.index(loser)
             ]
 
             # Create sub-tabs for each player pairing
