@@ -128,7 +128,7 @@ with tab_summary:
     ax2.tick_params(axis='y', labelcolor='orange')
     
     # Add a legend
-    fig.legend(loc='upper left', bbox_to_anchor=(0.1, 1), bbox_transform=ax1.transAxes)
+    fig.legend(loc='upper right', bbox_to_anchor=(0.1, 1), bbox_transform=ax1.transAxes)
     
     # Add gridlines and adjust layout
     ax1.grid(axis='y', linestyle='--', alpha=0.7)
