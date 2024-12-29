@@ -53,8 +53,8 @@ df_filtered = df[
 ]
 
 # ---- ORGANIZATION: TABS ----
-tab_summary, tab_head_to_head, tab_player_perf, tab_match_stats, tab_advanced = st.tabs([
-    "Summary Metrics", "Head-to-Head", "Player Performance", "Match Statistics", "Advanced Analytics"
+tab_summary, tab_head_to_head, tab_player_perf, tab_match_stats = st.tabs([
+    "Summary Metrics", "Head-to-Head", "Player Performance", "Match Statistics"
 ])
 
 # =========================
@@ -703,30 +703,3 @@ with tab_match_stats:
     )
 
 
-
-# =========================
-#  TAB: ADVANCED ANALYTICS
-# =========================
-with tab_advanced:
-    st.subheader("Elo Ratings")
-    df_sorted = df.sort_values(['date'], ascending=True)
-    elo_ratings = defaultdict(lambda: 1500)
-    K = 20
-
-    for _, row in df_sorted.iterrows():
-        p1, p2 = row['Player1'], row['Player2']
-        r1, r2 = elo_ratings[p1], elo_ratings[p2]
-        exp1 = 1 / (1 + 10 ** ((r2 - r1) / 400))
-        exp2 = 1 / (1 + 10 ** ((r1 - r2) / 400))
-
-        if row['Winner'] == p1:
-            elo_ratings[p1] += K * (1 - exp1)
-            elo_ratings[p2] += K * (0 - exp2)
-        else:
-            elo_ratings[p1] += K * (0 - exp1)
-            elo_ratings[p2] += K * (1 - exp2)
-
-    elo_df = pd.DataFrame([(player, rating) for player, rating in elo_ratings.items()], columns=['Player', 'Elo_Rating'])
-    elo_df.sort_values('Elo_Rating', ascending=False, inplace=True)
-
-    st.dataframe(elo_df, use_container_width=True)
