@@ -121,17 +121,6 @@ with tab_summary:
         width=700,
         height=400
     )
-    
-    # Create tabs in Streamlit
-    tab1, tab2 = st.tabs(["Wins Chart", "Points Chart"])
-    
-    with tab1:
-        st.subheader("Wins per Player")
-        st.altair_chart(wins_chart, use_container_width=True)
-    
-    with tab2:
-        st.subheader("Points per Player")
-        st.altair_chart(points_chart, use_container_width=True)
 
     # ---- Data Preparation for Over Time Analysis ----
     # Filtered Data: Aggregate Wins and Points by Date
