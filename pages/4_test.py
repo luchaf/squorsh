@@ -261,21 +261,96 @@ with tab_summary:
 #    TAB: HEAD-TO-HEAD
 # =========================
 
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
-    st.subheader("Head-to-Head Wins")
-    h2h_df = df_filtered.groupby(['Winner', 'Loser']).size().reset_index(name='Wins_against')
-    pivot_h2h = h2h_df.pivot(index='Winner', columns='Loser', values='Wins_against').fillna(0).astype(int)
-    st.dataframe(pivot_h2h, use_container_width=True)
+    st.subheader("Head-to-Head Analysis")
 
-    st.subheader("Head-to-Head Margins")
-    df_matchup_margin = (
-        df_filtered
-        .groupby(['Winner', 'Loser'])['PointDiff']
-        .mean()
-        .reset_index(name='Avg_margin_of_victory')
-    )
-    pivot_margin_vic = df_matchup_margin.pivot(index='Winner', columns='Loser', values='Avg_margin_of_victory').fillna(0).round(2)
-    st.dataframe(pivot_margin_vic, use_container_width=True)
+    # Group by Winner and Loser to get win counts
+    h2h_df = df_filtered.groupby(['Winner', 'Loser']).size().reset_index(name='Wins_against')
+
+    # Create list of unique player pairings
+    player_pairs = [(winner, loser) for winner, loser in zip(h2h_df['Winner'], h2h_df['Loser'])]
+
+    # Create sub-tabs for each player pairing
+    for winner, loser in player_pairs:
+        pair_tab = st.tabs([f"{winner} vs {loser}"])[0]
+        with pair_tab:
+
+            # Filter data for the specific player pairing
+            pair_data = df_filtered[
+                ((df_filtered['Winner'] == winner) & (df_filtered['Loser'] == loser)) |
+                ((df_filtered['Winner'] == loser) & (df_filtered['Loser'] == winner))
+            ]
+
+            # ---- Sub-tabs for the pairing ----
+            subtab_current, subtab_trends = st.tabs(["Current Standings", "Trends Over Time"])
+
+            # ---- Current Standings ----
+            with subtab_current:
+                st.subheader(f"Current Standings: {winner} vs {loser}")
+
+                # Bar chart for head-to-head wins
+                win_counts = pair_data.groupby('Winner').size().reset_index(name='Wins')
+                win_chart = alt.Chart(win_counts).mark_bar().encode(
+                    x=alt.X('Winner:N', title='Player'),
+                    y=alt.Y('Wins:Q', title='Number of Wins'),
+                    tooltip=['Winner:N', 'Wins:Q']
+                ).properties(
+                    title=f'Head-to-Head Wins: {winner} vs {loser}',
+                    width=700,
+                    height=400
+                )
+
+                st.altair_chart(win_chart, use_container_width=True)
+
+            # ---- Trends Over Time ----
+            with subtab_trends:
+                st.subheader(f"Trends Over Time: {winner} vs {loser}")
+
+                subtab_non_cumulative, subtab_cumulative = st.tabs(["Non-Cumulative", "Cumulative"])
+
+                # ---- Non-Cumulative Trends ----
+                with subtab_non_cumulative:
+                    st.subheader(f"Non-Cumulative Wins: {winner} vs {loser}")
+
+                    pair_data['match_date'] = pair_data['date']
+                    non_cumulative = pair_data.groupby(['match_date', 'Winner']).size().reset_index(name='Wins')
+
+                    non_cumulative_chart = alt.Chart(non_cumulative).mark_line().encode(
+                        x=alt.X('match_date:T', title='Date'),
+                        y=alt.Y('Wins:Q', title='Wins Per Match'),
+                        color=alt.Color('Winner:N', title='Player'),
+                        tooltip=['match_date:T', 'Winner:N', 'Wins:Q']
+                    ).properties(
+                        title=f'Non-Cumulative Wins Over Time: {winner} vs {loser}',
+                        width=700,
+                        height=400
+                    )
+
+                    st.altair_chart(non_cumulative_chart, use_container_width=True)
+
+                # ---- Cumulative Trends ----
+                with subtab_cumulative:
+                    st.subheader(f"Cumulative Wins: {winner} vs {loser}")
+
+                    cumulative = pair_data.copy()
+                    cumulative['CumulativeWins'] = cumulative.groupby('Winner').cumcount() + 1
+
+                    cumulative_chart = alt.Chart(cumulative).mark_line().encode(
+                        x=alt.X('date:T', title='Date'),
+                        y=alt.Y('CumulativeWins:Q', title='Cumulative Wins'),
+                        color=alt.Color('Winner:N', title='Player'),
+                        tooltip=['date:T', 'Winner:N', 'CumulativeWins:Q']
+                    ).properties(
+                        title=f'Cumulative Wins Over Time: {winner} vs {loser}',
+                        width=700,
+                        height=400
+                    )
+
+                    st.altair_chart(cumulative_chart, use_container_width=True)
+
 
 # =========================
 #   TAB: PLAYER PERFORMANCE
