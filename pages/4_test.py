@@ -94,6 +94,88 @@ with tab_summary:
     )
 
 
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    # Sort players by Wins
+    final_summary.sort_values(by='Wins', ascending=False, inplace=True)
+    
+    # Data preparation
+    players = final_summary['Player']
+    wins = final_summary['Wins']
+    points = final_summary['Points']
+    
+    # Bar positions
+    x = np.arange(len(players))  # the label locations
+    width = 0.4  # the width of the bars
+    
+    # Create the figure and axes
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    
+    # Plot Wins on the left y-axis
+    bars1 = ax1.bar(x - width / 2, wins, width, label='Wins', color='blue')
+    ax1.set_xlabel('Players')
+    ax1.set_ylabel('Number of Wins', color='blue')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(players, rotation=45, ha='right')
+    ax1.tick_params(axis='y', labelcolor='blue')
+    
+    # Create a second y-axis for Points
+    ax2 = ax1.twinx()
+    bars2 = ax2.bar(x + width / 2, points, width, label='Points', color='orange')
+    ax2.set_ylabel('Total Points', color='orange')
+    ax2.tick_params(axis='y', labelcolor='orange')
+    
+    # Align gridlines for both axes
+    # Define tick count
+    tick_count = 10
+    
+    # Compute the tick intervals
+    wins_max = max(wins)
+    points_max = max(points)
+    ax1_step = wins_max / tick_count
+    ax2_step = points_max / tick_count
+    
+    # Set matching tick ranges
+    ax1.set_yticks(np.arange(0, wins_max + ax1_step, ax1_step))
+    ax2.set_yticks(np.arange(0, points_max + ax2_step, ax2_step))
+    
+    # Align gridlines
+    ax1.set_ylim(0, wins_max + ax1_step)
+    ax2.set_ylim(0, points_max + ax2_step)
+    
+    # Add text annotations for Wins
+    for bar in bars1:
+        height = bar.get_height()
+        ax1.text(
+            bar.get_x() + bar.get_width() / 2, height + 0.5,  # Position the label slightly above the bar
+            f'{int(height)}', ha='center', va='bottom', color='blue'
+        )
+    
+    # Add text annotations for Points
+    for bar in bars2:
+        height = bar.get_height()
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2, height + 0.5,  # Position the label slightly above the bar
+            f'{int(height)}', ha='center', va='bottom', color='orange'
+        )
+    
+    # Add a legend
+    fig.legend(loc='upper right', bbox_to_anchor=(0.9, 1), bbox_transform=ax1.transAxes)
+    
+    # Add gridlines
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Remove the frame and make transparent
+    fig.patch.set_alpha(0)  # Make the figure transparent
+    ax1.patch.set_alpha(0)  # Make the axes transparent
+    
+    # Adjust layout
+    fig.tight_layout()
+    
+    # Show the plot in Streamlit
+    st.pyplot(fig)
+
 
     import matplotlib.pyplot as plt
     import numpy as np
