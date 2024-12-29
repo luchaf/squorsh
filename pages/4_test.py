@@ -283,6 +283,9 @@ with tab_summary:
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
+# =========================
+#    TAB: HEAD-TO-HEAD
+# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
@@ -490,10 +493,9 @@ with tab_head_to_head:
                             with subtab_cumulative:
                                 st.subheader(f"Cumulative Points: {player1} vs {player2}")
 
-                                points_cumulative = points_non_cumulative.copy()
-                                points_cumulative['CumulativePoints'] = points_cumulative.groupby('Player')['Points'].cumsum()
+                                points_non_cumulative['CumulativePoints'] = points_non_cumulative.groupby('Player')['Points'].cumsum()
 
-                                cumulative_chart = alt.Chart(points_cumulative).mark_line().encode(
+                                cumulative_chart = alt.Chart(points_non_cumulative).mark_line().encode(
                                     x=alt.X('match_date:T', title='Date'),
                                     y=alt.Y('CumulativePoints:Q', title='Cumulative Points'),
                                     color=alt.Color('Player:N', title='Player'),
@@ -505,6 +507,7 @@ with tab_head_to_head:
                                 )
 
                                 st.altair_chart(cumulative_chart, use_container_width=True)
+
 
 
 
