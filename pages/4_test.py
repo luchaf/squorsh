@@ -493,26 +493,31 @@ with tab_summary:
 
             # Prepare data for trends over time
             df_margin_vic = df_margin_vic.rename(
-                columns={"Avg_margin_victory": "Victory_Value"}
+                columns={"Avg_margin_victory": "Value"}
             )
             df_margin_vic["Metric"] = "Avg_margin_victory"
 
-            df_margin_def = df_margin_def.rename(
-                columns={"Avg_margin_defeat": "Defeat_Value"}
-            )
+            df_margin_def = df_margin_def.rename(columns={"Avg_margin_defeat": "Value"})
             df_margin_def["Metric"] = "Avg_margin_defeat"
-
-            # Adjust columns before concatenation
-            # df_margin_vic = df_margin_vic.rename(columns={"Victory_Value": "Value"})
-            # df_margin_def = df_margin_def.rename(columns={"Defeat_Value": "Value"})
 
             # Combine dataframes
             df_margin_summary = pd.concat(
                 [df_margin_vic, df_margin_def], ignore_index=True
             )
 
+            # Drop duplicate columns if any exist
+            df_margin_summary = df_margin_summary.loc[
+                :, ~df_margin_summary.columns.duplicated()
+            ]
+
             # Verify the dataframe structure
             st.write("Data used for trends over time:", df_margin_summary)
+
+            # Validate required columns
+            assert "date" in df_margin_summary.columns, "'date' column is missing"
+            assert "Player" in df_margin_summary.columns, "'Player' column is missing"
+            assert "Metric" in df_margin_summary.columns, "'Metric' column is missing"
+            assert "Value" in df_margin_summary.columns, "'Value' column is missing"
 
             # Create the trend chart
             trend_chart = (
@@ -520,7 +525,7 @@ with tab_summary:
                 .mark_line(point=True)
                 .encode(
                     x=alt.X("date:T", title="Date"),
-                    y=alt.Y("Victory_Value:Q", title="Average Margin"),
+                    y=alt.Y("Value:Q", title="Average Margin"),
                     color=alt.Color("Metric:N", title="Metric"),
                     tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
                     facet=alt.Facet("Player:N", title="Player"),
