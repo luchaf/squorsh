@@ -63,6 +63,15 @@ tab_summary, tab_head_to_head = st.tabs(["Summary Metrics", "Head-to-Head"])
 #       TAB: SUMMARY
 # =========================
 with tab_summary:
+    st.subheader("Matches Over Time (Filtered)")
+    matches_over_time = df_filtered.groupby("date").size().reset_index(name="Matches")
+    chart = (
+        alt.Chart(matches_over_time)
+        .mark_bar()
+        .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
+        .properties(width="container", height=300)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
     with st.expander("Elo Ratings", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
@@ -90,7 +99,6 @@ with tab_summary:
 
         st.dataframe(elo_df, use_container_width=True)
 
-    # Wins & Points Summary
     with st.expander("Wins & Points Per Player", expanded=False):
         wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
         points_p1 = df_filtered.groupby("Player1")["Score1"].sum().reset_index()
@@ -539,45 +547,6 @@ with tab_summary:
             use_container_width=True,
         )
 
-
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
-# =========================
-#    TAB: HEAD-TO-HEAD
-# =========================
 with tab_head_to_head:
     st.subheader("Head-to-Head Analysis")
 
