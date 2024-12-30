@@ -368,8 +368,8 @@ with tab_summary:
                 )
                 .properties(
                     title="Average Margins for Victory and Defeat",
-                    width=700,
-                    height=400,
+                    # width=700,
+                    # height=400,
                 )
             )
 
@@ -417,8 +417,8 @@ with tab_summary:
                 )
                 .properties(
                     title="Trends in Average Margins Over Time",
-                    width=700,
-                    height=200,
+                    # width=700,
+                    # height=200,
                 )
             )
 
