@@ -429,6 +429,7 @@ with tab_summary:
 
             st.altair_chart(trend_chart_victory, use_container_width=True)
             st.altair_chart(trend_chart_defeat, use_container_width=True)
+            st.write("ok")
 
     with st.expander("Winning and Losing Streaks", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
