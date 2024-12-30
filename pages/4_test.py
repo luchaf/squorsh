@@ -493,12 +493,18 @@ with tab_summary:
 
             # Prepare data for trends over time
             df_margin_vic = df_margin_vic.rename(
-                columns={"Avg_margin_victory": "Value"}
+                columns={"Avg_margin_victory": "Victory_Value"}
             )
             df_margin_vic["Metric"] = "Avg_margin_victory"
 
-            df_margin_def = df_margin_def.rename(columns={"Avg_margin_defeat": "Value"})
+            df_margin_def = df_margin_def.rename(
+                columns={"Avg_margin_defeat": "Defeat_Value"}
+            )
             df_margin_def["Metric"] = "Avg_margin_defeat"
+
+            # Adjust columns before concatenation
+            df_margin_vic = df_margin_vic.rename(columns={"Victory_Value": "Value"})
+            df_margin_def = df_margin_def.rename(columns={"Defeat_Value": "Value"})
 
             # Combine dataframes
             df_margin_summary = pd.concat(
