@@ -57,9 +57,7 @@ df_filtered = df[
 ]
 
 # ---- ORGANIZATION: TABS ----
-tab_summary, tab_head_to_head, tab_player_perf, tab_match_stats = st.tabs(
-    ["Summary Metrics", "Head-to-Head", "Player Performance", "Match Statistics"]
-)
+tab_summary, tab_head_to_head = st.tabs(["Summary Metrics", "Head-to-Head"])
 
 # =========================
 #       TAB: SUMMARY
@@ -497,6 +495,61 @@ with tab_summary:
         """
         )
 
+        with st.expander("Match Result Distribution", expanded=False):
+            st.subheader("Match Result Distribution")
+            df_filtered["ResultPair"] = df_filtered.apply(
+                lambda row: f"{int(max(row['Score1'], row['Score2']))}:{int(min(row['Score1'], row['Score2']))}",
+                axis=1,
+            )
+            pair_counts = df_filtered["ResultPair"].value_counts().reset_index()
+            pair_counts.columns = ["ResultPair", "Count"]
+
+            results_chart = (
+                alt.Chart(pair_counts)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Count:Q", title="Number of Matches"),
+                    y=alt.Y("ResultPair:N", sort="-x", title="Score Category"),
+                    tooltip=["ResultPair", "Count"],
+                )
+            )
+            st.altair_chart(results_chart, use_container_width=True)
+
+        with st.expander("List of most legendary matches", expanded=False):
+            # === 3) Identify the 'closest' matches (smallest margin) ===
+            st.subheader("Closest Matches (Filtered)")
+
+            n_closest = st.slider(
+                "Number of closest matches to display",
+                min_value=1,
+                max_value=50,
+                value=20,
+            )
+            df_filtered["TotalPoints"] = df_filtered["Score1"] + df_filtered["Score2"]
+
+            # Sort by margin ascending, then by total points descending
+            df_closest_sorted = df_filtered.sort_values(
+                ["PointDiff", "TotalPoints"], ascending=[True, False]
+            )
+            closest_subset = df_closest_sorted.head(n_closest)
+
+            st.dataframe(
+                closest_subset[
+                    [
+                        "match_number_total",
+                        "date",
+                        "Player1",
+                        "Score1",
+                        "Player2",
+                        "Score2",
+                        "PointDiff",
+                        "TotalPoints",
+                    ]
+                ].reset_index(drop=True),
+                use_container_width=True,
+            )
+
+
 # =========================
 #    TAB: HEAD-TO-HEAD
 # =========================
@@ -872,57 +925,3 @@ with tab_head_to_head:
                                 st.altair_chart(
                                     cumulative_chart, use_container_width=True
                                 )
-
-
-# =========================
-#   TAB: MATCH STATISTICS
-# =========================
-with tab_match_stats:
-    st.subheader("Match Result Distribution")
-    df_filtered["ResultPair"] = df_filtered.apply(
-        lambda row: f"{int(max(row['Score1'], row['Score2']))}:{int(min(row['Score1'], row['Score2']))}",
-        axis=1,
-    )
-    pair_counts = df_filtered["ResultPair"].value_counts().reset_index()
-    pair_counts.columns = ["ResultPair", "Count"]
-
-    results_chart = (
-        alt.Chart(pair_counts)
-        .mark_bar()
-        .encode(
-            x=alt.X("Count:Q", title="Number of Matches"),
-            y=alt.Y("ResultPair:N", sort="-x", title="Score Category"),
-            tooltip=["ResultPair", "Count"],
-        )
-    )
-    st.altair_chart(results_chart, use_container_width=True)
-
-    # === 3) Identify the 'closest' matches (smallest margin) ===
-    st.subheader("Closest Matches (Filtered)")
-
-    n_closest = st.slider(
-        "Number of closest matches to display", min_value=1, max_value=50, value=20
-    )
-    df_filtered["TotalPoints"] = df_filtered["Score1"] + df_filtered["Score2"]
-
-    # Sort by margin ascending, then by total points descending
-    df_closest_sorted = df_filtered.sort_values(
-        ["PointDiff", "TotalPoints"], ascending=[True, False]
-    )
-    closest_subset = df_closest_sorted.head(n_closest)
-
-    st.dataframe(
-        closest_subset[
-            [
-                "match_number_total",
-                "date",
-                "Player1",
-                "Score1",
-                "Player2",
-                "Score2",
-                "PointDiff",
-                "TotalPoints",
-            ]
-        ].reset_index(drop=True),
-        use_container_width=True,
-    )
