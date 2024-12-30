@@ -63,15 +63,17 @@ tab_summary, tab_head_to_head = st.tabs(["Summary Metrics", "Head-to-Head"])
 #       TAB: SUMMARY
 # =========================
 with tab_summary:
-    st.subheader("Matches Over Time")
-    matches_over_time = df_filtered.groupby("date").size().reset_index(name="Matches")
-    chart = (
-        alt.Chart(matches_over_time)
-        .mark_bar()
-        .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
-        .properties(width="container", height=300)
-    )
-    st.altair_chart(chart, use_container_width=True)
+    with st.expander("Matches Over Time", expanded=False):
+        matches_over_time = (
+            df_filtered.groupby("date").size().reset_index(name="Matches")
+        )
+        chart = (
+            alt.Chart(matches_over_time)
+            .mark_bar()
+            .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
+            .properties(width="container", height=300)
+        )
+        st.altair_chart(chart, use_container_width=True)
 
     with st.expander("Elo Ratings", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
@@ -429,7 +431,6 @@ with tab_summary:
 
             st.altair_chart(trend_chart_victory, use_container_width=True)
             st.altair_chart(trend_chart_defeat, use_container_width=True)
-            st.write("ok")
 
     with st.expander("Winning and Losing Streaks", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
