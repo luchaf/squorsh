@@ -517,6 +517,12 @@ with tab_summary:
             ["PointDiff", "TotalPoints"], ascending=[True, False]
         )
         closest_subset = df_closest_sorted.head(n_closest)
+        closest_subset["date"] = pd.to_datetime(
+            df["date"]
+        )  # Ensure the column is in datetime format
+        closest_subset["date"] = closest_subset[
+            "date"
+        ].dt.date  # Extract only the date part
 
         st.dataframe(
             closest_subset[
