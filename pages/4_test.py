@@ -366,11 +366,7 @@ with tab_summary:
                     color=alt.Color("Metric:N", title="Metric"),
                     tooltip=["Player:N", "Metric:N", "Value:Q"],
                 )
-                .properties(
-                    title="Average Margins for Victory and Defeat",
-                    width="container",
-                    height=400,
-                )
+                .properties(title="Average Margins for Victory and Defeat", height=400)
             )
 
             st.altair_chart(margin_chart, use_container_width=True)
@@ -378,7 +374,7 @@ with tab_summary:
         with margin_tabs[1]:
             st.subheader("Trends Over Time: Average Margins")
 
-            # Ensure date is included in data preparation
+            # Prepare data for trends over time
             df_margin_vic = (
                 df_filtered.groupby(["date", "Winner"])["PointDiff"]
                 .mean()
@@ -404,6 +400,11 @@ with tab_summary:
                 [df_margin_vic, df_margin_def], ignore_index=True
             )
 
+            # Drop duplicate columns if any exist
+            df_margin_summary = df_margin_summary.loc[
+                :, ~df_margin_summary.columns.duplicated()
+            ]
+
             # Create the trend chart
             trend_chart = (
                 alt.Chart(df_margin_summary)
@@ -415,10 +416,10 @@ with tab_summary:
                     tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
                     facet=alt.Facet("Player:N", title="Player"),
                 )
+                .resolve_scale(y="independent")
                 .properties(
                     title="Trends in Average Margins Over Time",
-                    width="container",
-                    height=400,
+                    height=300,
                 )
             )
 
