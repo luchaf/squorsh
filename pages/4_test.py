@@ -404,9 +404,6 @@ with tab_summary:
                 [df_margin_vic, df_margin_def], ignore_index=True
             )
 
-            # Check data structure for debugging
-            st.write("Data used for trends over time:", df_margin_summary)
-
             # Create the trend chart
             trend_chart = (
                 alt.Chart(df_margin_summary)
