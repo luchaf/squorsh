@@ -567,26 +567,17 @@ with tab_summary:
 
             st.altair_chart(chart_match_of_day, use_container_width=True)
 
-            st.markdown("**Table**: Win Rate by Nth Match of Day (Filtered)")
-            st.dataframe(
-                df_day_agg_display[["player", "MatchOfDay", "sum", "count", "win_rate"]]
-                .sort_values(["player", "MatchOfDay"])
-                .reset_index(drop=True)
-                .style.format({"win_rate": "{:.2f}"}),
-                use_container_width=True,
-            )
         else:
             st.info("No players selected for the Nth-match-of-day chart.")
 
         st.markdown(
             """
-        This chart & table show how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
+        This chart show how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
         The **solid line** is their actual data, and the **dashed line** is a linear trend line.  
         """
         )
 
     with st.expander("Match Result Distribution", expanded=False):
-        st.subheader("Match Result Distribution")
         df_filtered["ResultPair"] = df_filtered.apply(
             lambda row: f"{int(max(row['Score1'], row['Score2']))}:{int(min(row['Score1'], row['Score2']))}",
             axis=1,
@@ -606,8 +597,6 @@ with tab_summary:
         st.altair_chart(results_chart, use_container_width=True)
 
     with st.expander("List of the ten most legendary matches", expanded=False):
-
-        st.subheader("Closest Matches (Filtered)")
 
         n_closest = 10
         df_filtered["TotalPoints"] = df_filtered["Score1"] + df_filtered["Score2"]
