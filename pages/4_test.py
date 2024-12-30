@@ -368,8 +368,8 @@ with tab_summary:
                 )
                 .properties(
                     title="Average Margins for Victory and Defeat",
-                    # width=700,
-                    # height=400,
+                    width="container",
+                    height=400,
                 )
             )
 
