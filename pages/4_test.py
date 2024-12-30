@@ -397,19 +397,29 @@ with tab_summary:
         with margin_tabs[1]:
             st.subheader("Trends Over Time: Average Margins")
 
+            # Prepare data for trends over time
+            df_margin_vic["Metric"] = "Avg_margin_victory"
+            df_margin_def["Metric"] = "Avg_margin_defeat"
+            df_margin_summary = pd.concat(
+                [df_margin_vic, df_margin_def], ignore_index=True
+            )
+            df_margin_summary.rename(
+                columns={"Avg_margin_victory": "Value", "Avg_margin_defeat": "Value"},
+                inplace=True,
+            )
+
             trend_chart = (
                 alt.Chart(df_margin_summary)
                 .mark_line(point=True)
                 .encode(
                     x=alt.X("date:T", title="Date"),
-                    y=alt.Y("value:Q", title="Average Margin"),
-                    color=alt.Color("variable:N", title="Metric"),
-                    detail="Player:N",
-                    tooltip=["date:T", "Player:N", "variable:N", "value:Q"],
+                    y=alt.Y("Value:Q", title="Average Margin"),
+                    color=alt.Color("Metric:N", title="Metric"),
+                    facet=alt.Facet("Player:N", title="Player"),
+                    tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
                 )
-                .facet(row=alt.Row("Player:N", title="Player"), spacing=20)
                 .properties(
-                    title="Trends in Average Margins Over Time", width=700, height=100
+                    title="Trends in Average Margins Over Time", width=700, height=200
                 )
             )
 
