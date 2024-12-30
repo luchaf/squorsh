@@ -536,27 +536,6 @@ with tab_summary:
 
             st.altair_chart(trend_chart, use_container_width=True)
 
-    with st.expander("Average Margin of Victory & Defeat", expanded=False):
-        df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
-        df_margin_vic.columns = ["Player", "Avg_margin_victory"]
-
-        df_margin_def = (
-            df_filtered.groupby("Loser")["LoserPointDiff"].mean().reset_index()
-        )
-        df_margin_def.columns = ["Player", "Avg_margin_defeat"]
-
-        df_margin_summary = pd.merge(
-            df_margin_vic, df_margin_def, on="Player", how="outer"
-        ).fillna(0)
-        df_margin_summary.sort_values("Player", inplace=True)
-
-        st.dataframe(
-            df_margin_summary.style.format(
-                {"Avg_margin_victory": "{:.2f}", "Avg_margin_defeat": "{:.2f}"}
-            ),
-            use_container_width=True,
-        )
-
     with st.expander("Winning and Losing Streaks", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
         streaks = []
