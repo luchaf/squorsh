@@ -491,54 +491,6 @@ with tab_summary:
         with margin_tabs[1]:
             st.subheader("Trends Over Time: Average Margins")
 
-            # Prepare data for trends over time
-            df_margin_vic = df_margin_vic.rename(
-                columns={"Avg_margin_victory": "Value"}
-            )
-            df_margin_vic["Metric"] = "Avg_margin_victory"
-
-            df_margin_def = df_margin_def.rename(columns={"Avg_margin_defeat": "Value"})
-            df_margin_def["Metric"] = "Avg_margin_defeat"
-
-            # Combine dataframes
-            df_margin_summary = pd.concat(
-                [df_margin_vic, df_margin_def], ignore_index=True
-            )
-
-            # Drop duplicate columns if any exist
-            df_margin_summary = df_margin_summary.loc[
-                :, ~df_margin_summary.columns.duplicated()
-            ]
-
-            # Verify the dataframe structure
-            st.write("Data used for trends over time:", df_margin_summary)
-
-            # Validate required columns
-            assert "date" in df_margin_summary.columns, "'date' column is missing"
-            assert "Player" in df_margin_summary.columns, "'Player' column is missing"
-            assert "Metric" in df_margin_summary.columns, "'Metric' column is missing"
-            assert "Value" in df_margin_summary.columns, "'Value' column is missing"
-
-            # Create the trend chart
-            trend_chart = (
-                alt.Chart(df_margin_summary)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("date:T", title="Date"),
-                    y=alt.Y("Value:Q", title="Average Margin"),
-                    color=alt.Color("Metric:N", title="Metric"),
-                    tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
-                    facet=alt.Facet("Player:N", title="Player"),
-                )
-                .properties(
-                    title="Trends in Average Margins Over Time",
-                    width=700,
-                    height=200,
-                )
-            )
-
-            st.altair_chart(trend_chart, use_container_width=True)
-
     with st.expander("Winning and Losing Streaks", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
         streaks = []
