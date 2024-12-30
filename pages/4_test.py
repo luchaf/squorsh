@@ -76,7 +76,7 @@ with tab_summary:
         df_filtered[["Player1", "Player2"]].stack().nunique(),
     )
 
-    with st.expander("Elo Ratings"):
+    with st.expander("Elo Ratings", expanded=False):
         st.subheader("Elo Ratings")
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
         elo_ratings = defaultdict(lambda: 1500)
