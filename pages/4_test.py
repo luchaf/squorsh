@@ -63,16 +63,6 @@ tab_summary, tab_head_to_head = st.tabs(["Summary Metrics", "Head-to-Head"])
 #       TAB: SUMMARY
 # =========================
 with tab_summary:
-    st.subheader("Summary Metrics")
-
-    # Quick Metrics
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Matches (Filtered)", len(df_filtered))
-    col2.metric("Players Selected", len(selected_players))
-    col3.metric(
-        "Unique Players (Filtered)",
-        df_filtered[["Player1", "Player2"]].stack().nunique(),
-    )
 
     with st.expander("Elo Ratings", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
