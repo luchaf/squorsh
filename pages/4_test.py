@@ -503,8 +503,8 @@ with tab_summary:
             df_margin_def["Metric"] = "Avg_margin_defeat"
 
             # Adjust columns before concatenation
-            df_margin_vic = df_margin_vic.rename(columns={"Victory_Value": "Value"})
-            df_margin_def = df_margin_def.rename(columns={"Defeat_Value": "Value"})
+            # df_margin_vic = df_margin_vic.rename(columns={"Victory_Value": "Value"})
+            # df_margin_def = df_margin_def.rename(columns={"Defeat_Value": "Value"})
 
             # Combine dataframes
             df_margin_summary = pd.concat(
@@ -514,19 +514,13 @@ with tab_summary:
             # Verify the dataframe structure
             st.write("Data used for trends over time:", df_margin_summary)
 
-            # Validate required columns
-            assert "date" in df_margin_summary.columns, "'date' column is missing"
-            assert "Player" in df_margin_summary.columns, "'Player' column is missing"
-            assert "Metric" in df_margin_summary.columns, "'Metric' column is missing"
-            assert "Value" in df_margin_summary.columns, "'Value' column is missing"
-
             # Create the trend chart
             trend_chart = (
                 alt.Chart(df_margin_summary)
                 .mark_line(point=True)
                 .encode(
                     x=alt.X("date:T", title="Date"),
-                    y=alt.Y("Value:Q", title="Average Margin"),
+                    y=alt.Y("Victory_Value:Q", title="Average Margin"),
                     color=alt.Color("Metric:N", title="Metric"),
                     tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
                     facet=alt.Facet("Player:N", title="Player"),
