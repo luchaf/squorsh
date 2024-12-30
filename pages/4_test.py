@@ -381,9 +381,8 @@ with tab_summary:
                 .reset_index()
             )
             df_margin_vic = df_margin_vic.rename(
-                columns={"Winner": "Player", "PointDiff": "Value"}
+                columns={"Winner": "Player", "PointDiff": "Avg_margin_victory"}
             )
-            df_margin_vic["Metric"] = "Avg_margin_victory"
 
             df_margin_def = (
                 df_filtered.groupby(["date", "Loser"])["LoserPointDiff"]
@@ -391,39 +390,45 @@ with tab_summary:
                 .reset_index()
             )
             df_margin_def = df_margin_def.rename(
-                columns={"Loser": "Player", "LoserPointDiff": "Value"}
-            )
-            df_margin_def["Metric"] = "Avg_margin_defeat"
-
-            # Combine dataframes
-            df_margin_summary = pd.concat(
-                [df_margin_vic, df_margin_def], ignore_index=True
+                columns={"Loser": "Player", "LoserPointDiff": "Avg_margin_defeat"}
             )
 
-            # Drop duplicate columns if any exist
-            df_margin_summary = df_margin_summary.loc[
-                :, ~df_margin_summary.columns.duplicated()
-            ]
-
-            # Create the trend chart
-            trend_chart = (
-                alt.Chart(df_margin_summary)
+            # Create the trend chart for average margin of victory
+            trend_chart_victory = (
+                alt.Chart(df_margin_vic)
                 .mark_line(point=True)
                 .encode(
                     x=alt.X("date:T", title="Date"),
-                    y=alt.Y("Value:Q", title="Average Margin"),
-                    color=alt.Color("Metric:N", title="Metric"),
-                    tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
-                    facet=alt.Facet("Player:N", title="Player"),
+                    y=alt.Y("Avg_margin_victory:Q", title="Average Margin of Victory"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "Avg_margin_victory:Q"],
                 )
-                .resolve_scale(y="independent")
                 .properties(
-                    title="Trends in Average Margins Over Time",
-                    height=300,
+                    title="Trends in Average Margin of Victory Over Time",
+                    width=700,
+                    height=400,
                 )
             )
 
-            st.altair_chart(trend_chart, use_container_width=True)
+            # Create the trend chart for average margin of defeat
+            trend_chart_defeat = (
+                alt.Chart(df_margin_def)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("Avg_margin_defeat:Q", title="Average Margin of Defeat"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "Avg_margin_defeat:Q"],
+                )
+                .properties(
+                    title="Trends in Average Margin of Defeat Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            st.altair_chart(trend_chart_victory, use_container_width=True)
+            st.altair_chart(trend_chart_defeat, use_container_width=True)
 
     with st.expander("Winning and Losing Streaks", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
