@@ -415,6 +415,27 @@ with tab_summary:
 
             st.altair_chart(trend_chart, use_container_width=True)
 
+        with margin_tabs[1]:
+            st.subheader("Trends Over Time: Average Margins")
+
+            trend_chart = (
+                alt.Chart(df_margin_summary)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("value:Q", title="Average Margin"),
+                    color=alt.Color("variable:N", title="Metric"),
+                    detail="Player:N",
+                    tooltip=["date:T", "Player:N", "variable:N", "value:Q"],
+                )
+                .facet(row=alt.Row("Player:N", title="Player"), spacing=20)
+                .properties(
+                    title="Trends in Average Margins Over Time", width=700, height=100
+                )
+            )
+
+            st.altair_chart(trend_chart, use_container_width=True)
+
         st.subheader("Average Margin of Victory & Defeat")
 
         df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
