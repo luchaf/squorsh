@@ -378,13 +378,25 @@ with tab_summary:
         with margin_tabs[1]:
             st.subheader("Trends Over Time: Average Margins")
 
-            # Prepare data for trends over time
+            # Ensure date is included in data preparation
+            df_margin_vic = (
+                df_filtered.groupby(["date", "Winner"])["PointDiff"]
+                .mean()
+                .reset_index()
+            )
             df_margin_vic = df_margin_vic.rename(
-                columns={"Avg_margin_victory": "Value"}
+                columns={"Winner": "Player", "PointDiff": "Value"}
             )
             df_margin_vic["Metric"] = "Avg_margin_victory"
 
-            df_margin_def = df_margin_def.rename(columns={"Avg_margin_defeat": "Value"})
+            df_margin_def = (
+                df_filtered.groupby(["date", "Loser"])["LoserPointDiff"]
+                .mean()
+                .reset_index()
+            )
+            df_margin_def = df_margin_def.rename(
+                columns={"Loser": "Player", "LoserPointDiff": "Value"}
+            )
             df_margin_def["Metric"] = "Avg_margin_defeat"
 
             # Combine dataframes
@@ -392,11 +404,10 @@ with tab_summary:
                 [df_margin_vic, df_margin_def], ignore_index=True
             )
 
-            # Drop duplicate columns if any exist
-            df_margin_summary = df_margin_summary.loc[
-                :, ~df_margin_summary.columns.duplicated()
-            ]
+            # Check data structure for debugging
+            st.write("Data used for trends over time:", df_margin_summary)
 
+            # Create the trend chart
             trend_chart = (
                 alt.Chart(df_margin_summary)
                 .mark_line(point=True)
