@@ -505,16 +505,11 @@ with tab_summary:
         )
         st.altair_chart(results_chart, use_container_width=True)
 
-    with st.expander("List of most legendary matches", expanded=False):
-        # === 3) Identify the 'closest' matches (smallest margin) ===
+    with st.expander("List of the ten most legendary matches", expanded=False):
+
         st.subheader("Closest Matches (Filtered)")
 
-        n_closest = st.slider(
-            "Number of closest matches to display",
-            min_value=1,
-            max_value=50,
-            value=20,
-        )
+        n_closest = 10
         df_filtered["TotalPoints"] = df_filtered["Score1"] + df_filtered["Score2"]
 
         # Sort by margin ascending, then by total points descending
@@ -532,7 +527,6 @@ with tab_summary:
                     "Score1",
                     "Player2",
                     "Score2",
-                    "PointDiff",
                     "TotalPoints",
                 ]
             ].reset_index(drop=True),
