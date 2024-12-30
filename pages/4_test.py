@@ -63,7 +63,7 @@ tab_summary, tab_head_to_head = st.tabs(["Summary Metrics", "Head-to-Head"])
 #       TAB: SUMMARY
 # =========================
 with tab_summary:
-    st.subheader("Matches Over Time (Filtered)")
+    st.subheader("Matches Over Time")
     matches_over_time = df_filtered.groupby("date").size().reset_index(name="Matches")
     chart = (
         alt.Chart(matches_over_time)
@@ -332,6 +332,31 @@ with tab_summary:
                 with subtab2b:
                     st.subheader("Trends Over Time: Cumulative Points")
                     st.altair_chart(cumulative_points_chart, use_container_width=True)
+
+        # ----- Avg Margin of Victory & Defeat (Per Player) -----
+
+    with st.expander("Average Margin of Victory & Defeat (Per Player)", expanded=False):
+        st.subheader("Average Margin of Victory & Defeat (Per Player)")
+
+        df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
+        df_margin_vic.columns = ["Player", "Avg_margin_victory"]
+
+        df_margin_def = (
+            df_filtered.groupby("Loser")["LoserPointDiff"].mean().reset_index()
+        )
+        df_margin_def.columns = ["Player", "Avg_margin_defeat"]
+
+        df_margin_summary = pd.merge(
+            df_margin_vic, df_margin_def, on="Player", how="outer"
+        ).fillna(0)
+        df_margin_summary.sort_values("Player", inplace=True)
+
+        st.dataframe(
+            df_margin_summary.style.format(
+                {"Avg_margin_victory": "{:.2f}", "Avg_margin_defeat": "{:.2f}"}
+            ),
+            use_container_width=True,
+        )
 
     with st.expander("Winning and Losing Streaks", expanded=False):
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
