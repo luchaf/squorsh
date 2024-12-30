@@ -492,45 +492,42 @@ with tab_summary:
             st.subheader("Trends Over Time: Average Margins")
 
             # Prepare data for trends over time
-            df_margin_over_time = pd.concat(
+            df_margin_vic["Metric"] = "Avg_margin_victory"
+            df_margin_def["Metric"] = "Avg_margin_defeat"
+
+            # Combine dataframes
+            df_margin_summary = pd.concat(
                 [
-                    df_filtered.groupby(["date", "Winner"])["PointDiff"]
-                    .mean()
-                    .reset_index()
-                    .rename(
-                        columns={"Winner": "Player", "PointDiff": "Avg_margin_victory"}
-                    ),
-                    df_filtered.groupby(["date", "Loser"])["LoserPointDiff"]
-                    .mean()
-                    .reset_index()
-                    .rename(
-                        columns={
-                            "Loser": "Player",
-                            "LoserPointDiff": "Avg_margin_defeat",
-                        }
-                    ),
-                ]
+                    df_margin_vic.rename(columns={"Avg_margin_victory": "Value"}),
+                    df_margin_def.rename(columns={"Avg_margin_defeat": "Value"}),
+                ],
+                ignore_index=True,
             )
 
-            df_margin_over_time = pd.melt(
-                df_margin_over_time,
-                id_vars=["date", "Player"],
-                value_vars=["Avg_margin_victory", "Avg_margin_defeat"],
-                var_name="Metric",
-                value_name="Value",
-            )
+            # Verify the dataframe structure
+            st.write("Data used for trends over time:", df_margin_summary)
 
+            # Validate required columns
+            assert "date" in df_margin_summary.columns, "'date' column is missing"
+            assert "Player" in df_margin_summary.columns, "'Player' column is missing"
+            assert "Metric" in df_margin_summary.columns, "'Metric' column is missing"
+            assert "Value" in df_margin_summary.columns, "'Value' column is missing"
+
+            # Create the trend chart
             trend_chart = (
-                alt.Chart(df_margin_over_time)
+                alt.Chart(df_margin_summary)
                 .mark_line(point=True)
                 .encode(
                     x=alt.X("date:T", title="Date"),
                     y=alt.Y("Value:Q", title="Average Margin"),
                     color=alt.Color("Metric:N", title="Metric"),
                     tooltip=["date:T", "Player:N", "Metric:N", "Value:Q"],
+                    facet=alt.Facet("Player:N", title="Player"),
                 )
                 .properties(
-                    title="Trends in Average Margins Over Time", width=700, height=400
+                    title="Trends in Average Margins Over Time",
+                    width=700,
+                    height=200,
                 )
             )
 
