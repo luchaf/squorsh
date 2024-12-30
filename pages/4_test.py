@@ -746,33 +746,6 @@ with tab_head_to_head:
 #   TAB: PLAYER PERFORMANCE
 # =========================
 with tab_player_perf:
-    st.subheader("Winning and Losing Streaks")
-
-    df_sorted = df_filtered.sort_values(["date"], ascending=True)
-    streaks = []
-    unique_players = sorted(set(df_filtered["Player1"]) | set(df_filtered["Player2"]))
-
-    for player in unique_players:
-        current_win, max_win = 0, 0
-        current_loss, max_loss = 0, 0
-
-        for _, row in df_sorted.iterrows():
-            if row["Winner"] == player:
-                current_win += 1
-                max_win = max(max_win, current_win)
-                current_loss = 0
-            elif row["Loser"] == player:
-                current_loss += 1
-                max_loss = max(max_loss, current_loss)
-                current_win = 0
-
-        streaks.append((player, max_win, max_loss))
-
-    streaks_df = pd.DataFrame(
-        streaks, columns=["Player", "Longest_Win_Streak", "Longest_Loss_Streak"]
-    )
-    streaks_df.sort_values("Longest_Win_Streak", ascending=False, inplace=True)
-    st.dataframe(streaks_df, use_container_width=True)
 
     st.subheader("Performance by Nth Match of Day")
 
