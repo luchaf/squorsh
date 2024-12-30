@@ -335,7 +335,86 @@ with tab_summary:
 
         # ----- Avg Margin of Victory & Defeat (Per Player) -----
 
-    with st.expander("Average Margin of Victory & Defeat 2", expanded=False):
+    with st.expander("Average Margin of Victory & Defeat2", expanded=False):
+        st.subheader("Average Margin of Victory & Defeat")
+
+        df_margin_vic = (
+            df_filtered.groupby(["date", "Winner"])["PointDiff"].mean().reset_index()
+        )
+        df_margin_vic.columns = ["date", "Player", "Avg_margin_victory"]
+
+        df_margin_def = (
+            df_filtered.groupby(["date", "Loser"])["LoserPointDiff"]
+            .mean()
+            .reset_index()
+        )
+        df_margin_def.columns = ["date", "Player", "Avg_margin_defeat"]
+
+        df_margin_summary = pd.concat([df_margin_vic, df_margin_def], ignore_index=True)
+
+        # Tabs for Current Standings and Trends Over Time
+        margin_tabs = st.tabs(["Current Standings", "Trends Over Time"])
+
+        with margin_tabs[0]:
+            st.subheader("Current Standings: Average Margins")
+
+            summary_vic = (
+                df_margin_vic.groupby("Player")["Avg_margin_victory"]
+                .mean()
+                .reset_index()
+            )
+            summary_def = (
+                df_margin_def.groupby("Player")["Avg_margin_defeat"]
+                .mean()
+                .reset_index()
+            )
+
+            margin_summary = pd.merge(
+                summary_vic, summary_def, on="Player", how="outer"
+            ).fillna(0)
+
+            margin_chart = (
+                alt.Chart(margin_summary)
+                .transform_fold(
+                    ["Avg_margin_victory", "Avg_margin_defeat"], as_=["Metric", "Value"]
+                )
+                .mark_bar()
+                .encode(
+                    x=alt.X("Player:N", sort="-y", title="Player"),
+                    y=alt.Y("Value:Q", title="Average Margin"),
+                    color=alt.Color("Metric:N", title="Metric"),
+                    tooltip=["Player:N", "Metric:N", "Value:Q"],
+                )
+                .properties(
+                    title="Average Margins for Victory and Defeat",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            st.altair_chart(margin_chart, use_container_width=True)
+
+        with margin_tabs[1]:
+            st.subheader("Trends Over Time: Average Margins")
+
+            trend_chart = (
+                alt.Chart(df_margin_summary)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("value:Q", title="Average Margin"),
+                    color=alt.Color("variable:N", title="Metric"),
+                    detail="Player:N",
+                    tooltip=["date:T", "Player:N", "variable:N", "value:Q"],
+                )
+                .facet(row=alt.Row("Player:N", title="Player"), spacing=20)
+                .properties(
+                    title="Trends in Average Margins Over Time", width=700, height=100
+                )
+            )
+
+            st.altair_chart(trend_chart, use_container_width=True)
+
         st.subheader("Average Margin of Victory & Defeat")
 
         df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
