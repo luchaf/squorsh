@@ -99,7 +99,7 @@ with tab_summary:
 
         st.dataframe(elo_df, use_container_width=True)
 
-    with st.expander("Wins & Points Per Player", expanded=False):
+    with st.expander("Wins & Points", expanded=False):
         wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
         points_p1 = df_filtered.groupby("Player1")["Score1"].sum().reset_index()
         points_p1.columns = ["Player", "Points"]
@@ -335,8 +335,8 @@ with tab_summary:
 
         # ----- Avg Margin of Victory & Defeat (Per Player) -----
 
-    with st.expander("Average Margin of Victory & Defeat (Per Player)", expanded=False):
-        st.subheader("Average Margin of Victory & Defeat (Per Player)")
+    with st.expander("Average Margin of Victory & Defeat", expanded=False):
+        st.subheader("Average Margin of Victory & Defeat")
 
         df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
         df_margin_vic.columns = ["Player", "Avg_margin_victory"]
