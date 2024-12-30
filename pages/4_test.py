@@ -418,7 +418,7 @@ with tab_summary:
                 .properties(
                     title="Trends in Average Margins Over Time",
                     width="container",
-                    height=200,
+                    height=400,
                 )
             )
 
