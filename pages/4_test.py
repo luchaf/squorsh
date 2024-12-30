@@ -336,8 +336,6 @@ with tab_summary:
         # ----- Avg Margin of Victory & Defeat (Per Player) -----
 
     with st.expander("Average Margin of Victory & Defeat", expanded=False):
-        st.subheader("Average Margin of Victory & Defeat")
-
         df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
         df_margin_vic.columns = ["Player", "Avg_margin_victory"]
 
