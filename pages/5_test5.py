@@ -537,7 +537,7 @@ with main_tab_overall:
 
     # ------------- 6) ENDURANCE METRICS  -------------
     with subtab_endurance:
-        st.subheader("Endurance Metrics: Performance by Nth Match of Day")
+        st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
         def meltdown_day_matches(df_in):
             df_in = df_in.sort_values(
