@@ -685,15 +685,3 @@ with main_tab_head2head:
 
     else:
         st.write("Please select two players to compare their head-to-head statistics.")
-
-
-# Create the selectbox
-selected_option = st.selectbox(
-    "Choose an option:", options, format_func=lambda x: "Select..." if x == "" else x
-)
-
-# Display the selected option
-if selected_option:
-    st.write(f"You selected: {selected_option}")
-else:
-    st.write("No option selected yet.")
