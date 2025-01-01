@@ -801,4 +801,4 @@ with main_tab_head2head:
         else:
             st.write(f"No matches found between **{player1}** and **{player2}**.")
     else:
-        st.write("Please select two different players to analyze their matches.")
+        st.write("Please select two different players to analyze their matches!")
