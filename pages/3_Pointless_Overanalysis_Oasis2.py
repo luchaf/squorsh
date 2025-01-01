@@ -33,25 +33,6 @@ df["PointDiff"] = df["WinnerScore"] - df["LoserScore"]
 df["LoserPointDiff"] = df["LoserScore"] - df["WinnerScore"]
 df["day_of_week"] = df["date"].dt.day_name()
 
-
-# ------------- SIDEBAR FILTERS -------------
-st.sidebar.header("Filters")
-
-# Date Range Filter
-min_date = df["date"].min()
-max_date = df["date"].max()
-start_date, end_date = st.sidebar.date_input(
-    "Select date range to include",
-    [min_date, max_date],
-    min_value=min_date,
-    max_value=max_date,
-)
-if not isinstance(start_date, pd.Timestamp):
-    start_date = pd.to_datetime(start_date)
-if not isinstance(end_date, pd.Timestamp):
-    end_date = pd.to_datetime(end_date)
-
-
 # ------------- SIDEBAR FILTERS -------------
 st.sidebar.header("Filters")
 
