@@ -168,6 +168,7 @@ def generate_analysis_content(df_filtered, include_elo):
                 ].reset_index(drop=True),
                 use_container_width=True,
             )
+        index += 1
 
     # ------------- 2) ELO RATINGS (Optional) -------------
     if include_elo:
@@ -196,9 +197,7 @@ def generate_analysis_content(df_filtered, include_elo):
             )
             elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
             st.dataframe(elo_df, use_container_width=True)
-            index += 2
-    else:
-        index += 1
+            index += 1
 
     # ------------- 3) WINS & POINTS  -------------
     with tabs[index]:
