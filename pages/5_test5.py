@@ -119,7 +119,7 @@ with main_tab_overall:
                 alt.Chart(matches_over_time)
                 .mark_bar()
                 .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
-                .properties(width="container", height=300)
+                .properties(width="container", height=400)
             )
             st.altair_chart(chart, use_container_width=True)
 
