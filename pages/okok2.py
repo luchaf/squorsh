@@ -93,9 +93,10 @@ def generate_analysis_content(df_filtered, include_elo):
         list_of_tabs.pop(1)
 
     tabs = st.tabs(list_of_tabs)
+    index = 0
 
     # ------------- 1) MATCH STATS  -------------
-    with tabs[0]:
+    with tabs[index]:
         st.subheader("Overall Match Statistics")
 
         # Three subtabs for Over Time, Distribution, Legendary
@@ -170,7 +171,7 @@ def generate_analysis_content(df_filtered, include_elo):
 
     # ------------- 2) ELO RATINGS (Optional) -------------
     if include_elo:
-        with tabs[1]:
+        with tabs[index]:
             st.subheader("Elo Ratings")
             df_sorted = df_filtered.sort_values(["date"], ascending=True)
             elo_ratings = defaultdict(lambda: 1500)
@@ -195,9 +196,12 @@ def generate_analysis_content(df_filtered, include_elo):
             )
             elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
             st.dataframe(elo_df, use_container_width=True)
+            index += 2
+    else:
+        index += 1
 
     # ------------- 3) WINS & POINTS  -------------
-    with tabs[2]:
+    with tabs[index]:
         st.subheader("Wins & Points")
 
         # Wins & Points Summary
@@ -390,9 +394,9 @@ def generate_analysis_content(df_filtered, include_elo):
                 with subtab_cum:
                     st.subheader("Cumulative Points")
                     st.altair_chart(cumulative_points_chart, use_container_width=True)
-
+        index += 1
     # ------------- 4) AVG. MARGIN  -------------
-    with tabs[3]:
+    with tabs[index]:
         st.subheader("Average Margin of Victory & Defeat")
 
         df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
@@ -501,9 +505,9 @@ def generate_analysis_content(df_filtered, include_elo):
                     )
                 )
                 st.altair_chart(trend_chart_defeat, use_container_width=True)
-
+        index += 1
     # ------------- 5) WIN/LOSS STREAKS  -------------
-    with tabs[4]:
+    with tabs[index]:
         st.subheader("Winning and Losing Streaks")
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
         streaks = []
@@ -532,9 +536,9 @@ def generate_analysis_content(df_filtered, include_elo):
         )
         streaks_df.sort_values("Longest Win Streak", ascending=False, inplace=True)
         st.dataframe(streaks_df, use_container_width=True)
-
+        index += 1
     # ------------- 6) ENDURANCE METRICS  -------------
-    with tabs[5]:
+    with tabs[index]:
         st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
         def meltdown_day_matches(df_in):
@@ -643,6 +647,7 @@ def generate_analysis_content(df_filtered, include_elo):
             The **solid line** is their actual data, and the **dashed line** is a linear trend line.
             """
         )
+        index += 1
 
 
 st.write("okok")
