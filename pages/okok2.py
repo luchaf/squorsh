@@ -80,16 +80,19 @@ main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to
 #                    OVERALL ANALYSIS
 # ==========================================================
 def generate_analysis_content(df_filtered, include_elo):
-    tabs = st.tabs(
-        [
-            "Match Stats",  # 1) Combined tab for match-related data
-            "Elo Ratings",  # 2) Elo Ratings
-            "Wins & Points",  # 3) Wins & Points
-            "Avg. Margin",  # 4) Average Margin
-            "Win/Loss Streaks",  # 5) Streaks
-            "Endurance Metrics",  # 6) Endurance (Nth match of the day)
-        ]
-    )
+    list_of_tabs = [
+        "Match Stats",  # 1) Combined tab for match-related data
+        "Elo Ratings",  # 2) Elo Ratings
+        "Wins & Points",  # 3) Wins & Points
+        "Avg. Margin",  # 4) Average Margin
+        "Win/Loss Streaks",  # 5) Streaks
+        "Endurance Metrics",  # 6) Endurance (Nth match of the day)
+    ]
+
+    if not include_elo:
+        list_of_tabs.pop(1)
+
+    tabs = st.tabs(list_of_tabs)
 
     # ------------- 1) MATCH STATS  -------------
     with tabs[0]:
