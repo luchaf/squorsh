@@ -188,8 +188,9 @@ def generate_analysis_content(df_input, include_elo):
 # ------------- MAIN TABS -------------
 main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
 
-# Generate analysis for overall
-generate_analysis_content(df_filtered, include_elo)
+with main_tab_overall:
+    # Generate analysis for overall
+    generate_analysis_content(df_filtered, include_elo)
 
 
 # Generate analysis for head-to-head
