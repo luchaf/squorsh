@@ -682,6 +682,9 @@ with main_tab_head2head:
         if not df_h2h.empty:
             st.write(f"Showing matches between **{player1}** and **{player2}**.")
 
+            # ------------- 1) MATCH STATS -------------
+            st.subheader("Overall Match Statistics")
+
             # Matches Over Time
             st.subheader("Matches Over Time")
             matches_over_time = (
@@ -716,8 +719,8 @@ with main_tab_head2head:
             st.altair_chart(results_chart, use_container_width=True)
 
             # Legendary Matches
-            st.subheader("The Most Legendary Matches")
-            n_closest = 5
+            st.subheader("The Ten Most Legendary Matches")
+            n_closest = 10
             df_h2h["TotalPoints"] = df_h2h["Score1"] + df_h2h["Score2"]
 
             # Sort by margin ascending, then total points descending
@@ -744,7 +747,7 @@ with main_tab_head2head:
                 use_container_width=True,
             )
 
-            # Elo Ratings
+            # ------------- 2) ELO RATINGS -------------
             st.subheader("Elo Ratings")
             df_sorted = df_h2h.sort_values(["date"], ascending=True)
             elo_ratings = defaultdict(lambda: 1500)
@@ -770,8 +773,10 @@ with main_tab_head2head:
             elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
             st.dataframe(elo_df, use_container_width=True)
 
-            # Wins & Points
+            # ------------- 3) WINS & POINTS -------------
             st.subheader("Wins & Points")
+
+            # Wins & Points Summary
             wins_df = df_h2h.groupby("Winner").size().reset_index(name="Wins")
             points_p1 = df_h2h.groupby("Player1")["Score1"].sum().reset_index()
             points_p1.columns = ["Player", "Points"]
@@ -798,7 +803,167 @@ with main_tab_head2head:
             )
 
             st.dataframe(final_summary, use_container_width=True)
+
+            # ------------- 4) AVG. MARGIN -------------
+            st.subheader("Average Margin of Victory & Defeat")
+
+            df_margin_vic = df_h2h.groupby("Winner")["PointDiff"].mean().reset_index()
+            df_margin_vic.columns = ["Player", "Avg_margin_victory"]
+
+            df_margin_def = (
+                df_h2h.groupby("Loser")["LoserPointDiff"].mean().reset_index()
+            )
+            df_margin_def.columns = ["Player", "Avg_margin_defeat"]
+
+            df_margin_summary = pd.merge(
+                df_margin_vic, df_margin_def, on="Player", how="outer"
+            ).fillna(0)
+
+            st.dataframe(df_margin_summary, use_container_width=True)
+
+            # ------------- 5) WIN/LOSS STREAKS -------------
+            st.subheader("Winning and Losing Streaks")
+            df_sorted = df_h2h.sort_values(["date"], ascending=True)
+            streaks = []
+            unique_players = sorted(set(df_h2h["Player1"]) | set(df_h2h["Player2"]))
+
+            for player in unique_players:
+                current_win, max_win = 0, 0
+                current_loss, max_loss = 0, 0
+
+                for _, row in df_sorted.iterrows():
+                    if row["Winner"] == player:
+                        current_win += 1
+                        max_win = max(max_win, current_win)
+                        current_loss = 0
+                    elif row["Loser"] == player:
+                        current_loss += 1
+                        max_loss = max(max_loss, current_loss)
+                        current_win = 0
+
+                streaks.append((player, max_win, max_loss))
+
+            streaks_df = pd.DataFrame(
+                streaks, columns=["Player", "Longest Win Streak", "Longest Loss Streak"]
+            )
+            streaks_df.sort_values("Longest Win Streak", ascending=False, inplace=True)
+            st.dataframe(streaks_df, use_container_width=True)
+
+            # ------------- 6) ENDURANCE METRICS -------------
+            st.subheader("Endurance Metrics: Performance by N-th Match of Day")
+
+            def meltdown_day_matches(df_in):
+                df_in = df_in.sort_values(
+                    ["date", "match_number_total", "match_number_day"], ascending=True
+                )
+
+                df_p1 = df_in[
+                    [
+                        "date",
+                        "Player1",
+                        "Winner",
+                        "Loser",
+                        "Score1",
+                        "Score2",
+                        "match_number_total",
+                        "match_number_day",
+                    ]
+                ].rename(
+                    columns={
+                        "Player1": "player",
+                        "Score1": "score_for_this_player",
+                        "Score2": "score_for_opponent",
+                    }
+                )
+                df_p1["did_win"] = (df_p1["player"] == df_p1["Winner"]).astype(int)
+
+                df_p2 = df_in[
+                    [
+                        "date",
+                        "Player2",
+                        "Winner",
+                        "Loser",
+                        "Score1",
+                        "Score2",
+                        "match_number_total",
+                        "match_number_day",
+                    ]
+                ].rename(
+                    columns={
+                        "Player2": "player",
+                        "Score2": "score_for_this_player",
+                        "Score1": "score_for_opponent",
+                    }
+                )
+                df_p2["did_win"] = (df_p2["player"] == df_p2["Winner"]).astype(int)
+
+                df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
+                df_stacked = df_stacked.sort_values(
+                    ["date", "player", "match_number_total", "match_number_day"]
+                )
+                df_stacked["MatchOfDay"] = (
+                    df_stacked.groupby(["date", "player"]).cumcount() + 1
+                )
+                return df_stacked
+
+            df_daycount = meltdown_day_matches(df_h2h)
+            df_day_agg = (
+                df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
+                .agg(["sum", "count"])
+                .reset_index()
+            )
+            df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
+
+            available_players = sorted(df_day_agg["player"].unique())
+            players_for_nth_chart = st.multiselect(
+                "Select which players to display in the Nth-Match-of-Day chart",
+                options=available_players,
+                default=available_players,
+            )
+
+            if players_for_nth_chart:
+                df_day_agg_display = df_day_agg[
+                    df_day_agg["player"].isin(players_for_nth_chart)
+                ]
+
+                base = alt.Chart(df_day_agg_display).encode(
+                    x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
+                    y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
+                    color=alt.Color("player:N", title="Player"),
+                    tooltip=[
+                        alt.Tooltip("player:N"),
+                        alt.Tooltip("MatchOfDay:Q"),
+                        alt.Tooltip("win_rate:Q", format=".2f"),
+                        alt.Tooltip("sum:Q", title="Wins"),
+                        alt.Tooltip("count:Q", title="Matches"),
+                    ],
+                )
+
+                lines_layer = base.mark_line(point=True)
+
+                trend_layer = (
+                    base.transform_regression(
+                        "MatchOfDay", "win_rate", groupby=["player"]
+                    )
+                    .mark_line(strokeDash=[4, 4])
+                    .encode(opacity=alt.value(0.7))
+                )
+
+                chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+                    width="container", height=400
+                )
+                st.altair_chart(chart_match_of_day, use_container_width=True)
+            else:
+                st.info("No players selected for the Nth-match-of-day chart.")
+
+            st.markdown(
+                """
+                This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
+                The **solid line** is their actual data, and the **dashed line** is a linear trend line.
+                """
+            )
+
         else:
             st.write(f"No matches found between **{player1}** and **{player2}**.")
     else:
-        st.write("Please select two different players to analyze their matches!")
+        st.write("Please select two different players to analyze their matches.")
