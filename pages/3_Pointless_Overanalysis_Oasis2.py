@@ -33,10 +33,11 @@ df["PointDiff"] = df["WinnerScore"] - df["LoserScore"]
 df["LoserPointDiff"] = df["LoserScore"] - df["WinnerScore"]
 df["day_of_week"] = df["date"].dt.day_name()
 
+
 # ------------- SIDEBAR FILTERS -------------
 st.sidebar.header("Filters")
 
-# Date Range Filter (Optional Enhancement)
+# Date Range Filter
 min_date = df["date"].min()
 max_date = df["date"].max()
 start_date, end_date = st.sidebar.date_input(
@@ -64,6 +65,24 @@ selected_players = st.sidebar.multiselect(
     "Select Player(s) to Include", options=all_players, default=all_players
 )
 
+# Filter for matches ending in 11:9 or 9:11
+filter_specific_score = st.sidebar.checkbox("Filter matches ending in 11:9 or 9:11")
+if filter_specific_score:
+    df = df[
+        (df["Score1"] == 11 and df["Score2"] == 9)
+        | (df["Score1"] == 9 and df["Score2"] == 11)
+    ]
+
+# Filter for matches with at least results like 12:10 or higher
+filter_high_scores = st.sidebar.checkbox(
+    "Filter matches with results at least 12:10 or higher"
+)
+if filter_high_scores:
+    df = df[
+        (df[["Score1", "Score2"]].max(axis=1) >= 12)
+        & (df[["Score1", "Score2"]].min(axis=1) >= 10)
+    ]
+
 # Apply All Filters
 df_filtered = df[
     (df["date"] >= start_date)
@@ -71,6 +90,7 @@ df_filtered = df[
     & (df["day_of_week"].isin(selected_days))
     & ((df["Player1"].isin(selected_players)) | (df["Player2"].isin(selected_players)))
 ].copy()
+
 
 # ------------- MAIN TABS -------------
 main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
