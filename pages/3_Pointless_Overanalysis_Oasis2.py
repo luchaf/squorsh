@@ -78,12 +78,12 @@ selected_players = st.sidebar.multiselect(
 #    df = df[(df["Score1"] > 11) | (df["Score2"] > 11)].copy()
 
 # Apply All Filters
-# df_filtered = df[
-#    (df["date"] >= start_date)
-#   & (df["date"] <= end_date)
-#    & (df["day_of_week"].isin(selected_days))
-#   & ((df["Player1"].isin(selected_players)) | (df["Player2"].isin(selected_players)))
-# ].copy()
+df_filtered = df[
+    (df["date"] >= start_date)
+    & (df["date"] <= end_date)
+    & (df["day_of_week"].isin(selected_days))
+    & ((df["Player1"].isin(selected_players)) | (df["Player2"].isin(selected_players)))
+].copy()
 
 # ------------- MAIN TABS -------------
 main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
