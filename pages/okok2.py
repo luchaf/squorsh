@@ -83,7 +83,7 @@ def generate_analysis_content(df_filtered, include_elo):
     tabs = st.tabs(
         [
             "Match Stats",  # 1) Combined tab for match-related data
-            "Elo Ratings" if include_elo else None,  # 2) Elo Ratings
+            "Elo Ratings",  # 2) Elo Ratings
             "Wins & Points",  # 3) Wins & Points
             "Avg. Margin",  # 4) Average Margin
             "Win/Loss Streaks",  # 5) Streaks
