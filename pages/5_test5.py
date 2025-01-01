@@ -449,6 +449,7 @@ with main_tab_overall:
                         columns={"Winner": "Player", "PointDiff": "Avg_margin_victory"}
                     )
                 )
+
                 # Trend chart for average margin of victory
                 trend_chart_victory = (
                     alt.Chart(df_margin_vic)
