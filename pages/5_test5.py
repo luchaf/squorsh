@@ -133,7 +133,7 @@ with main_tab_overall:
             )
             pair_counts = df_filtered["ResultPair"].value_counts().reset_index()
             pair_counts.columns = ["ResultPair", "Count"]
-
+    
             results_chart = (
                 alt.Chart(pair_counts)
                 .mark_bar()
@@ -142,9 +142,9 @@ with main_tab_overall:
                     y=alt.Y("ResultPair:N", sort="-x", title="Score Category"),
                     tooltip=["ResultPair", "Count"],
                 )
-                .properties(width="container", height=400)
             )
             st.altair_chart(results_chart, use_container_width=True)
+
 
         # ---- 1c) Legendary Matches ----
         with legendary_tab:
