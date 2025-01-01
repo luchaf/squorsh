@@ -77,10 +77,7 @@ filter_high_scores = st.sidebar.checkbox(
     "Filter matches with results at least 12:10 or higher"
 )
 if filter_high_scores:
-    df = df[
-        (df[["Score1", "Score2"]].max(axis=1) >= 12)
-        & (df[["Score1", "Score2"]].min(axis=1) >= 10)
-    ]
+    df = df[(df["Score1"] > 11) | (df["Score2"] > 11)]
 
 # Apply All Filters
 df_filtered = df[
