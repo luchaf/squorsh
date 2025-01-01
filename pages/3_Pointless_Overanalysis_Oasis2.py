@@ -67,10 +67,7 @@ selected_players = st.sidebar.multiselect(
 # Filter for matches ending in 11:9 or 9:11
 filter_specific_score = st.sidebar.checkbox("Filter matches ending in 11:9 or 9:11")
 if filter_specific_score:
-    df = df[
-        (df["Score1"] == 11 and df["Score2"] == 9)
-        | (df["Score1"] == 9 and df["Score2"] == 11)
-    ]
+    df = df[(df["Score1"] == 11) | (df["Score2"] == 11)]
 
 # Filter for matches with at least results like 12:10 or higher
 filter_high_scores = st.sidebar.checkbox(
