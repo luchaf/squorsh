@@ -668,7 +668,7 @@ with main_tab_head2head:
     with col2:
         player2 = st.selectbox("Select Player 2", options=players)
 
-    if player1 and player2:
+    if player1 and player2 and player1 != player2:
         df_head2head = df[
             ((df["Player1"] == player1) & (df["Player2"] == player2))
             | ((df["Player1"] == player2) & (df["Player2"] == player1))
