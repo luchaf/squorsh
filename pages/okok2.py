@@ -674,3 +674,6 @@ with main_tab_head2head:
             | ((df["Player1"] == player2) & (df["Player2"] == player1))
         ]
         generate_analysis_content(df_head2head, include_elo=False)
+
+    else:
+        st.write("Please select two players to compare their head-to-head statistics.")
