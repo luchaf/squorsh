@@ -75,30 +75,28 @@ df_filtered = df[
 # ------------- MAIN TABS -------------
 main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
 
+
 # ==========================================================
 #                    OVERALL ANALYSIS
 # ==========================================================
-with main_tab_overall:
-    (
-        subtab_match_stats,  # Consolidated tab for Matches Over Time, Distribution, Legendary
-        subtab_elo,
-        subtab_wins_points,
-        subtab_margins,
-        subtab_streaks,
-        subtab_endurance,
-    ) = st.tabs(
-        [
-            "Match Stats",  # 1) Combined tab for match-related data
-            "Elo Ratings",  # 2) Elo
-            "Wins & Points",  # 3) Wins & Points
-            "Avg. Margin",  # 4) Average Margin
-            "Win/Loss Streaks",  # 5) Streaks
-            "Endurance Metrics",  # 6) Endurance (Nth match of the day)
-        ]
-    )
+def generate_analysis_content(df_filtered, include_elo):
+    list_of_tabs = [
+        "Match Stats",  # 1) Combined tab for match-related data
+        "Elo Ratings",  # 2) Elo Ratings
+        "Wins & Points",  # 3) Wins & Points
+        "Avg. Margin",  # 4) Average Margin
+        "Win/Loss Streaks",  # 5) Streaks
+        "Endurance Metrics",  # 6) Endurance (Nth match of the day)
+    ]
+
+    if not include_elo:
+        list_of_tabs.pop(1)
+
+    tabs = st.tabs(list_of_tabs)
+    index = 0
 
     # ------------- 1) MATCH STATS  -------------
-    with subtab_match_stats:
+    with tabs[index]:
         st.subheader("Overall Match Statistics")
 
         # Three subtabs for Over Time, Distribution, Legendary
@@ -170,36 +168,39 @@ with main_tab_overall:
                 ].reset_index(drop=True),
                 use_container_width=True,
             )
+        index += 1
 
-    # ------------- 2) ELO RATINGS  -------------
-    with subtab_elo:
-        st.subheader("Elo Ratings")
-        df_sorted = df_filtered.sort_values(["date"], ascending=True)
-        elo_ratings = defaultdict(lambda: 1500)
-        K = 20
+    # ------------- 2) ELO RATINGS (Optional) -------------
+    if include_elo:
+        with tabs[index]:
+            st.subheader("Elo Ratings")
+            df_sorted = df_filtered.sort_values(["date"], ascending=True)
+            elo_ratings = defaultdict(lambda: 1500)
+            K = 20
 
-        for _, row in df_sorted.iterrows():
-            p1, p2 = row["Player1"], row["Player2"]
-            r1, r2 = elo_ratings[p1], elo_ratings[p2]
-            exp1 = 1 / (1 + 10 ** ((r2 - r1) / 400))
-            exp2 = 1 / (1 + 10 ** ((r1 - r2) / 400))
+            for _, row in df_sorted.iterrows():
+                p1, p2 = row["Player1"], row["Player2"]
+                r1, r2 = elo_ratings[p1], elo_ratings[p2]
+                exp1 = 1 / (1 + 10 ** ((r2 - r1) / 400))
+                exp2 = 1 / (1 + 10 ** ((r1 - r2) / 400))
 
-            if row["Winner"] == p1:
-                elo_ratings[p1] += K * (1 - exp1)
-                elo_ratings[p2] += K * (0 - exp2)
-            else:
-                elo_ratings[p1] += K * (0 - exp1)
-                elo_ratings[p2] += K * (1 - exp2)
+                if row["Winner"] == p1:
+                    elo_ratings[p1] += K * (1 - exp1)
+                    elo_ratings[p2] += K * (0 - exp2)
+                else:
+                    elo_ratings[p1] += K * (0 - exp1)
+                    elo_ratings[p2] += K * (1 - exp2)
 
-        elo_df = pd.DataFrame(
-            [(player, rating) for player, rating in elo_ratings.items()],
-            columns=["Player", "Elo Rating"],
-        )
-        elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
-        st.dataframe(elo_df, use_container_width=True)
+            elo_df = pd.DataFrame(
+                [(player, rating) for player, rating in elo_ratings.items()],
+                columns=["Player", "Elo Rating"],
+            )
+            elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
+            st.dataframe(elo_df, use_container_width=True)
+            index += 1
 
     # ------------- 3) WINS & POINTS  -------------
-    with subtab_wins_points:
+    with tabs[index]:
         st.subheader("Wins & Points")
 
         # Wins & Points Summary
@@ -392,9 +393,9 @@ with main_tab_overall:
                 with subtab_cum:
                     st.subheader("Cumulative Points")
                     st.altair_chart(cumulative_points_chart, use_container_width=True)
-
+        index += 1
     # ------------- 4) AVG. MARGIN  -------------
-    with subtab_margins:
+    with tabs[index]:
         st.subheader("Average Margin of Victory & Defeat")
 
         df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
@@ -503,9 +504,9 @@ with main_tab_overall:
                     )
                 )
                 st.altair_chart(trend_chart_defeat, use_container_width=True)
-
+        index += 1
     # ------------- 5) WIN/LOSS STREAKS  -------------
-    with subtab_streaks:
+    with tabs[index]:
         st.subheader("Winning and Losing Streaks")
         df_sorted = df_filtered.sort_values(["date"], ascending=True)
         streaks = []
@@ -534,9 +535,9 @@ with main_tab_overall:
         )
         streaks_df.sort_values("Longest Win Streak", ascending=False, inplace=True)
         st.dataframe(streaks_df, use_container_width=True)
-
+        index += 1
     # ------------- 6) ENDURANCE METRICS  -------------
-    with subtab_endurance:
+    with tabs[index]:
         st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
         def meltdown_day_matches(df_in):
@@ -603,46 +604,41 @@ with main_tab_overall:
 
         # Let user select which players to show
         available_players = sorted(df_day_agg["player"].unique())
-        players_for_nth_chart = st.multiselect(
-            "Select which players to display in the Nth-Match-of-Day chart",
-            options=available_players,
-            default=available_players,
+        # players_for_nth_chart = st.multiselect(
+        #    "Select which players to display in the Nth-Match-of-Day chart",
+        #    options=available_players,
+        #    default=available_players,
+        # )
+
+        df_day_agg_display = df_day_agg[df_day_agg["player"].isin(available_players)]
+
+        base = alt.Chart(df_day_agg_display).encode(
+            x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
+            y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
+            color=alt.Color("player:N", title="Player"),
+            tooltip=[
+                alt.Tooltip("player:N"),
+                alt.Tooltip("MatchOfDay:Q"),
+                alt.Tooltip("win_rate:Q", format=".2f"),
+                alt.Tooltip("sum:Q", title="Wins"),
+                alt.Tooltip("count:Q", title="Matches"),
+            ],
         )
 
-        if players_for_nth_chart:
-            df_day_agg_display = df_day_agg[
-                df_day_agg["player"].isin(players_for_nth_chart)
-            ]
+        # Actual data line with points
+        lines_layer = base.mark_line(point=True)
 
-            base = alt.Chart(df_day_agg_display).encode(
-                x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
-                y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
-                color=alt.Color("player:N", title="Player"),
-                tooltip=[
-                    alt.Tooltip("player:N"),
-                    alt.Tooltip("MatchOfDay:Q"),
-                    alt.Tooltip("win_rate:Q", format=".2f"),
-                    alt.Tooltip("sum:Q", title="Wins"),
-                    alt.Tooltip("count:Q", title="Matches"),
-                ],
-            )
+        # Regression line
+        trend_layer = (
+            base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
+            .mark_line(strokeDash=[4, 4])
+            .encode(opacity=alt.value(0.7))
+        )
 
-            # Actual data line with points
-            lines_layer = base.mark_line(point=True)
-
-            # Regression line
-            trend_layer = (
-                base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
-                .mark_line(strokeDash=[4, 4])
-                .encode(opacity=alt.value(0.7))
-            )
-
-            chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
-                width="container", height=400
-            )
-            st.altair_chart(chart_match_of_day, use_container_width=True)
-        else:
-            st.info("No players selected for the Nth-match-of-day chart.")
+        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+            width="container", height=400
+        )
+        st.altair_chart(chart_match_of_day, use_container_width=True)
 
         st.markdown(
             """
@@ -650,10 +646,34 @@ with main_tab_overall:
             The **solid line** is their actual data, and the **dashed line** is a linear trend line.
             """
         )
+        index += 1
 
+
+# ==========================================================
+#                    OVERALL ANALYSIS
+# ==========================================================
+with main_tab_overall:
+    generate_analysis_content(df_filtered, include_elo=True)
 
 # ==========================================================
 #                  HEAD-TO-HEAD ANALYSIS
 # ==========================================================
 with main_tab_head2head:
-    st.write("tbd")
+    st.subheader("Select Players for Head-to-Head Analysis")
+    players = sorted(set(df["Player1"]) | set(df["Player2"]))
+
+    col1, col2 = st.columns(2)
+    with col1:
+        player1 = st.selectbox("Select Player 1", options=players)
+    with col2:
+        player2 = st.selectbox("Select Player 2", options=players)
+
+    if player1 and player2 and player1 != player2:
+        df_head2head = df[
+            ((df["Player1"] == player1) & (df["Player2"] == player2))
+            | ((df["Player1"] == player2) & (df["Player2"] == player1))
+        ]
+        generate_analysis_content(df_head2head, include_elo=False)
+
+    else:
+        st.write("Please select two players to compare their head-to-head statistics.")
