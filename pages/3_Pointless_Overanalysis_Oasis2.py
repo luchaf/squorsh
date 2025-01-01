@@ -65,24 +65,24 @@ selected_players = st.sidebar.multiselect(
 )
 
 # Filter for matches ending in 11:9 or 9:11
-filter_specific_score = st.sidebar.checkbox("Filter matches ending in 11:9 or 9:11")
-if filter_specific_score:
-    df = df[(df["Score1"] == 11) | (df["Score2"] == 11)].copy()
+# filter_specific_score = st.sidebar.checkbox("Filter matches ending in 11:9 or 9:11")
+# if filter_specific_score:
+#    df = df[(df["Score1"] == 11) | (df["Score2"] == 11)].copy()
 
 # Filter for matches with at least results like 12:10 or higher
-filter_high_scores = st.sidebar.checkbox(
-    "Filter matches with results at least 12:10 or higher"
-)
-if filter_high_scores:
-    df = df[(df["Score1"] > 11) | (df["Score2"] > 11)].copy()
+# filter_high_scores = st.sidebar.checkbox(
+#    "Filter matches with results at least 12:10 or higher"
+# )
+# if filter_high_scores:
+#    df = df[(df["Score1"] > 11) | (df["Score2"] > 11)].copy()
 
 # Apply All Filters
-df_filtered = df[
-    (df["date"] >= start_date)
-    & (df["date"] <= end_date)
-    & (df["day_of_week"].isin(selected_days))
-    & ((df["Player1"].isin(selected_players)) | (df["Player2"].isin(selected_players)))
-].copy()
+# df_filtered = df[
+#    (df["date"] >= start_date)
+#   & (df["date"] <= end_date)
+#    & (df["day_of_week"].isin(selected_days))
+#   & ((df["Player1"].isin(selected_players)) | (df["Player2"].isin(selected_players)))
+# ].copy()
 
 # ------------- MAIN TABS -------------
 main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
