@@ -112,18 +112,17 @@ with main_tab_overall:
         # ---- 1a) Matches Over Time ----
         with match_time_tab:
             st.subheader("Matches Over Time")
-            matches_over_time = df_filtered.groupby("date").size().reset_index(name="Matches")
+            matches_over_time = (
+                        df_filtered.groupby("date").size().reset_index(name="Matches")
+                    )
             chart = (
                 alt.Chart(matches_over_time)
                 .mark_bar()
-                .encode(
-                    x="date:T",
-                    y="Matches:Q",
-                    tooltip=["date:T", "Matches:Q"]
-                )
+                .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
                 .properties(width="container", height=300)
             )
             st.altair_chart(chart, use_container_width=True)
+
 
         # ---- 1b) Match Result Distribution ----
         with match_dist_tab:
