@@ -649,7 +649,6 @@ def generate_analysis_content(df_filtered, include_elo):
         index += 1
 
 
-st.write("okok")
 # ==========================================================
 #                    OVERALL ANALYSIS
 # ==========================================================
@@ -660,4 +659,18 @@ with main_tab_overall:
 #                  HEAD-TO-HEAD ANALYSIS
 # ==========================================================
 with main_tab_head2head:
-    generate_analysis_content(df_filtered, include_elo=False)
+    st.subheader("Select Players for Head-to-Head Analysis")
+    players = sorted(set(df["Player1"]) | set(df["Player2"]))
+
+    col1, col2 = st.columns(2)
+    with col1:
+        player1 = st.selectbox("Select Player 1", options=players)
+    with col2:
+        player2 = st.selectbox("Select Player 2", options=players)
+
+    if player1 and player2:
+        df_head2head = df[
+            ((df["Player1"] == player1) & (df["Player2"] == player2))
+            | ((df["Player1"] == player2) & (df["Player2"] == player1))
+        ]
+        generate_analysis_content(df_head2head, include_elo=False)
