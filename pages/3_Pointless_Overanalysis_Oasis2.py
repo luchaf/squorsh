@@ -651,10 +651,154 @@ with main_tab_overall:
             """
         )
 
+
 # ==========================================================
 #                  HEAD-TO-HEAD ANALYSIS
 # ==========================================================
 with main_tab_head2head:
     st.subheader("Head-to-Head Analysis")
-    # todo: Implement the head-to-head analysis here
-    st.write("This feature is coming soon! Stay tuned!")
+
+    # Dropdown fields to select two players
+    col1, col2 = st.columns(2)
+    with col1:
+        player1 = st.selectbox(
+            "Select Player 1", options=all_players, key="player1_h2h"
+        )
+    with col2:
+        player2 = st.selectbox(
+            "Select Player 2", options=all_players, key="player2_h2h"
+        )
+
+    if player1 and player2 and player1 != player2:
+        # Filter DataFrame for matches between the two players
+        df_h2h = df_filtered[
+            ((df_filtered["Player1"] == player1) & (df_filtered["Player2"] == player2))
+            | (
+                (df_filtered["Player1"] == player2)
+                & (df_filtered["Player2"] == player1)
+            )
+        ].copy()
+
+        if not df_h2h.empty:
+            st.write(f"Showing matches between **{player1}** and **{player2}**.")
+
+            # Matches Over Time
+            st.subheader("Matches Over Time")
+            matches_over_time = (
+                df_h2h.groupby("date").size().reset_index(name="Matches")
+            )
+            chart = (
+                alt.Chart(matches_over_time)
+                .mark_bar()
+                .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
+                .properties(width="container", height=400)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+            # Match Result Distribution
+            st.subheader("Match Result Distribution")
+            df_h2h["ResultPair"] = df_h2h.apply(
+                lambda row: f"{int(max(row['Score1'], row['Score2']))}:{int(min(row['Score1'], row['Score2']))}",
+                axis=1,
+            )
+            pair_counts = df_h2h["ResultPair"].value_counts().reset_index()
+            pair_counts.columns = ["ResultPair", "Count"]
+
+            results_chart = (
+                alt.Chart(pair_counts)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Count:Q", title="Number of Matches"),
+                    y=alt.Y("ResultPair:N", sort="-x", title="Score Category"),
+                    tooltip=["ResultPair", "Count"],
+                )
+            )
+            st.altair_chart(results_chart, use_container_width=True)
+
+            # Legendary Matches
+            st.subheader("The Most Legendary Matches")
+            n_closest = 5
+            df_h2h["TotalPoints"] = df_h2h["Score1"] + df_h2h["Score2"]
+
+            # Sort by margin ascending, then total points descending
+            df_closest_sorted = df_h2h.sort_values(
+                ["PointDiff", "TotalPoints"], ascending=[True, False]
+            )
+            closest_subset = df_closest_sorted.head(n_closest)
+
+            # Ensure date is in date format only
+            closest_subset["date"] = pd.to_datetime(closest_subset["date"]).dt.date
+
+            st.dataframe(
+                closest_subset[
+                    [
+                        "match_number_total",
+                        "date",
+                        "Player1",
+                        "Score1",
+                        "Player2",
+                        "Score2",
+                        "TotalPoints",
+                    ]
+                ].reset_index(drop=True),
+                use_container_width=True,
+            )
+
+            # Elo Ratings
+            st.subheader("Elo Ratings")
+            df_sorted = df_h2h.sort_values(["date"], ascending=True)
+            elo_ratings = defaultdict(lambda: 1500)
+            K = 20
+
+            for _, row in df_sorted.iterrows():
+                p1, p2 = row["Player1"], row["Player2"]
+                r1, r2 = elo_ratings[p1], elo_ratings[p2]
+                exp1 = 1 / (1 + 10 ** ((r2 - r1) / 400))
+                exp2 = 1 / (1 + 10 ** ((r1 - r2) / 400))
+
+                if row["Winner"] == p1:
+                    elo_ratings[p1] += K * (1 - exp1)
+                    elo_ratings[p2] += K * (0 - exp2)
+                else:
+                    elo_ratings[p1] += K * (0 - exp1)
+                    elo_ratings[p2] += K * (1 - exp2)
+
+            elo_df = pd.DataFrame(
+                [(player, rating) for player, rating in elo_ratings.items()],
+                columns=["Player", "Elo Rating"],
+            )
+            elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
+            st.dataframe(elo_df, use_container_width=True)
+
+            # Wins & Points
+            st.subheader("Wins & Points")
+            wins_df = df_h2h.groupby("Winner").size().reset_index(name="Wins")
+            points_p1 = df_h2h.groupby("Player1")["Score1"].sum().reset_index()
+            points_p1.columns = ["Player", "Points"]
+            points_p2 = df_h2h.groupby("Player2")["Score2"].sum().reset_index()
+            points_p2.columns = ["Player", "Points"]
+            total_points = (
+                pd.concat([points_p1, points_p2], ignore_index=True)
+                .groupby("Player")["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            summary_df = pd.merge(
+                wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
+            ).drop(columns="Player")
+            summary_df.rename(columns={"Winner": "Player"}, inplace=True)
+            summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
+            final_summary = pd.merge(
+                total_points, summary_df[["Player", "Wins"]], on="Player", how="outer"
+            )
+            final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
+            final_summary.sort_values(
+                "Wins", ascending=False, inplace=True, ignore_index=True
+            )
+
+            st.dataframe(final_summary, use_container_width=True)
+        else:
+            st.write(f"No matches found between **{player1}** and **{player2}**.")
+    else:
+        st.write("Please select two different players to analyze their matches.")
