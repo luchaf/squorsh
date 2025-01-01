@@ -660,13 +660,21 @@ with main_tab_overall:
 # ==========================================================
 with main_tab_head2head:
     st.subheader("Select Players for Head-to-Head Analysis")
-    players = sorted(set(df["Player1"]) | set(df["Player2"]))
+    players = [""] + sorted(set(df["Player1"]) | set(df["Player2"]))
 
     col1, col2 = st.columns(2)
     with col1:
-        player1 = st.selectbox("Select Player 1", options=players)
+        player1 = st.selectbox(
+            "Select Player 1",
+            players,
+            format_func=lambda x: "Select..." if x == "" else x,
+        )
     with col2:
-        player2 = st.selectbox("Select Player 2", options=players)
+        player2 = st.selectbox(
+            "Select Player 2",
+            players,
+            format_func=lambda x: "Select..." if x == "" else x,
+        )
 
     if player1 and player2 and player1 != player2:
         df_head2head = df[
@@ -677,3 +685,15 @@ with main_tab_head2head:
 
     else:
         st.write("Please select two players to compare their head-to-head statistics.")
+
+
+# Create the selectbox
+selected_option = st.selectbox(
+    "Choose an option:", options, format_func=lambda x: "Select..." if x == "" else x
+)
+
+# Display the selected option
+if selected_option:
+    st.write(f"You selected: {selected_option}")
+else:
+    st.write("No option selected yet.")
