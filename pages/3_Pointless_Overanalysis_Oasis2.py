@@ -73,7 +73,7 @@ df_filtered = df[
 ].copy()
 
 # ------------- MAIN TABS -------------
-main_tab_overall, main_tab_head2head = st.tabs(["Overall Analysis", "Head-to-Head"])
+main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
 
 # ==========================================================
 #                    OVERALL ANALYSIS
