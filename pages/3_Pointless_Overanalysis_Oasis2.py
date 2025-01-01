@@ -64,6 +64,7 @@ selected_players = st.sidebar.multiselect(
     "Select Player(s) to Include", options=all_players, default=all_players
 )
 
+#
 # Filter for matches ending in 11:9 or 9:11
 # filter_specific_score = st.sidebar.checkbox("Filter matches ending in 11:9 or 9:11")
 # if filter_specific_score:
