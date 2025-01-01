@@ -598,46 +598,41 @@ def generate_analysis_content(df_filtered, include_elo):
 
         # Let user select which players to show
         available_players = sorted(df_day_agg["player"].unique())
-        players_for_nth_chart = st.multiselect(
-            "Select which players to display in the Nth-Match-of-Day chart",
-            options=available_players,
-            default=available_players,
+        # players_for_nth_chart = st.multiselect(
+        #    "Select which players to display in the Nth-Match-of-Day chart",
+        #    options=available_players,
+        #    default=available_players,
+        # )
+
+        df_day_agg_display = df_day_agg[df_day_agg["player"].isin(available_players)]
+
+        base = alt.Chart(df_day_agg_display).encode(
+            x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
+            y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
+            color=alt.Color("player:N", title="Player"),
+            tooltip=[
+                alt.Tooltip("player:N"),
+                alt.Tooltip("MatchOfDay:Q"),
+                alt.Tooltip("win_rate:Q", format=".2f"),
+                alt.Tooltip("sum:Q", title="Wins"),
+                alt.Tooltip("count:Q", title="Matches"),
+            ],
         )
 
-        if players_for_nth_chart:
-            df_day_agg_display = df_day_agg[
-                df_day_agg["player"].isin(players_for_nth_chart)
-            ]
+        # Actual data line with points
+        lines_layer = base.mark_line(point=True)
 
-            base = alt.Chart(df_day_agg_display).encode(
-                x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
-                y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
-                color=alt.Color("player:N", title="Player"),
-                tooltip=[
-                    alt.Tooltip("player:N"),
-                    alt.Tooltip("MatchOfDay:Q"),
-                    alt.Tooltip("win_rate:Q", format=".2f"),
-                    alt.Tooltip("sum:Q", title="Wins"),
-                    alt.Tooltip("count:Q", title="Matches"),
-                ],
-            )
+        # Regression line
+        trend_layer = (
+            base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
+            .mark_line(strokeDash=[4, 4])
+            .encode(opacity=alt.value(0.7))
+        )
 
-            # Actual data line with points
-            lines_layer = base.mark_line(point=True)
-
-            # Regression line
-            trend_layer = (
-                base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
-                .mark_line(strokeDash=[4, 4])
-                .encode(opacity=alt.value(0.7))
-            )
-
-            chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
-                width="container", height=400
-            )
-            st.altair_chart(chart_match_of_day, use_container_width=True)
-        else:
-            st.info("No players selected for the Nth-match-of-day chart.")
+        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+            width="container", height=400
+        )
+        st.altair_chart(chart_match_of_day, use_container_width=True)
 
         st.markdown(
             """
