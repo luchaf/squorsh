@@ -656,6 +656,8 @@ with main_tab_overall:
 #                  HEAD-TO-HEAD ANALYSIS
 # ==========================================================
 with main_tab_head2head:
+    st.write("tbd")
+    # to be implemented...
     st.subheader("Head-to-Head Analysis")
 
     # Dropdown fields to select two players
