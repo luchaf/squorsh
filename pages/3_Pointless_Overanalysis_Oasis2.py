@@ -193,9 +193,9 @@ with main_tab_overall:
 
         elo_df = pd.DataFrame(
             [(player, rating) for player, rating in elo_ratings.items()],
-            columns=["Player", "Elo_Rating"],
+            columns=["Player", "Elo Rating"],
         )
-        elo_df.sort_values("Elo_Rating", ascending=False, inplace=True)
+        elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
         st.dataframe(elo_df, use_container_width=True)
 
     # ------------- 3) WINS & POINTS  -------------
