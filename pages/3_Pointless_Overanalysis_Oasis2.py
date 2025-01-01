@@ -530,9 +530,9 @@ with main_tab_overall:
             streaks.append((player, max_win, max_loss))
 
         streaks_df = pd.DataFrame(
-            streaks, columns=["Player", "Longest_Win_Streak", "Longest_Loss_Streak"]
+            streaks, columns=["Player", "Longest Win Streak", "Longest Loss Streak"]
         )
-        streaks_df.sort_values("Longest_Win_Streak", ascending=False, inplace=True)
+        streaks_df.sort_values("Longest Win Streak", ascending=False, inplace=True)
         st.dataframe(streaks_df, use_container_width=True)
 
     # ------------- 6) ENDURANCE METRICS  -------------
