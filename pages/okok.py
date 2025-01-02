@@ -559,7 +559,7 @@ def generate_analysis_content(df_filtered, include_elo):
     with tabs[index]:
 
         endurance_tabs = st.tabs(
-            "N-th Match of the Day", "Ball of Steel", "Balls of Adamantium"
+            ["N-th Match of the Day", "Ball of Steel", "Balls of Adamantium"]
         )
 
         with endurance_tabs[0]:
