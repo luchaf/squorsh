@@ -659,21 +659,18 @@ def display_match_stats(df_filtered: pd.DataFrame):
     Subtabs:
       1) "Matches Over Time"
       2) "Match Distribution"
-      3) "Legendary Matches"
-      4) "Match Intensity"
-      5) "Day-of-Week Performance"
+      3) "Match Intensity"
+      4) "Day-of-Week Performance"
     """
     (
         match_time_tab,
         match_dist_tab,
-        legendary_tab,
         intensity_tab,
         dayofweek_tab,
     ) = st.tabs(
         [
             "Matches Over Time",
             "Match Distribution",
-            "Legendary Matches",
             "Match Intensity",
             "Day-of-Week Performance",
         ]
@@ -686,25 +683,6 @@ def display_match_stats(df_filtered: pd.DataFrame):
     with match_dist_tab:
         st.subheader("Match Result Distribution")
         st.altair_chart(chart_match_distribution(df_filtered), use_container_width=True)
-
-    with legendary_tab:
-        st.subheader("The Ten Most Legendary Matches")
-        legendary_df = get_legendary_matches(df_filtered, n_closest=10)
-        legendary_df["date"] = pd.to_datetime(legendary_df["date"]).dt.date
-        st.dataframe(
-            legendary_df[
-                [
-                    "match_number_total",
-                    "date",
-                    "Player1",
-                    "Score1",
-                    "Player2",
-                    "Score2",
-                    "TotalPoints",
-                ]
-            ].reset_index(drop=True),
-            use_container_width=True,
-        )
 
     with intensity_tab:
         st.subheader("Match Intensity (Average Total Points Over Time)")
@@ -728,17 +706,6 @@ def display_match_stats(df_filtered: pd.DataFrame):
                 ]
             ].reset_index(drop=True),
             use_container_width=True,
-        )
-
-        # Top 10 Most Intense Matches
-        temp = df_filtered.copy()
-        temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
-        temp.sort_values("TotalPoints", ascending=False, inplace=True)
-        st.markdown("**Top 10 Most Intense Matches by Total Points**")
-        st.dataframe(
-            temp.head(10)[
-                ["date", "Player1", "Score1", "Player2", "Score2", "TotalPoints"]
-            ].reset_index(drop=True)
         )
 
     with dayofweek_tab:
