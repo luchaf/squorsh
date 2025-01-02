@@ -662,7 +662,7 @@ def generate_analysis_content(df_filtered, include_elo):
                 """
             )
 
-        with endurance_tabs[0]:
+        with endurance_tabs[1]:
             df_filtered_backup = df_filtered.copy()
             df_filtered = df_filtered[
                 ((df_filtered["Score1"] == 11) & (df_filtered["Score2"] == 9))
@@ -884,7 +884,7 @@ def generate_analysis_content(df_filtered, include_elo):
                             cumulative_points_chart, use_container_width=True
                         )
 
-        with endurance_tabs[1]:
+        with endurance_tabs[2]:
             df_filtered = df_filtered_backup.copy()
             df_filtered = df_filtered[
                 ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
