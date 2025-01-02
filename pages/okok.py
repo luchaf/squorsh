@@ -720,8 +720,7 @@ def generate_analysis_content(df_filtered, include_elo):
         with match_tabs[1]:
             st.subheader("Wins in Matches Ending 12:10 or Higher")
             df_high_matches = df_filtered[
-                ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
-                | ((df_filtered["Score1"] >= 10) & (df_filtered["Score2"] >= 12))
+                ((df_filtered["Score1"] >= 12)) | ((df_filtered["Score2"] >= 12))
             ]
             wins_df = df_high_matches.groupby("Winner").size().reset_index(name="Wins")
 
