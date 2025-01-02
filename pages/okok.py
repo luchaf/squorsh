@@ -858,18 +858,6 @@ def main():
         "Select Player(s) to Include", options=all_players, default=all_players
     )
 
-    # # Example of more filters that are commented out:
-    # # Filter for matches ending in 11:9 or 9:11
-    # filter_specific_score = st.sidebar.checkbox("Filter matches ending in 11:9 or 9:11")
-    # if filter_specific_score:
-    #     df = df[((df["Score1"] == 11) & (df["Score2"] == 9)) |
-    #             ((df["Score1"] == 9) & (df["Score2"] == 11))].copy()
-
-    # # Filter for matches with at least results like 12:10 or higher
-    # filter_high_scores = st.sidebar.checkbox("Filter matches with results at least 12:10 or higher")
-    # if filter_high_scores:
-    #     df = df[((df["Score1"] > 11) | (df["Score2"] > 11))].copy()
-
     # Apply All Filters
     df_filtered = df[
         (df["date"] >= start_date)
@@ -877,7 +865,7 @@ def main():
         & (df["day_of_week"].isin(selected_days))
         & (
             (df["Player1"].isin(selected_players))
-            | (df["Player2"].isin(selected_players))
+            & (df["Player2"].isin(selected_players))
         )
     ].copy()
 
