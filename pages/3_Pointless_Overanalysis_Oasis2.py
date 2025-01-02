@@ -243,6 +243,9 @@ def generate_analysis_content(df_filtered, include_elo):
         )
 
         final_summary_wins = final_summary.copy()
+
+        st.dataframe(final_summary, use_container_width=True)
+
         final_summary_points = final_summary.copy()
         final_summary_wins.sort_values(by="Wins", ascending=False, inplace=True)
         final_summary_points.sort_values(by="Points", ascending=False, inplace=True)
