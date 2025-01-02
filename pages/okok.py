@@ -557,108 +557,112 @@ def generate_analysis_content(df_filtered, include_elo):
         index += 1
     # ------------- 6) ENDURANCE METRICS  -------------
     with tabs[index]:
-        st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
-        def meltdown_day_matches(df_in):
-            df_in = df_in.sort_values(
-                ["date", "match_number_total", "match_number_day"], ascending=True
-            )
-
-            df_p1 = df_in[
-                [
-                    "date",
-                    "Player1",
-                    "Winner",
-                    "Loser",
-                    "Score1",
-                    "Score2",
-                    "match_number_total",
-                    "match_number_day",
-                ]
-            ].rename(
-                columns={
-                    "Player1": "player",
-                    "Score1": "score_for_this_player",
-                    "Score2": "score_for_opponent",
-                }
-            )
-            df_p1["did_win"] = (df_p1["player"] == df_p1["Winner"]).astype(int)
-
-            df_p2 = df_in[
-                [
-                    "date",
-                    "Player2",
-                    "Winner",
-                    "Loser",
-                    "Score1",
-                    "Score2",
-                    "match_number_total",
-                    "match_number_day",
-                ]
-            ].rename(
-                columns={
-                    "Player2": "player",
-                    "Score2": "score_for_this_player",
-                    "Score1": "score_for_opponent",
-                }
-            )
-            df_p2["did_win"] = (df_p2["player"] == df_p2["Winner"]).astype(int)
-
-            df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
-            df_stacked = df_stacked.sort_values(
-                ["date", "player", "match_number_total", "match_number_day"]
-            )
-            df_stacked["MatchOfDay"] = (
-                df_stacked.groupby(["date", "player"]).cumcount() + 1
-            )
-            return df_stacked
-
-        df_daycount = meltdown_day_matches(df_filtered)
-
-        # Existing N-th Match Analysis
-        df_day_agg = (
-            df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
-            .agg(["sum", "count"])
-            .reset_index()
-        )
-        df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
-
-        base = alt.Chart(df_day_agg).encode(
-            x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
-            y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
-            color=alt.Color("player:N", title="Player"),
-            tooltip=[
-                alt.Tooltip("player:N"),
-                alt.Tooltip("MatchOfDay:Q"),
-                alt.Tooltip("win_rate:Q", format=".2f"),
-                alt.Tooltip("sum:Q", title="Wins"),
-                alt.Tooltip("count:Q", title="Matches"),
-            ],
+        endurance_tabs = st.tabs(
+            "N-th Match of the Day", "Ball of Steel", "Balls of Adamantium"
         )
 
-        lines_layer = base.mark_line(point=True)
-        trend_layer = (
-            base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
-            .mark_line(strokeDash=[4, 4])
-            .encode(opacity=alt.value(0.7))
-        )
+        with endurance_tabs[0]:
 
-        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
-            width="container", height=400
-        )
-        st.altair_chart(chart_match_of_day, use_container_width=True)
+            st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
-        st.markdown(
-            """
-            This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
-            The **solid line** is their actual data, and the **dashed line** is a linear trend line.
-            """
-        )
+            def meltdown_day_matches(df_in):
+                df_in = df_in.sort_values(
+                    ["date", "match_number_total", "match_number_day"], ascending=True
+                )
 
-        # Additional Tabs for Specific Match Analyses
-        match_tabs = st.tabs(["11:9 or 9:11 Matches", "12:10 or Higher Matches"])
+                df_p1 = df_in[
+                    [
+                        "date",
+                        "Player1",
+                        "Winner",
+                        "Loser",
+                        "Score1",
+                        "Score2",
+                        "match_number_total",
+                        "match_number_day",
+                    ]
+                ].rename(
+                    columns={
+                        "Player1": "player",
+                        "Score1": "score_for_this_player",
+                        "Score2": "score_for_opponent",
+                    }
+                )
+                df_p1["did_win"] = (df_p1["player"] == df_p1["Winner"]).astype(int)
 
-        with match_tabs[0]:
+                df_p2 = df_in[
+                    [
+                        "date",
+                        "Player2",
+                        "Winner",
+                        "Loser",
+                        "Score1",
+                        "Score2",
+                        "match_number_total",
+                        "match_number_day",
+                    ]
+                ].rename(
+                    columns={
+                        "Player2": "player",
+                        "Score2": "score_for_this_player",
+                        "Score1": "score_for_opponent",
+                    }
+                )
+                df_p2["did_win"] = (df_p2["player"] == df_p2["Winner"]).astype(int)
+
+                df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
+                df_stacked = df_stacked.sort_values(
+                    ["date", "player", "match_number_total", "match_number_day"]
+                )
+                df_stacked["MatchOfDay"] = (
+                    df_stacked.groupby(["date", "player"]).cumcount() + 1
+                )
+                return df_stacked
+
+            df_daycount = meltdown_day_matches(df_filtered)
+
+            # Existing N-th Match Analysis
+            df_day_agg = (
+                df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
+                .agg(["sum", "count"])
+                .reset_index()
+            )
+            df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
+
+            base = alt.Chart(df_day_agg).encode(
+                x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
+                y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
+                color=alt.Color("player:N", title="Player"),
+                tooltip=[
+                    alt.Tooltip("player:N"),
+                    alt.Tooltip("MatchOfDay:Q"),
+                    alt.Tooltip("win_rate:Q", format=".2f"),
+                    alt.Tooltip("sum:Q", title="Wins"),
+                    alt.Tooltip("count:Q", title="Matches"),
+                ],
+            )
+
+            lines_layer = base.mark_line(point=True)
+            trend_layer = (
+                base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
+                .mark_line(strokeDash=[4, 4])
+                .encode(opacity=alt.value(0.7))
+            )
+
+            chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+                width="container", height=400
+            )
+            st.altair_chart(chart_match_of_day, use_container_width=True)
+
+            st.markdown(
+                """
+                This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
+                The **solid line** is their actual data, and the **dashed line** is a linear trend line.
+                """
+            )
+
+        with endurance_tabs[0]:
             df_filtered_backup = df_filtered.copy()
             df_filtered = df_filtered[
                 ((df_filtered["Score1"] == 11) & (df_filtered["Score2"] == 9))
@@ -880,7 +884,7 @@ def generate_analysis_content(df_filtered, include_elo):
                             cumulative_points_chart, use_container_width=True
                         )
 
-        with match_tabs[1]:
+        with endurance_tabs[1]:
             df_filtered = df_filtered_backup.copy()
             df_filtered = df_filtered[
                 ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
