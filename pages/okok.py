@@ -99,7 +99,7 @@ def generate_analysis_content(df_filtered, include_elo):
         "Wins & Points",  # 3) Wins & Points
         "Avg. Margin",  # 4) Average Margin
         "Win/Loss Streaks",  # 5) Streaks
-        "Endurance Metrics",  # 6) Endurance (Nth match of the day)
+        "Endurance and Grit",  # 6) Endurance (Nth match of the day)
     ]
 
     if not include_elo:
