@@ -722,6 +722,7 @@ def generate_analysis_content(df_filtered, include_elo):
             df_high_matches = df_filtered[
                 ((df_filtered["Score1"] >= 12)) | ((df_filtered["Score2"] >= 12))
             ]
+            st.dataframe(df_high_matches)
             wins_df = df_high_matches.groupby("Winner").size().reset_index(name="Wins")
 
             points_p1 = df_high_matches.groupby("Player1")["Score1"].sum().reset_index()
