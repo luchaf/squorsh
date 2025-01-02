@@ -615,87 +615,161 @@ def generate_analysis_content(df_filtered, include_elo):
 
         df_daycount = meltdown_day_matches(df_filtered)
 
-        # Analyze matches ending 11:9 or 9:11
-        df_close_matches = df_filtered[
-            (
-                ((df_filtered["Score1"] == 11) & (df_filtered["Score2"] == 9))
-                | ((df_filtered["Score1"] == 9) & (df_filtered["Score2"] == 11))
-            )
-        ]
-
-        df_close_daycount = meltdown_day_matches(df_close_matches)
-        df_close_agg = (
-            df_close_daycount.groupby(["player", "MatchOfDay"])["did_win"]
+        # Existing N-th Match Analysis
+        df_day_agg = (
+            df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
             .agg(["sum", "count"])
             .reset_index()
         )
-        df_close_agg["win_rate"] = df_close_agg["sum"] / df_close_agg["count"]
+        df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
 
-        # Analyze matches ending with scores 12:10, 10:12, or higher
-        df_high_matches = df_filtered[
-            ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
-            | ((df_filtered["Score1"] >= 10) & (df_filtered["Score2"] >= 12))
-        ]
-
-        df_high_daycount = meltdown_day_matches(df_high_matches)
-        df_high_agg = (
-            df_high_daycount.groupby(["player", "MatchOfDay"])["did_win"]
-            .agg(["sum", "count"])
-            .reset_index()
-        )
-        df_high_agg["win_rate"] = df_high_agg["sum"] / df_high_agg["count"]
-
-        # Base chart configuration
-        def create_chart(data, title):
-            base = alt.Chart(data).encode(
-                x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
-                y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
-                color=alt.Color("player:N", title="Player"),
-                tooltip=[
-                    alt.Tooltip("player:N"),
-                    alt.Tooltip("MatchOfDay:Q"),
-                    alt.Tooltip("win_rate:Q", format=".2f"),
-                    alt.Tooltip("sum:Q", title="Wins"),
-                    alt.Tooltip("count:Q", title="Matches"),
-                ],
-            )
-
-            lines_layer = base.mark_line(point=True)
-            trend_layer = (
-                base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
-                .mark_line(strokeDash=[4, 4])
-                .encode(opacity=alt.value(0.7))
-            )
-
-            return alt.layer(lines_layer, trend_layer).properties(
-                width="container", height=400, title=title
-            )
-
-        # Charts
-        st.altair_chart(
-            create_chart(
-                df_close_agg,
-                "Win Rate for Matches Ending 11:9 or 9:11",
-            ),
-            use_container_width=True,
+        base = alt.Chart(df_day_agg).encode(
+            x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
+            y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
+            color=alt.Color("player:N", title="Player"),
+            tooltip=[
+                alt.Tooltip("player:N"),
+                alt.Tooltip("MatchOfDay:Q"),
+                alt.Tooltip("win_rate:Q", format=".2f"),
+                alt.Tooltip("sum:Q", title="Wins"),
+                alt.Tooltip("count:Q", title="Matches"),
+            ],
         )
 
-        st.altair_chart(
-            create_chart(
-                df_high_agg,
-                "Win Rate for Matches Ending 12:10, 10:12, or Higher",
-            ),
-            use_container_width=True,
+        lines_layer = base.mark_line(point=True)
+        trend_layer = (
+            base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
+            .mark_line(strokeDash=[4, 4])
+            .encode(opacity=alt.value(0.7))
         )
+
+        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+            width="container", height=400
+        )
+        st.altair_chart(chart_match_of_day, use_container_width=True)
 
         st.markdown(
             """
-            These charts display player performance in their **Nth match of the day**:
-
-            - **Win rate for matches ending 11:9 or 9:11**: Shows how players perform in close matches.
-            - **Win rate for matches ending 12:10, 10:12, or higher**: Highlights endurance in high-scoring matches.
+            This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
+            The **solid line** is their actual data, and the **dashed line** is a linear trend line.
             """
         )
+
+        # Additional Tabs for Specific Match Analyses
+        match_tabs = st.tabs(["11:9 or 9:11 Matches", "12:10 or Higher Matches"])
+
+        # ---- 11:9 or 9:11 Matches Analysis ----
+        with match_tabs[0]:
+            st.subheader("Wins in Matches Ending 11:9 or 9:11")
+            df_close_matches = df_filtered[
+                (
+                    ((df_filtered["Score1"] == 11) & (df_filtered["Score2"] == 9))
+                    | ((df_filtered["Score1"] == 9) & (df_filtered["Score2"] == 11))
+                )
+            ]
+            wins_df = df_close_matches.groupby("Winner").size().reset_index(name="Wins")
+
+            points_p1 = (
+                df_close_matches.groupby("Player1")["Score1"].sum().reset_index()
+            )
+            points_p1.columns = ["Player", "Points"]
+            points_p2 = (
+                df_close_matches.groupby("Player2")["Score2"].sum().reset_index()
+            )
+            points_p2.columns = ["Player", "Points"]
+            total_points = (
+                pd.concat([points_p1, points_p2], ignore_index=True)
+                .groupby("Player")["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            summary_df = pd.merge(
+                wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
+            ).drop(columns="Player")
+
+            summary_df.rename(columns={"Winner": "Player"}, inplace=True)
+            summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
+            final_summary = pd.merge(
+                total_points, summary_df[["Player", "Wins"]], on="Player", how="outer"
+            )
+
+            final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
+            final_summary.sort_values(
+                "Wins", ascending=False, inplace=True, ignore_index=True
+            )
+
+            wins_chart = (
+                alt.Chart(final_summary)
+                .mark_bar(color="blue")
+                .encode(
+                    x=alt.X(
+                        "Player:N", sort=list(final_summary["Player"]), title="Player"
+                    ),
+                    y=alt.Y("Wins:Q", title="Number of Wins"),
+                    tooltip=["Player:N", "Wins:Q"],
+                )
+                .properties(
+                    title="Wins in Matches Ending 11:9 or 9:11", width=700, height=400
+                )
+            )
+
+            st.altair_chart(wins_chart, use_container_width=True)
+
+        # ---- 12:10 or Higher Matches Analysis ----
+        with match_tabs[1]:
+            st.subheader("Wins in Matches Ending 12:10 or Higher")
+            df_high_matches = df_filtered[
+                ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
+                | ((df_filtered["Score1"] >= 10) & (df_filtered["Score2"] >= 12))
+            ]
+            wins_df = df_high_matches.groupby("Winner").size().reset_index(name="Wins")
+
+            points_p1 = df_high_matches.groupby("Player1")["Score1"].sum().reset_index()
+            points_p1.columns = ["Player", "Points"]
+            points_p2 = df_high_matches.groupby("Player2")["Score2"].sum().reset_index()
+            points_p2.columns = ["Player", "Points"]
+            total_points = (
+                pd.concat([points_p1, points_p2], ignore_index=True)
+                .groupby("Player")["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            summary_df = pd.merge(
+                wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
+            ).drop(columns="Player")
+
+            summary_df.rename(columns={"Winner": "Player"}, inplace=True)
+            summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
+            final_summary = pd.merge(
+                total_points, summary_df[["Player", "Wins"]], on="Player", how="outer"
+            )
+
+            final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
+            final_summary.sort_values(
+                "Wins", ascending=False, inplace=True, ignore_index=True
+            )
+
+            wins_chart = (
+                alt.Chart(final_summary)
+                .mark_bar(color="orange")
+                .encode(
+                    x=alt.X(
+                        "Player:N", sort=list(final_summary["Player"]), title="Player"
+                    ),
+                    y=alt.Y("Wins:Q", title="Number of Wins"),
+                    tooltip=["Player:N", "Wins:Q"],
+                )
+                .properties(
+                    title="Wins in Matches Ending 12:10 or Higher",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            st.altair_chart(wins_chart, use_container_width=True)
+
         index += 1
 
 
