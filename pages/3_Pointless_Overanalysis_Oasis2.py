@@ -218,6 +218,9 @@ def generate_analysis_content(df_filtered, include_elo):
 
         # Wins & Points Summary
         wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
+
+        st.dataframe(wins_df, use_container_width=True)
+
         points_p1 = df_filtered.groupby("Player1")["Score1"].sum().reset_index()
         points_p1.columns = ["Player", "Points"]
         points_p2 = df_filtered.groupby("Player2")["Score2"].sum().reset_index()
