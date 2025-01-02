@@ -737,4 +737,4 @@ with main_tab_head2head:
             generate_analysis_content(df_head2head, include_elo=False)
 
     else:
-        st.write("Please select two players to compare their head-to-head statistics.")
+        st.write("Please select two players to compare their head-to-head statistics!")
