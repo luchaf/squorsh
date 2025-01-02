@@ -764,7 +764,9 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
 
     with glicko_tab:
         st.subheader("Glicko2 Ratings")
-        glicko_df = generate_glicko2_ratings(df_filtered)
+        glicko_df = generate_elo_ratings(
+            df_filtered, base_elo=1500, K=20
+        )  # generate_glicko2_ratings(df_filtered)
         st.dataframe(glicko_df, use_container_width=True)
         st.markdown(
             "Above are the **live** Glicko2 ratings after processing each match in chronological order."
@@ -772,9 +774,7 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
 
     with trueskill_tab:
         st.subheader("TrueSkill Ratings")
-        ts_df = generate_elo_ratings(
-            df_filtered, base_elo=1500, K=20
-        )  # generate_trueskill_ratings(df_filtered)
+        ts_df = generate_trueskill_ratings(df_filtered)
         st.dataframe(ts_df, use_container_width=True)
         st.markdown(
             "Column **TrueSkill Rating** = `mu - 3*sigma`, a conservative estimate."
