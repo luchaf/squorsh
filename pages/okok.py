@@ -699,6 +699,8 @@ def generate_analysis_content(df_filtered, include_elo):
                 "Wins", ascending=False, inplace=True, ignore_index=True
             )
 
+            final_summary = final_summary.dropna(subset=["Player"]).copy()
+
             wins_chart = (
                 alt.Chart(final_summary)
                 .mark_bar(color="blue")
@@ -774,6 +776,8 @@ def generate_analysis_content(df_filtered, include_elo):
             final_summary.sort_values(
                 "Wins", ascending=False, inplace=True, ignore_index=True
             )
+
+            final_summary = final_summary.dropna(subset=["Player"]).copy()
 
             wins_chart = (
                 alt.Chart(final_summary)
