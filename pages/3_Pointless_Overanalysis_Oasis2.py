@@ -99,7 +99,7 @@ def generate_analysis_content(df_filtered, include_elo):
         "Wins & Points",  # 3) Wins & Points
         "Avg. Margin",  # 4) Average Margin
         "Win/Loss Streaks",  # 5) Streaks
-        "Endurance Metrics",  # 6) Endurance (Nth match of the day)
+        "Endurance and Grit",  # 6) Endurance (Nth match of the day)
     ]
 
     if not include_elo:
@@ -557,114 +557,572 @@ def generate_analysis_content(df_filtered, include_elo):
         index += 1
     # ------------- 6) ENDURANCE METRICS  -------------
     with tabs[index]:
-        st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
-        def meltdown_day_matches(df_in):
-            df_in = df_in.sort_values(
-                ["date", "match_number_total", "match_number_day"], ascending=True
-            )
-
-            df_p1 = df_in[
-                [
-                    "date",
-                    "Player1",
-                    "Winner",
-                    "Loser",
-                    "Score1",
-                    "Score2",
-                    "match_number_total",
-                    "match_number_day",
-                ]
-            ].rename(
-                columns={
-                    "Player1": "player",
-                    "Score1": "score_for_this_player",
-                    "Score2": "score_for_opponent",
-                }
-            )
-            df_p1["did_win"] = (df_p1["player"] == df_p1["Winner"]).astype(int)
-
-            df_p2 = df_in[
-                [
-                    "date",
-                    "Player2",
-                    "Winner",
-                    "Loser",
-                    "Score1",
-                    "Score2",
-                    "match_number_total",
-                    "match_number_day",
-                ]
-            ].rename(
-                columns={
-                    "Player2": "player",
-                    "Score2": "score_for_this_player",
-                    "Score1": "score_for_opponent",
-                }
-            )
-            df_p2["did_win"] = (df_p2["player"] == df_p2["Winner"]).astype(int)
-
-            df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
-            df_stacked = df_stacked.sort_values(
-                ["date", "player", "match_number_total", "match_number_day"]
-            )
-            df_stacked["MatchOfDay"] = (
-                df_stacked.groupby(["date", "player"]).cumcount() + 1
-            )
-            return df_stacked
-
-        df_daycount = meltdown_day_matches(df_filtered)
-        df_day_agg = (
-            df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
-            .agg(["sum", "count"])
-            .reset_index()
-        )
-        df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
-
-        # Let user select which players to show
-        available_players = sorted(df_day_agg["player"].unique())
-        # players_for_nth_chart = st.multiselect(
-        #    "Select which players to display in the Nth-Match-of-Day chart",
-        #    options=available_players,
-        #    default=available_players,
-        # )
-
-        df_day_agg_display = df_day_agg[df_day_agg["player"].isin(available_players)]
-
-        base = alt.Chart(df_day_agg_display).encode(
-            x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
-            y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
-            color=alt.Color("player:N", title="Player"),
-            tooltip=[
-                alt.Tooltip("player:N"),
-                alt.Tooltip("MatchOfDay:Q"),
-                alt.Tooltip("win_rate:Q", format=".2f"),
-                alt.Tooltip("sum:Q", title="Wins"),
-                alt.Tooltip("count:Q", title="Matches"),
-            ],
+        endurance_tabs = st.tabs(
+            ["N-th Match of the Day", "Balls of Steel", "Balls of Adamantium"]
         )
 
-        # Actual data line with points
-        lines_layer = base.mark_line(point=True)
+        with endurance_tabs[0]:
 
-        # Regression line
-        trend_layer = (
-            base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
-            .mark_line(strokeDash=[4, 4])
-            .encode(opacity=alt.value(0.7))
-        )
+            st.subheader("Endurance Metrics: Performance by N-th Match of Day")
 
-        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
-            width="container", height=400
-        )
-        st.altair_chart(chart_match_of_day, use_container_width=True)
+            def meltdown_day_matches(df_in):
+                df_in = df_in.sort_values(
+                    ["date", "match_number_total", "match_number_day"], ascending=True
+                )
 
-        st.markdown(
-            """
-            This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
-            The **solid line** is their actual data, and the **dashed line** is a linear trend line.
-            """
-        )
+                df_p1 = df_in[
+                    [
+                        "date",
+                        "Player1",
+                        "Winner",
+                        "Loser",
+                        "Score1",
+                        "Score2",
+                        "match_number_total",
+                        "match_number_day",
+                    ]
+                ].rename(
+                    columns={
+                        "Player1": "player",
+                        "Score1": "score_for_this_player",
+                        "Score2": "score_for_opponent",
+                    }
+                )
+                df_p1["did_win"] = (df_p1["player"] == df_p1["Winner"]).astype(int)
+
+                df_p2 = df_in[
+                    [
+                        "date",
+                        "Player2",
+                        "Winner",
+                        "Loser",
+                        "Score1",
+                        "Score2",
+                        "match_number_total",
+                        "match_number_day",
+                    ]
+                ].rename(
+                    columns={
+                        "Player2": "player",
+                        "Score2": "score_for_this_player",
+                        "Score1": "score_for_opponent",
+                    }
+                )
+                df_p2["did_win"] = (df_p2["player"] == df_p2["Winner"]).astype(int)
+
+                df_stacked = pd.concat([df_p1, df_p2], ignore_index=True)
+                df_stacked = df_stacked.sort_values(
+                    ["date", "player", "match_number_total", "match_number_day"]
+                )
+                df_stacked["MatchOfDay"] = (
+                    df_stacked.groupby(["date", "player"]).cumcount() + 1
+                )
+                return df_stacked
+
+            df_daycount = meltdown_day_matches(df_filtered)
+
+            # Existing N-th Match Analysis
+            df_day_agg = (
+                df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
+                .agg(["sum", "count"])
+                .reset_index()
+            )
+            df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
+
+            base = alt.Chart(df_day_agg).encode(
+                x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
+                y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
+                color=alt.Color("player:N", title="Player"),
+                tooltip=[
+                    alt.Tooltip("player:N"),
+                    alt.Tooltip("MatchOfDay:Q"),
+                    alt.Tooltip("win_rate:Q", format=".2f"),
+                    alt.Tooltip("sum:Q", title="Wins"),
+                    alt.Tooltip("count:Q", title="Matches"),
+                ],
+            )
+
+            lines_layer = base.mark_line(point=True)
+            trend_layer = (
+                base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
+                .mark_line(strokeDash=[4, 4])
+                .encode(opacity=alt.value(0.7))
+            )
+
+            chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
+                width="container", height=400
+            )
+            st.altair_chart(chart_match_of_day, use_container_width=True)
+
+            st.markdown(
+                """
+                This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
+                The **solid line** is their actual data, and the **dashed line** is a linear trend line.
+                """
+            )
+
+        with endurance_tabs[1]:
+            df_filtered_backup = df_filtered.copy()
+            df_filtered = df_filtered[
+                ((df_filtered["Score1"] == 11) & (df_filtered["Score2"] == 9))
+                | ((df_filtered["Score1"] == 9) & (df_filtered["Score2"] == 11))
+            ].copy()
+
+            # Wins & Points Summary
+            wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
+
+            points_p1 = df_filtered.groupby("Player1")["Score1"].sum().reset_index()
+            points_p1.columns = ["Player", "Points"]
+            points_p2 = df_filtered.groupby("Player2")["Score2"].sum().reset_index()
+            points_p2.columns = ["Player", "Points"]
+            total_points = (
+                pd.concat([points_p1, points_p2], ignore_index=True)
+                .groupby("Player")["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            summary_df = pd.merge(
+                wins_df,
+                total_points,
+                left_on="Winner",
+                right_on="Player",
+                how="outer",
+            ).drop(columns="Player")
+
+            summary_df.rename(columns={"Winner": "Player"}, inplace=True)
+            summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
+            final_summary = pd.merge(
+                total_points,
+                summary_df[["Player", "Wins"]],
+                on="Player",
+                how="outer",
+            )
+
+            final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
+            final_summary.sort_values(
+                "Wins", ascending=False, inplace=True, ignore_index=True
+            )
+
+            final_summary = final_summary.dropna(subset=["Player"]).copy()
+
+            final_summary_wins = final_summary.copy()
+
+            final_summary_points = final_summary.copy()
+            final_summary_wins.sort_values(by="Wins", ascending=False, inplace=True)
+            final_summary_points.sort_values(by="Points", ascending=False, inplace=True)
+
+            # Charts: Wins & Points (Current Standings)
+            wins_chart = (
+                alt.Chart(final_summary_wins)
+                .mark_bar(color="blue")
+                .encode(
+                    x=alt.X(
+                        "Player:N",
+                        sort=list(final_summary_wins["Player"]),
+                        title="Player",
+                    ),
+                    y=alt.Y("Wins:Q", title="Number of Wins"),
+                    tooltip=["Player:N", "Wins:Q"],
+                )
+                .properties(title="Number of Wins by Player", width=700, height=400)
+            )
+
+            points_chart = (
+                alt.Chart(final_summary_points)
+                .mark_bar(color="orange")
+                .encode(
+                    x=alt.X(
+                        "Player:N",
+                        sort=list(final_summary_points["Player"]),
+                        title="Player",
+                    ),
+                    y=alt.Y("Points:Q", title="Total Points"),
+                    tooltip=["Player:N", "Points:Q"],
+                )
+                .properties(title="Total Points by Player", width=700, height=400)
+            )
+
+            # Over Time (Wins & Points)
+            wins_over_time = (
+                df_filtered.groupby(["date", "Winner"]).size().reset_index(name="Wins")
+            )
+            wins_over_time.rename(columns={"Winner": "Player"}, inplace=True)
+
+            points_p1_ot = (
+                df_filtered.groupby(["date", "Player1"])["Score1"].sum().reset_index()
+            )
+            points_p2_ot = (
+                df_filtered.groupby(["date", "Player2"])["Score2"].sum().reset_index()
+            )
+
+            points_p1_ot.rename(
+                columns={"Player1": "Player", "Score1": "Points"}, inplace=True
+            )
+            points_p2_ot.rename(
+                columns={"Player2": "Player", "Score2": "Points"}, inplace=True
+            )
+            points_over_time = pd.concat(
+                [points_p1_ot, points_p2_ot], ignore_index=True
+            )
+            points_over_time = (
+                points_over_time.groupby(["date", "Player"])["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            # Non-cumulative vs. cumulative
+            wins_over_time["CumulativeWins"] = wins_over_time.groupby("Player")[
+                "Wins"
+            ].cumsum()
+            points_over_time["CumulativePoints"] = points_over_time.groupby("Player")[
+                "Points"
+            ].cumsum()
+
+            # Non-cumulative charts
+            non_cumulative_wins_chart = (
+                alt.Chart(wins_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("Wins:Q", title="Wins Per Match"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "Wins:Q"],
+                )
+                .properties(
+                    title="Non-Cumulative Wins Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            non_cumulative_points_chart = (
+                alt.Chart(points_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("Points:Q", title="Points Per Match"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "Points:Q"],
+                )
+                .properties(
+                    title="Non-Cumulative Points Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            # Cumulative charts
+            cumulative_wins_chart = (
+                alt.Chart(wins_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
+                )
+                .properties(
+                    title="Cumulative Wins Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            cumulative_points_chart = (
+                alt.Chart(points_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("CumulativePoints:Q", title="Cumulative Points"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "CumulativePoints:Q"],
+                )
+                .properties(
+                    title="Cumulative Points Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            # Display in sub-tabs
+            chart_tab_wins, chart_tab_points = st.tabs(["Wins", "Points"])
+
+            # --- Wins Tab ---
+            with chart_tab_wins:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Wins per Player (Current)")
+                    st.altair_chart(wins_chart, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Wins")
+                        st.altair_chart(
+                            non_cumulative_wins_chart, use_container_width=True
+                        )
+                    with subtab_cum:
+                        st.subheader("Cumulative Wins")
+                        st.altair_chart(cumulative_wins_chart, use_container_width=True)
+
+            # --- Points Tab ---
+            with chart_tab_points:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Points per Player (Current)")
+                    st.altair_chart(points_chart, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Points")
+                        st.altair_chart(
+                            non_cumulative_points_chart, use_container_width=True
+                        )
+                    with subtab_cum:
+                        st.subheader("Cumulative Points")
+                        st.altair_chart(
+                            cumulative_points_chart, use_container_width=True
+                        )
+
+        with endurance_tabs[2]:
+            df_filtered = df_filtered_backup.copy()
+            df_filtered = df_filtered[
+                ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
+                | ((df_filtered["Score1"] >= 10) & (df_filtered["Score2"] >= 12))
+            ].copy()
+            # Wins & Points Summary
+            wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
+
+            points_p1 = df_filtered.groupby("Player1")["Score1"].sum().reset_index()
+            points_p1.columns = ["Player", "Points"]
+            points_p2 = df_filtered.groupby("Player2")["Score2"].sum().reset_index()
+            points_p2.columns = ["Player", "Points"]
+            total_points = (
+                pd.concat([points_p1, points_p2], ignore_index=True)
+                .groupby("Player")["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            summary_df = pd.merge(
+                wins_df,
+                total_points,
+                left_on="Winner",
+                right_on="Player",
+                how="outer",
+            ).drop(columns="Player")
+
+            summary_df.rename(columns={"Winner": "Player"}, inplace=True)
+            summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
+            final_summary = pd.merge(
+                total_points,
+                summary_df[["Player", "Wins"]],
+                on="Player",
+                how="outer",
+            )
+
+            final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
+            final_summary.sort_values(
+                "Wins", ascending=False, inplace=True, ignore_index=True
+            )
+
+            final_summary = final_summary.dropna(subset=["Player"]).copy()
+
+            final_summary_wins = final_summary.copy()
+
+            final_summary_points = final_summary.copy()
+            final_summary_wins.sort_values(by="Wins", ascending=False, inplace=True)
+            final_summary_points.sort_values(by="Points", ascending=False, inplace=True)
+
+            # Charts: Wins & Points (Current Standings)
+            wins_chart = (
+                alt.Chart(final_summary_wins)
+                .mark_bar(color="blue")
+                .encode(
+                    x=alt.X(
+                        "Player:N",
+                        sort=list(final_summary_wins["Player"]),
+                        title="Player",
+                    ),
+                    y=alt.Y("Wins:Q", title="Number of Wins"),
+                    tooltip=["Player:N", "Wins:Q"],
+                )
+                .properties(title="Number of Wins by Player", width=700, height=400)
+            )
+
+            points_chart = (
+                alt.Chart(final_summary_points)
+                .mark_bar(color="orange")
+                .encode(
+                    x=alt.X(
+                        "Player:N",
+                        sort=list(final_summary_points["Player"]),
+                        title="Player",
+                    ),
+                    y=alt.Y("Points:Q", title="Total Points"),
+                    tooltip=["Player:N", "Points:Q"],
+                )
+                .properties(title="Total Points by Player", width=700, height=400)
+            )
+
+            # Over Time (Wins & Points)
+            wins_over_time = (
+                df_filtered.groupby(["date", "Winner"]).size().reset_index(name="Wins")
+            )
+            wins_over_time.rename(columns={"Winner": "Player"}, inplace=True)
+
+            points_p1_ot = (
+                df_filtered.groupby(["date", "Player1"])["Score1"].sum().reset_index()
+            )
+            points_p2_ot = (
+                df_filtered.groupby(["date", "Player2"])["Score2"].sum().reset_index()
+            )
+
+            points_p1_ot.rename(
+                columns={"Player1": "Player", "Score1": "Points"}, inplace=True
+            )
+            points_p2_ot.rename(
+                columns={"Player2": "Player", "Score2": "Points"}, inplace=True
+            )
+            points_over_time = pd.concat(
+                [points_p1_ot, points_p2_ot], ignore_index=True
+            )
+            points_over_time = (
+                points_over_time.groupby(["date", "Player"])["Points"]
+                .sum()
+                .reset_index()
+            )
+
+            # Non-cumulative vs. cumulative
+            wins_over_time["CumulativeWins"] = wins_over_time.groupby("Player")[
+                "Wins"
+            ].cumsum()
+            points_over_time["CumulativePoints"] = points_over_time.groupby("Player")[
+                "Points"
+            ].cumsum()
+
+            # Non-cumulative charts
+            non_cumulative_wins_chart = (
+                alt.Chart(wins_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("Wins:Q", title="Wins Per Match"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "Wins:Q"],
+                )
+                .properties(
+                    title="Non-Cumulative Wins Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            non_cumulative_points_chart = (
+                alt.Chart(points_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("Points:Q", title="Points Per Match"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "Points:Q"],
+                )
+                .properties(
+                    title="Non-Cumulative Points Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            # Cumulative charts
+            cumulative_wins_chart = (
+                alt.Chart(wins_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
+                )
+                .properties(
+                    title="Cumulative Wins Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            cumulative_points_chart = (
+                alt.Chart(points_over_time)
+                .mark_line()
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("CumulativePoints:Q", title="Cumulative Points"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "CumulativePoints:Q"],
+                )
+                .properties(
+                    title="Cumulative Points Development Over Time",
+                    width=700,
+                    height=400,
+                )
+            )
+
+            # Display in sub-tabs
+            chart_tab_wins, chart_tab_points = st.tabs(["Wins", "Points"])
+
+            # --- Wins Tab ---
+            with chart_tab_wins:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Wins per Player (Current)")
+                    st.altair_chart(wins_chart, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Wins")
+                        st.altair_chart(
+                            non_cumulative_wins_chart, use_container_width=True
+                        )
+                    with subtab_cum:
+                        st.subheader("Cumulative Wins")
+                        st.altair_chart(cumulative_wins_chart, use_container_width=True)
+
+            # --- Points Tab ---
+            with chart_tab_points:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Points per Player (Current)")
+                    st.altair_chart(points_chart, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Points")
+                        st.altair_chart(
+                            non_cumulative_points_chart, use_container_width=True
+                        )
+                    with subtab_cum:
+                        st.subheader("Cumulative Points")
+                        st.altair_chart(
+                            cumulative_points_chart, use_container_width=True
+                        )
+
         index += 1
 
 
@@ -706,4 +1164,4 @@ with main_tab_head2head:
             generate_analysis_content(df_head2head, include_elo=False)
 
     else:
-        st.write("Please select two players to compare their head-to-head statistics.")
+        st.write("Please select two players to compare their head-to-head statistics!")
