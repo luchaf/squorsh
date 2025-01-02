@@ -17,6 +17,7 @@ import trueskill
 #                  UTILITY & HELPER FUNCTIONS
 # ==========================================================
 
+
 def meltdown_day_matches(df_in: pd.DataFrame) -> pd.DataFrame:
     """
     Convert each match into a row per player, preserving original match info.
@@ -125,7 +126,9 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
     return final_summary
 
 
-def generate_elo_ratings(df_in: pd.DataFrame, base_elo: float = 1500, K: float = 20) -> pd.DataFrame:
+def generate_elo_ratings(
+    df_in: pd.DataFrame, base_elo: float = 1500, K: float = 20
+) -> pd.DataFrame:
     """
     Given a DataFrame of matches (already filtered), compute Elo ratings for each player.
     """
@@ -158,7 +161,8 @@ def generate_elo_ratings(df_in: pd.DataFrame, base_elo: float = 1500, K: float =
 #            REAL Glicko2 & TrueSkill IMPLEMENTATIONS
 # ==========================================================
 
-def generate_glicko2_ratings(df_in: pd.DataFrame]) -> pd.DataFrame:
+
+def generate_glicko2_ratings(df_in: pd.DataFrame) -> pd.DataFrame:
     """
     Compute Glicko2 ratings for each player by iterating through matches in chronological order.
     Requires 'pip install glicko2'.
@@ -215,7 +219,7 @@ def generate_glicko2_ratings(df_in: pd.DataFrame]) -> pd.DataFrame:
     return df_glicko
 
 
-def generate_trueskill_ratings(df_in: pd.DataFrame]) -> pd.DataFrame:
+def generate_trueskill_ratings(df_in: pd.DataFrame) -> pd.DataFrame:
     """
     Compute TrueSkill ratings by iterating matches in chronological order.
     By default, each player starts with Rating(mu=25, sigma=8.333...).
@@ -264,6 +268,7 @@ def generate_trueskill_ratings(df_in: pd.DataFrame]) -> pd.DataFrame:
 # ==========================================================
 #          CORE VISUALIZATION COMPONENTS (CHARTS/TABLES)
 # ==========================================================
+
 
 def chart_matches_over_time(df_in: pd.DataFrame) -> alt.Chart:
     """
@@ -448,6 +453,7 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
 
 # 1) MATCH PACE / INTENSITY
 
+
 def chart_match_intensity_over_time(df_in: pd.DataFrame) -> alt.Chart:
     """
     Returns a line chart of average total points (Score1 + Score2) over time.
@@ -474,6 +480,7 @@ def chart_match_intensity_over_time(df_in: pd.DataFrame) -> alt.Chart:
 
 # 3) PERFORMANCE BY DAY OF WEEK (DETAILED)
 
+
 def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
     """
     Returns a heatmap of each player's win rate by day of week.
@@ -481,16 +488,33 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
     # meltdown to get individual rows for each player + day_of_week
     df_melt = meltdown_day_matches(df_in)
     # compute total matches per day-of-week per player
-    matches_per_day = df_melt.groupby(["day_of_week", "player"]).size().reset_index(name="matches")
+    matches_per_day = (
+        df_melt.groupby(["day_of_week", "player"]).size().reset_index(name="matches")
+    )
     # compute wins
-    wins_per_day = df_melt[df_melt["did_win"] == 1].groupby(["day_of_week", "player"]).size().reset_index(name="wins")
+    wins_per_day = (
+        df_melt[df_melt["did_win"] == 1]
+        .groupby(["day_of_week", "player"])
+        .size()
+        .reset_index(name="wins")
+    )
 
     # merge
-    merged = pd.merge(matches_per_day, wins_per_day, on=["day_of_week", "player"], how="left").fillna(0)
+    merged = pd.merge(
+        matches_per_day, wins_per_day, on=["day_of_week", "player"], how="left"
+    ).fillna(0)
     merged["win_rate"] = merged["wins"] / merged["matches"]
 
     # define a custom sort for day_of_week if you want
-    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    day_order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
 
     heatmap = (
         alt.Chart(merged)
@@ -502,7 +526,9 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
                 sort=alt.EncodingSortField(field="win_rate", order="descending"),
                 title="Player",
             ),
-            color=alt.Color("win_rate:Q", scale=alt.Scale(scheme="greens"), title="Win Rate"),
+            color=alt.Color(
+                "win_rate:Q", scale=alt.Scale(scheme="greens"), title="Win Rate"
+            ),
             tooltip=[
                 alt.Tooltip("day_of_week:N", title="Day"),
                 alt.Tooltip("player:N", title="Player"),
@@ -517,6 +543,7 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
 
 
 # 4) HOT & COLD STREAKS OVER TIME
+
 
 def compute_streak_timeseries(df_in: pd.DataFrame) -> pd.DataFrame:
     """
@@ -575,6 +602,7 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
 
 
 # 11) RECORDS / LEADERBOARDS
+
 
 def display_records_leaderboards(df_in: pd.DataFrame):
     """
@@ -638,10 +666,11 @@ def display_records_leaderboards(df_in: pd.DataFrame):
 #                  ANALYSIS SUB-SECTIONS
 # ==========================================================
 
+
 def display_match_stats(df_filtered: pd.DataFrame):
     """
     Section: "Match Stats"
-    Subtabs: 
+    Subtabs:
       1) "Matches Over Time"
       2) "Match Distribution"
       3) "Legendary Matches"
@@ -693,7 +722,9 @@ def display_match_stats(df_filtered: pd.DataFrame):
 
     with intensity_tab:
         st.subheader("Match Intensity (Average Total Points Over Time)")
-        st.altair_chart(chart_match_intensity_over_time(df_filtered), use_container_width=True)
+        st.altair_chart(
+            chart_match_intensity_over_time(df_filtered), use_container_width=True
+        )
 
         # Optional: Top 10 Most Intense Matches
         temp = df_filtered.copy()
@@ -708,7 +739,9 @@ def display_match_stats(df_filtered: pd.DataFrame):
 
     with dayofweek_tab:
         st.subheader("Detailed Win Rate by Day of Week")
-        st.altair_chart(chart_win_rate_by_day_of_week(df_filtered), use_container_width=True)
+        st.altair_chart(
+            chart_win_rate_by_day_of_week(df_filtered), use_container_width=True
+        )
         st.write(
             "Hover over the chart to see each player's matches, wins, and computed win rate by day of the week."
         )
@@ -717,7 +750,7 @@ def display_match_stats(df_filtered: pd.DataFrame):
 def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
     """
     Section: "Ratings Systems"
-    Subtabs: 
+    Subtabs:
       1) "Elo Ratings"
       2) "Glicko2 Ratings"
       3) "TrueSkill Ratings"
@@ -907,13 +940,19 @@ def display_win_loss_streaks(df_filtered: pd.DataFrame):
     """
     st.subheader("Winning and Losing Streaks")
 
-    tabs_streaks = st.tabs(["Longest Streaks (Overall)", "Hot & Cold Streaks Over Time"])
+    tabs_streaks = st.tabs(
+        ["Longest Streaks (Overall)", "Hot & Cold Streaks Over Time"]
+    )
 
     # ---- Tab 1: Overall Longest Streaks ----
     with tabs_streaks[0]:
-        df_sorted = df_filtered.sort_values(["date", "match_number_total"], ascending=True)
+        df_sorted = df_filtered.sort_values(
+            ["date", "match_number_total"], ascending=True
+        )
         streaks = []
-        unique_players = sorted(set(df_filtered["Player1"]) | set(df_filtered["Player2"]))
+        unique_players = sorted(
+            set(df_filtered["Player1"]) | set(df_filtered["Player2"])
+        )
 
         for player in unique_players:
             current_win, max_win = 0, 0
@@ -940,7 +979,9 @@ def display_win_loss_streaks(df_filtered: pd.DataFrame):
     # ---- Tab 2: Streaks Over Time Visualization ----
     with tabs_streaks[1]:
         df_stacked_streaks = compute_streak_timeseries(df_filtered)
-        st.altair_chart(chart_streaks_over_time(df_stacked_streaks), use_container_width=True)
+        st.altair_chart(
+            chart_streaks_over_time(df_stacked_streaks), use_container_width=True
+        )
         st.markdown(
             """
             **Interpretation**:
@@ -1016,14 +1057,20 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         ].copy()
 
         if df_steel.empty:
-            st.warning("No matches ended with a tight 11:9 or 9:11 score under current filters.")
+            st.warning(
+                "No matches ended with a tight 11:9 or 9:11 score under current filters."
+            )
         else:
             # Summaries
             final_summary_steel = generate_wins_points_summary(df_steel)
             final_summary_wins_steel = final_summary_steel.copy()
             final_summary_points_steel = final_summary_steel.copy()
-            final_summary_wins_steel.sort_values(by="Wins", ascending=False, inplace=True)
-            final_summary_points_steel.sort_values(by="Points", ascending=False, inplace=True)
+            final_summary_wins_steel.sort_values(
+                by="Wins", ascending=False, inplace=True
+            )
+            final_summary_points_steel.sort_values(
+                by="Points", ascending=False, inplace=True
+            )
 
             # Charts
             wins_chart_steel = chart_wins_barchart(final_summary_wins_steel)
@@ -1042,7 +1089,9 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     st.subheader("Wins per Player (Current)")
                     st.altair_chart(wins_chart_steel, use_container_width=True)
                 with subtab_trend:
-                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
                     with subtab_non_cum:
                         st.subheader("Non-Cumulative Wins")
                         st.altair_chart(non_cum_wins_steel, use_container_width=True)
@@ -1059,7 +1108,9 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     st.subheader("Points per Player (Current)")
                     st.altair_chart(points_chart_steel, use_container_width=True)
                 with subtab_trend:
-                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
                     with subtab_non_cum:
                         st.subheader("Non-Cumulative Points")
                         st.altair_chart(non_cum_points_steel, use_container_width=True)
@@ -1077,14 +1128,20 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         ].copy()
 
         if df_adamantium.empty:
-            st.warning("No matches ended with >=12:10 or >=10:12 under current filters.")
+            st.warning(
+                "No matches ended with >=12:10 or >=10:12 under current filters."
+            )
         else:
             # Summaries
             final_summary_adam = generate_wins_points_summary(df_adamantium)
             final_summary_wins_adam = final_summary_adam.copy()
             final_summary_points_adam = final_summary_adam.copy()
-            final_summary_wins_adam.sort_values(by="Wins", ascending=False, inplace=True)
-            final_summary_points_adam.sort_values(by="Points", ascending=False, inplace=True)
+            final_summary_wins_adam.sort_values(
+                by="Wins", ascending=False, inplace=True
+            )
+            final_summary_points_adam.sort_values(
+                by="Points", ascending=False, inplace=True
+            )
 
             # Charts
             wins_chart_adam = chart_wins_barchart(final_summary_wins_adam)
@@ -1103,7 +1160,9 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     st.subheader("Wins per Player (Current)")
                     st.altair_chart(wins_chart_adam, use_container_width=True)
                 with subtab_trend:
-                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
                     with subtab_non_cum:
                         st.subheader("Non-Cumulative Wins")
                         st.altair_chart(non_cum_wins_adam, use_container_width=True)
@@ -1120,7 +1179,9 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     st.subheader("Points per Player (Current)")
                     st.altair_chart(points_chart_adam, use_container_width=True)
                 with subtab_trend:
-                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    subtab_non_cum, subtab_cum = st.tabs(
+                        ["Non-Cumulative", "Cumulative"]
+                    )
                     with subtab_non_cum:
                         st.subheader("Non-Cumulative Points")
                         st.altair_chart(non_cum_points_adam, use_container_width=True)
@@ -1268,7 +1329,9 @@ def main():
     ].copy()
 
     # ------------- MAIN TABS -------------
-    main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
+    main_tab_overall, main_tab_head2head = st.tabs(
+        ["Overall Overanalysis", "Head-to-Head"]
+    )
 
     # Overall Analysis Tab
     with main_tab_overall:
@@ -1299,13 +1362,17 @@ def main():
                 | ((df["Player1"] == player2) & (df["Player2"] == player1))
             ]
             if df_head2head.empty:
-                st.write(f"No head-to-head matches found between {player1} and {player2}.")
+                st.write(
+                    f"No head-to-head matches found between {player1} and {player2}."
+                )
             else:
                 # Optionally include Elo, Glicko2, TrueSkill for head2head
                 # but let's leave it out to keep it simpler.
                 generate_analysis_content(df_head2head, include_elo=False)
         else:
-            st.write("Please select two players to compare their head-to-head statistics!")
+            st.write(
+                "Please select two players to compare their head-to-head statistics!"
+            )
 
 
 # Run the app
