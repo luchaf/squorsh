@@ -251,6 +251,8 @@ def generate_analysis_content(df_filtered, include_elo):
             "Wins", ascending=False, inplace=True, ignore_index=True
         )
 
+        final_summary = final_summary.dropna(subset=["Player"]).copy()
+
         final_summary_wins = final_summary.copy()
 
         st.dataframe(final_summary, use_container_width=True)
