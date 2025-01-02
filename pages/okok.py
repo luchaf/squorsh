@@ -659,6 +659,12 @@ def generate_analysis_content(df_filtered, include_elo):
         match_tabs = st.tabs(["11:9 or 9:11 Matches", "12:10 or Higher Matches"])
 
         with match_tabs[0]:
+            df_filtered_backup = df_filtered.copy()
+            df_filtered = df_filtered[
+                ((df_filtered["Score1"] == 11) & (df_filtered["Score2"] == 9))
+                | ((df_filtered["Score1"] == 9) & (df_filtered["Score2"] == 11))
+            ].copy()
+
             # Wins & Points Summary
             wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
 
@@ -875,6 +881,11 @@ def generate_analysis_content(df_filtered, include_elo):
                         )
 
         with match_tabs[1]:
+            df_filtered = df_filtered_backup.copy()
+            df_filtered = df_filtered[
+                ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
+                | ((df_filtered["Score1"] >= 10) & (df_filtered["Score2"] >= 12))
+            ].copy()
             # Wins & Points Summary
             wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
 
