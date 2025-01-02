@@ -667,8 +667,8 @@ def generate_analysis_content(df_filtered, include_elo):
                     | ((df_filtered["Score1"] == 9) & (df_filtered["Score2"] == 11))
                 )
             ]
-            wins_df = df_close_matches.groupby("Winner").size().reset_index(name="Wins")
 
+            wins_df = df_close_matches.groupby("Winner").size().reset_index(name="Wins")
             points_p1 = (
                 df_close_matches.groupby("Player1")["Score1"].sum().reset_index()
             )
@@ -714,17 +714,41 @@ def generate_analysis_content(df_filtered, include_elo):
                 )
             )
 
+            # Development Over Time
+            wins_over_time = (
+                df_close_matches.groupby(["date", "Winner"])
+                .size()
+                .reset_index(name="Wins")
+            )
+            wins_over_time.rename(columns={"Winner": "Player"}, inplace=True)
+            wins_over_time["CumulativeWins"] = wins_over_time.groupby("Player")[
+                "Wins"
+            ].cumsum()
+
+            cumulative_wins_chart = (
+                alt.Chart(wins_over_time)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
+                )
+                .properties(title="Cumulative Wins Over Time", width=700, height=400)
+            )
+
             st.altair_chart(wins_chart, use_container_width=True)
+            st.altair_chart(cumulative_wins_chart, use_container_width=True)
 
         # ---- 12:10 or Higher Matches Analysis ----
         with match_tabs[1]:
             st.subheader("Wins in Matches Ending 12:10 or Higher")
             df_high_matches = df_filtered[
-                ((df_filtered["Score1"] >= 12)) | ((df_filtered["Score2"] >= 12))
+                ((df_filtered["Score1"] >= 12) & (df_filtered["Score2"] >= 10))
+                | ((df_filtered["Score1"] >= 10) & (df_filtered["Score2"] >= 12))
             ]
-            st.dataframe(df_high_matches)
-            wins_df = df_high_matches.groupby("Winner").size().reset_index(name="Wins")
 
+            wins_df = df_high_matches.groupby("Winner").size().reset_index(name="Wins")
             points_p1 = df_high_matches.groupby("Player1")["Score1"].sum().reset_index()
             points_p1.columns = ["Player", "Points"]
             points_p2 = df_high_matches.groupby("Player2")["Score2"].sum().reset_index()
@@ -751,8 +775,6 @@ def generate_analysis_content(df_filtered, include_elo):
                 "Wins", ascending=False, inplace=True, ignore_index=True
             )
 
-            final_summary = final_summary.dropna(subset=["Player"]).copy()
-
             wins_chart = (
                 alt.Chart(final_summary)
                 .mark_bar(color="orange")
@@ -770,7 +792,31 @@ def generate_analysis_content(df_filtered, include_elo):
                 )
             )
 
+            # Development Over Time
+            wins_over_time = (
+                df_high_matches.groupby(["date", "Winner"])
+                .size()
+                .reset_index(name="Wins")
+            )
+            wins_over_time.rename(columns={"Winner": "Player"}, inplace=True)
+            wins_over_time["CumulativeWins"] = wins_over_time.groupby("Player")[
+                "Wins"
+            ].cumsum()
+
+            cumulative_wins_chart = (
+                alt.Chart(wins_over_time)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
+                    color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+                    tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
+                )
+                .properties(title="Cumulative Wins Over Time", width=700, height=400)
+            )
+
             st.altair_chart(wins_chart, use_container_width=True)
+            st.altair_chart(cumulative_wins_chart, use_container_width=True)
 
         index += 1
 
