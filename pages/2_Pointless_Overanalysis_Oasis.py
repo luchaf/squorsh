@@ -647,16 +647,6 @@ def display_records_leaderboards(df_in: pd.DataFrame):
     top_rivalry = pair_counts.sort_values("match_count", ascending=False).head(1)
     st.dataframe(top_rivalry.reset_index(drop=True))
 
-    # 5) Highest Single-Game Score
-    st.markdown("**Highest Single-Game Score:**")
-    temp["max_score"] = temp[["Score1", "Score2"]].max(axis=1)
-    highest_single_game = temp.sort_values("max_score", ascending=False).head(1)
-    st.dataframe(
-        highest_single_game[
-            ["date", "Player1", "Score1", "Player2", "Score2", "max_score"]
-        ].reset_index(drop=True)
-    )
-
 
 # ==========================================================
 #                  ANALYSIS SUB-SECTIONS
