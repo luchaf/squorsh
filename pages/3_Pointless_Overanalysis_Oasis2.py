@@ -219,8 +219,6 @@ def generate_analysis_content(df_filtered, include_elo):
         # Wins & Points Summary
         wins_df = df_filtered.groupby("Winner").size().reset_index(name="Wins")
 
-        st.dataframe(wins_df, use_container_width=True)
-
         points_p1 = df_filtered.groupby("Player1")["Score1"].sum().reset_index()
         points_p1.columns = ["Player", "Points"]
         points_p2 = df_filtered.groupby("Player2")["Score2"].sum().reset_index()
@@ -236,15 +234,11 @@ def generate_analysis_content(df_filtered, include_elo):
             wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
         ).drop(columns="Player")
 
-        st.dataframe(summary_df, use_container_width=True)
-
         summary_df.rename(columns={"Winner": "Player"}, inplace=True)
         summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
         final_summary = pd.merge(
             total_points, summary_df[["Player", "Wins"]], on="Player", how="outer"
         )
-
-        st.dataframe(final_summary, use_container_width=True)
 
         final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
         final_summary.sort_values(
@@ -254,8 +248,6 @@ def generate_analysis_content(df_filtered, include_elo):
         final_summary = final_summary.dropna(subset=["Player"]).copy()
 
         final_summary_wins = final_summary.copy()
-
-        st.dataframe(final_summary, use_container_width=True)
 
         final_summary_points = final_summary.copy()
         final_summary_wins.sort_values(by="Wins", ascending=False, inplace=True)
