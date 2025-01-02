@@ -232,11 +232,17 @@ def generate_analysis_content(df_filtered, include_elo):
         summary_df = pd.merge(
             wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
         ).drop(columns="Player")
+
+        st.dataframe(summary_df, use_container_width=True)
+
         summary_df.rename(columns={"Winner": "Player"}, inplace=True)
         summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
         final_summary = pd.merge(
             total_points, summary_df[["Player", "Wins"]], on="Player", how="outer"
         )
+
+        st.dataframe(final_summary, use_container_width=True)
+
         final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
         final_summary.sort_values(
             "Wins", ascending=False, inplace=True, ignore_index=True
