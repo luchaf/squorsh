@@ -8,30 +8,34 @@ from streamlit_gsheets import GSheetsConnection
 from typing import Tuple, Dict
 from functools import lru_cache
 
-# If you want to use Glicko2 or TrueSkill, you might need:
-# pip install glicko2
-# pip install trueskill
-# from glicko2 import Glicko2
-# import trueskill
+# -- NEW: Glicko2 and TrueSkill imports
+from glicko2 import Player as Glicko2Player
+import trueskill
+
 
 # ==========================================================
 #                  UTILITY & HELPER FUNCTIONS
 # ==========================================================
 
-
 def meltdown_day_matches(df_in: pd.DataFrame) -> pd.DataFrame:
     """
     Convert each match into a row per player, preserving original match info.
     Assign each player's 'Nth Match of the Day'.
+    Also preserve or recalculate 'day_of_week' for the melted rows to fix KeyError.
     """
+    # Ensure 'day_of_week' is present in the original df
+    if "day_of_week" not in df_in.columns:
+        df_in["day_of_week"] = df_in["date"].dt.day_name()
+
     df_in = df_in.sort_values(
         ["date", "match_number_total", "match_number_day"], ascending=True
-    )
+    ).copy()
 
     # Player1 meltdown
     df_p1 = df_in[
         [
             "date",
+            "day_of_week",  # preserve day_of_week
             "Player1",
             "Winner",
             "Loser",
@@ -53,6 +57,7 @@ def meltdown_day_matches(df_in: pd.DataFrame) -> pd.DataFrame:
     df_p2 = df_in[
         [
             "date",
+            "day_of_week",  # preserve day_of_week
             "Player2",
             "Winner",
             "Loser",
@@ -75,6 +80,7 @@ def meltdown_day_matches(df_in: pd.DataFrame) -> pd.DataFrame:
     df_stacked = df_stacked.sort_values(
         ["date", "player", "match_number_total", "match_number_day"]
     )
+    # Assign Nth match
     df_stacked["MatchOfDay"] = df_stacked.groupby(["date", "player"]).cumcount() + 1
 
     return df_stacked
@@ -119,90 +125,145 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
     return final_summary
 
 
-def generate_elo_ratings(
-    df_in: pd.DataFrame, base_elo: float = 1500, K: float = 20
-) -> pd.DataFrame:
+def generate_elo_ratings(df_in: pd.DataFrame, base_elo: float = 1500, K: float = 20) -> pd.DataFrame:
     """
     Given a DataFrame of matches (already filtered), compute Elo ratings for each player.
     """
-    df_sorted = df_in.sort_values(["date"], ascending=True)
+    df_sorted = df_in.sort_values(["date", "match_number_total"]).copy()
     elo_ratings: Dict[str, float] = defaultdict(lambda: base_elo)
 
     for _, row in df_sorted.iterrows():
         p1, p2 = row["Player1"], row["Player2"]
         r1, r2 = elo_ratings[p1], elo_ratings[p2]
-        exp1 = 1 / (1 + 10 ** ((r2 - r1) / 400))
-        exp2 = 1 / (1 + 10 ** ((r1 - r2) / 400))
+        exp1 = 1.0 / (1.0 + 10.0 ** ((r2 - r1) / 400.0))
+        exp2 = 1.0 / (1.0 + 10.0 ** ((r1 - r2) / 400.0))
 
         if row["Winner"] == p1:
-            elo_ratings[p1] += K * (1 - exp1)
-            elo_ratings[p2] += K * (0 - exp2)
+            elo_ratings[p1] = r1 + K * (1.0 - exp1)
+            elo_ratings[p2] = r2 + K * (0.0 - exp2)
         else:
-            elo_ratings[p1] += K * (0 - exp1)
-            elo_ratings[p2] += K * (1 - exp2)
+            elo_ratings[p1] = r1 + K * (0.0 - exp1)
+            elo_ratings[p2] = r2 + K * (1.0 - exp2)
 
     elo_df = pd.DataFrame(
         [(player, rating) for player, rating in elo_ratings.items()],
         columns=["Player", "Elo Rating"],
     )
     elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
-
+    elo_df.reset_index(drop=True, inplace=True)
     return elo_df
 
 
-# ============ ALTERNATIVE RATING SYSTEMS (BEYOND ELO) ==============
+# ==========================================================
+#            REAL Glicko2 & TrueSkill IMPLEMENTATIONS
+# ==========================================================
 
-
-def generate_glicko2_ratings(df_in: pd.DataFrame):
+def generate_glicko2_ratings(df_in: pd.DataFrame]) -> pd.DataFrame:
     """
-    Example placeholder function for Glicko2 Ratings.
-
-    In practice, you'd use a library like 'glicko2' or 'openskill'.
-    This is a skeleton function. The real implementation would
-    update each player's rating, deviation, volatility after each match.
-
-    For demonstration, we'll just return a DataFrame with placeholder values.
+    Compute Glicko2 ratings for each player by iterating through matches in chronological order.
+    Requires 'pip install glicko2'.
     """
-    # Placeholder logic:
-    all_players = sorted(set(df_in["Player1"]) | set(df_in["Player2"]))
-    data = {
-        "Player": all_players,
-        "Glicko2 Rating": [
-            1500 + i * 10 for i in range(len(all_players))
-        ],  # dummy values
-        "Deviation": [350 for _ in range(len(all_players))],
-    }
-    glicko_df = pd.DataFrame(data)
-    return glicko_df.sort_values("Glicko2 Rating", ascending=False).reset_index(
-        drop=True
-    )
+    from glicko2 import Player as Glicko2Player
+
+    df_sorted = df_in.sort_values(["date", "match_number_total"]).copy()
+
+    # Create a dictionary of Glicko2Player objects
+    players_dict = {}
+    all_players = sorted(set(df_sorted["Player1"]) | set(df_sorted["Player2"]))
+    for p in all_players:
+        players_dict[p] = Glicko2Player()  # default rating=1500, RD=350, vol=0.06
+
+    for _, row in df_sorted.iterrows():
+        p1, p2 = row["Player1"], row["Player2"]
+        player1 = players_dict[p1]
+        player2 = players_dict[p2]
+
+        # We fetch their current rating, RD, vol
+        r1, rd1, vol1 = player1.getRating(), player1.getRd(), player1.getVol()
+        r2, rd2, vol2 = player2.getRating(), player2.getRd(), player2.getVol()
+
+        # Determine the outcome for p1
+        if row["Winner"] == p1:
+            score_p1 = 1.0
+            score_p2 = 0.0
+        else:
+            score_p1 = 0.0
+            score_p2 = 1.0
+
+        # Update p1's rating with p2 as the only opponent
+        # The library's update_player() signature is:
+        #   update_player(opponent_rating_list, opponent_rd_list, score_list)
+        player1.update_player([r2], [rd2], [score_p1])
+        # Then update p2
+        player2.update_player([r1], [rd1], [score_p2])
+
+    # After processing all matches, read final rating & RD from each player
+    data_out = []
+    for p in all_players:
+        pl = players_dict[p]
+        data_out.append(
+            {
+                "Player": p,
+                "Glicko2 Rating": pl.getRating(),
+                "RD": pl.getRd(),
+                "Volatility": pl.getVol(),
+            }
+        )
+    df_glicko = pd.DataFrame(data_out)
+    df_glicko.sort_values("Glicko2 Rating", ascending=False, inplace=True)
+    df_glicko.reset_index(drop=True, inplace=True)
+    return df_glicko
 
 
-def generate_trueskill_ratings(df_in: pd.DataFrame):
+def generate_trueskill_ratings(df_in: pd.DataFrame]) -> pd.DataFrame:
     """
-    Example placeholder function for TrueSkill ratings.
-
-    Actual TrueSkill usage:
-        from trueskill import Rating, rate_1vs1
-
-    This skeleton returns dummy data for demonstration.
+    Compute TrueSkill ratings by iterating matches in chronological order.
+    By default, each player starts with Rating(mu=25, sigma=8.333...).
     """
-    all_players = sorted(set(df_in["Player1"]) | set(df_in["Player2"]))
-    data = {
-        "Player": all_players,
-        "TrueSkill Mu": [25.0 for _ in range(len(all_players))],
-        "TrueSkill Sigma": [8.333 for _ in range(len(all_players))],
-    }
-    ts_df = pd.DataFrame(data)
-    return (
-        ts_df  # no sorting needed for placeholders, in real usage you'd do more logic.
-    )
+    df_sorted = df_in.sort_values(["date", "match_number_total"]).copy()
+
+    # Dictionary of player -> trueskill.Rating()
+    players_dict = {}
+    all_players = sorted(set(df_sorted["Player1"]) | set(df_sorted["Player2"]))
+    for p in all_players:
+        players_dict[p] = trueskill.Rating()  # default mu=25, sigma=8.333
+
+    for _, row in df_sorted.iterrows():
+        p1, p2 = row["Player1"], row["Player2"]
+        rating_p1 = players_dict[p1]
+        rating_p2 = players_dict[p2]
+
+        # If p1 is the winner, we do
+        if row["Winner"] == p1:
+            rating_p1, rating_p2 = trueskill.rate_1vs1(rating_p1, rating_p2)
+        else:
+            # p2 is the winner, so invert the order
+            rating_p2, rating_p1 = trueskill.rate_1vs1(rating_p2, rating_p1)
+
+        players_dict[p1] = rating_p1
+        players_dict[p2] = rating_p2
+
+    data_out = []
+    for p in all_players:
+        r = players_dict[p]
+        data_out.append(
+            {
+                "Player": p,
+                "TrueSkill Mu": r.mu,
+                "TrueSkill Sigma": r.sigma,
+                "TrueSkill Rating": r.mu - 3 * r.sigma,  # conservative rating
+            }
+        )
+    df_ts = pd.DataFrame(data_out)
+    # Sort by the conservative skill estimate
+    df_ts.sort_values("TrueSkill Rating", ascending=False, inplace=True)
+    df_ts.reset_index(drop=True, inplace=True)
+    return df_ts
 
 
 # ==========================================================
 #          CORE VISUALIZATION COMPONENTS (CHARTS/TABLES)
 # ==========================================================
-
 
 def chart_matches_over_time(df_in: pd.DataFrame) -> alt.Chart:
     """
@@ -248,6 +309,7 @@ def get_legendary_matches(df_in: pd.DataFrame, n_closest: int = 10) -> pd.DataFr
     """
     temp_df = df_in.copy()
     temp_df["TotalPoints"] = temp_df["Score1"] + temp_df["Score2"]
+    # Sort by ascending PointDiff, then descending total points
     df_closest_sorted = temp_df.sort_values(
         ["PointDiff", "TotalPoints"], ascending=[True, False]
     )
@@ -301,7 +363,7 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         .mark_line()
         .encode(
             x=alt.X("date:T", title="Date"),
-            y=alt.Y("Wins:Q", title="Wins Per Match"),
+            y=alt.Y("Wins:Q", title="Wins Per Day"),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=["date:T", "Player:N", "Wins:Q"],
         )
@@ -350,7 +412,7 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         .mark_line()
         .encode(
             x=alt.X("date:T", title="Date"),
-            y=alt.Y("Points:Q", title="Points Per Match"),
+            y=alt.Y("Points:Q", title="Points Per Day"),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=["date:T", "Player:N", "Points:Q"],
         )
@@ -386,11 +448,9 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
 
 # 1) MATCH PACE / INTENSITY
 
-
 def chart_match_intensity_over_time(df_in: pd.DataFrame) -> alt.Chart:
     """
     Returns a line chart of average total points (Score1 + Score2) over time.
-    This is a proxy for match "intensity" or "pace."
     """
     temp = df_in.copy()
     temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
@@ -414,42 +474,23 @@ def chart_match_intensity_over_time(df_in: pd.DataFrame) -> alt.Chart:
 
 # 3) PERFORMANCE BY DAY OF WEEK (DETAILED)
 
-
 def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
     """
     Returns a heatmap of each player's win rate by day of week.
     """
-    # meltdown to get individual rows for each player
+    # meltdown to get individual rows for each player + day_of_week
     df_melt = meltdown_day_matches(df_in)
     # compute total matches per day-of-week per player
-    matches_per_day = (
-        df_melt.groupby(["day_of_week", "player"]).size().reset_index(name="matches")
-    )
+    matches_per_day = df_melt.groupby(["day_of_week", "player"]).size().reset_index(name="matches")
     # compute wins
-    wins_per_day = (
-        df_melt[df_melt["did_win"] == 1]
-        .groupby(["day_of_week", "player"])
-        .size()
-        .reset_index(name="wins")
-    )
+    wins_per_day = df_melt[df_melt["did_win"] == 1].groupby(["day_of_week", "player"]).size().reset_index(name="wins")
 
     # merge
-    merged = pd.merge(
-        matches_per_day, wins_per_day, on=["day_of_week", "player"], how="left"
-    ).fillna(0)
+    merged = pd.merge(matches_per_day, wins_per_day, on=["day_of_week", "player"], how="left").fillna(0)
     merged["win_rate"] = merged["wins"] / merged["matches"]
 
-    # define a custom sort for day_of_week if desired
-    day_order = [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-    ]
-    # If your data doesn't contain all days, you might do a dynamic sort.
+    # define a custom sort for day_of_week if you want
+    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
     heatmap = (
         alt.Chart(merged)
@@ -461,9 +502,7 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
                 sort=alt.EncodingSortField(field="win_rate", order="descending"),
                 title="Player",
             ),
-            color=alt.Color(
-                "win_rate:Q", scale=alt.Scale(scheme="greens"), title="Win Rate"
-            ),
+            color=alt.Color("win_rate:Q", scale=alt.Scale(scheme="greens"), title="Win Rate"),
             tooltip=[
                 alt.Tooltip("day_of_week:N", title="Day"),
                 alt.Tooltip("player:N", title="Player"),
@@ -477,8 +516,7 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
     return heatmap
 
 
-# 4) HOT & COLD STREAKS OVER TIME (DETAILED VISUALIZATION)
-
+# 4) HOT & COLD STREAKS OVER TIME
 
 def compute_streak_timeseries(df_in: pd.DataFrame) -> pd.DataFrame:
     """
@@ -488,20 +526,18 @@ def compute_streak_timeseries(df_in: pd.DataFrame) -> pd.DataFrame:
     df_stacked = meltdown_day_matches(df_in).sort_values(["date", "match_number_total"])
 
     streak_vals = []
-    current_streaks = defaultdict(int)  # {player: current streak}
-    last_outcome = defaultdict(lambda: None)  # {player: 'win' or 'loss'}
+    current_streaks = defaultdict(int)
+    last_outcome = defaultdict(lambda: None)
 
     for _, row in df_stacked.iterrows():
         player = row["player"]
         if row["did_win"] == 1:
-            # if last outcome was also a win, increment streak
             if last_outcome[player] == "win":
                 current_streaks[player] += 1
             else:
                 current_streaks[player] = 1
             last_outcome[player] = "win"
         else:
-            # if last outcome was also a loss, keep decrementing
             if last_outcome[player] == "loss":
                 current_streaks[player] -= 1
             else:
@@ -517,7 +553,8 @@ def compute_streak_timeseries(df_in: pd.DataFrame) -> pd.DataFrame:
 def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
     """
     Plot the player's streak_value over time.
-    Positive = continuing win streak, negative = continuing loss streak.
+    Positive streak_value => consecutive wins.
+    Negative => consecutive losses.
     """
     chart = (
         alt.Chart(df_stacked)
@@ -539,7 +576,6 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
 
 # 11) RECORDS / LEADERBOARDS
 
-
 def display_records_leaderboards(df_in: pd.DataFrame):
     """
     Shows a variety of interesting records/leaderboards:
@@ -547,11 +583,10 @@ def display_records_leaderboards(df_in: pd.DataFrame):
       - Highest Combined Score
       - Most Matches in a Single Day
       - Longest Rivalry (by number of matches)
-      - Highest Single-Game Score (if extended scoring is possible)
+      - Highest Single-Game Score
     """
     st.subheader("Records & Leaderboards")
 
-    # Make a copy to avoid messing up original
     temp = df_in.copy()
     temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
 
@@ -579,9 +614,8 @@ def display_records_leaderboards(df_in: pd.DataFrame):
     busiest_day = matches_by_day.sort_values("Matches", ascending=False).head(1)
     st.dataframe(busiest_day.reset_index(drop=True))
 
-    # 4) Longest Rivalry (by total matches played)
+    # 4) Longest Rivalry (by total H2H matches)
     st.markdown("**Longest Rivalry (by total H2H matches):**")
-    # identify pairs in a canonical (sorted) form
     temp["pair"] = temp.apply(
         lambda row: tuple(sorted([row["Player1"], row["Player2"]])), axis=1
     )
@@ -590,8 +624,6 @@ def display_records_leaderboards(df_in: pd.DataFrame):
     st.dataframe(top_rivalry.reset_index(drop=True))
 
     # 5) Highest Single-Game Score
-    #   If your rules have extended scoring, e.g. 15:13 or 21:19,
-    #   you can track that as well. We'll do a simple approach:
     st.markdown("**Highest Single-Game Score:**")
     temp["max_score"] = temp[["Score1", "Score2"]].max(axis=1)
     highest_single_game = temp.sort_values("max_score", ascending=False).head(1)
@@ -606,16 +638,15 @@ def display_records_leaderboards(df_in: pd.DataFrame):
 #                  ANALYSIS SUB-SECTIONS
 # ==========================================================
 
-
 def display_match_stats(df_filtered: pd.DataFrame):
     """
     Section: "Match Stats"
-    Subtabs:
+    Subtabs: 
       1) "Matches Over Time"
       2) "Match Distribution"
       3) "Legendary Matches"
       4) "Match Intensity"
-      5) "Performance by Day of Week"
+      5) "Day-of-Week Performance"
     """
     (
         match_time_tab,
@@ -662,9 +693,7 @@ def display_match_stats(df_filtered: pd.DataFrame):
 
     with intensity_tab:
         st.subheader("Match Intensity (Average Total Points Over Time)")
-        st.altair_chart(
-            chart_match_intensity_over_time(df_filtered), use_container_width=True
-        )
+        st.altair_chart(chart_match_intensity_over_time(df_filtered), use_container_width=True)
 
         # Optional: Top 10 Most Intense Matches
         temp = df_filtered.copy()
@@ -679,18 +708,16 @@ def display_match_stats(df_filtered: pd.DataFrame):
 
     with dayofweek_tab:
         st.subheader("Detailed Win Rate by Day of Week")
-        st.altair_chart(
-            chart_win_rate_by_day_of_week(df_filtered), use_container_width=True
-        )
+        st.altair_chart(chart_win_rate_by_day_of_week(df_filtered), use_container_width=True)
         st.write(
             "Hover over the chart to see each player's matches, wins, and computed win rate by day of the week."
         )
 
 
-def display_elo_ratings(df_filtered: pd.DataFrame):
+def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
     """
     Section: "Ratings Systems"
-    Subtabs:
+    Subtabs: 
       1) "Elo Ratings"
       2) "Glicko2 Ratings"
       3) "TrueSkill Ratings"
@@ -707,7 +734,7 @@ def display_elo_ratings(df_filtered: pd.DataFrame):
         glicko_df = generate_glicko2_ratings(df_filtered)
         st.dataframe(glicko_df, use_container_width=True)
         st.markdown(
-            "*(Demo/Placeholder) For real Glicko2 calculations, install a Glicko2 package and implement actual rating updates.*"
+            "Above are the **live** Glicko2 ratings after processing each match in chronological order."
         )
 
     with trueskill_tab:
@@ -715,7 +742,7 @@ def display_elo_ratings(df_filtered: pd.DataFrame):
         ts_df = generate_trueskill_ratings(df_filtered)
         st.dataframe(ts_df, use_container_width=True)
         st.markdown(
-            "*(Demo/Placeholder) For real TrueSkill calculations, install `trueskill` and implement actual point-by-point or match-by-match rating updates.*"
+            "Column **TrueSkill Rating** = `mu - 3*sigma`, a conservative estimate."
         )
 
 
@@ -751,10 +778,10 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
         with subtab_trend:
             subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
             with subtab_non_cum:
-                st.subheader("Non-Cumulative Wins")
+                st.subheader("Non-Cumulative Wins Over Time")
                 st.altair_chart(non_cum_wins, use_container_width=True)
             with subtab_cum:
-                st.subheader("Cumulative Wins")
+                st.subheader("Cumulative Wins Over Time")
                 st.altair_chart(cum_wins, use_container_width=True)
 
     # --- Points Tab ---
@@ -766,10 +793,10 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
         with subtab_trend:
             subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
             with subtab_non_cum:
-                st.subheader("Non-Cumulative Points")
+                st.subheader("Non-Cumulative Points Over Time")
                 st.altair_chart(non_cum_points, use_container_width=True)
             with subtab_cum:
-                st.subheader("Cumulative Points")
+                st.subheader("Cumulative Points Over Time")
                 st.altair_chart(cum_points, use_container_width=True)
 
 
@@ -880,17 +907,13 @@ def display_win_loss_streaks(df_filtered: pd.DataFrame):
     """
     st.subheader("Winning and Losing Streaks")
 
-    tabs_streaks = st.tabs(
-        ["Longest Streaks (Overall)", "Hot & Cold Streaks Over Time"]
-    )
+    tabs_streaks = st.tabs(["Longest Streaks (Overall)", "Hot & Cold Streaks Over Time"])
 
     # ---- Tab 1: Overall Longest Streaks ----
     with tabs_streaks[0]:
-        df_sorted = df_filtered.sort_values(["date"], ascending=True)
+        df_sorted = df_filtered.sort_values(["date", "match_number_total"], ascending=True)
         streaks = []
-        unique_players = sorted(
-            set(df_filtered["Player1"]) | set(df_filtered["Player2"])
-        )
+        unique_players = sorted(set(df_filtered["Player1"]) | set(df_filtered["Player2"]))
 
         for player in unique_players:
             current_win, max_win = 0, 0
@@ -917,9 +940,7 @@ def display_win_loss_streaks(df_filtered: pd.DataFrame):
     # ---- Tab 2: Streaks Over Time Visualization ----
     with tabs_streaks[1]:
         df_stacked_streaks = compute_streak_timeseries(df_filtered)
-        st.altair_chart(
-            chart_streaks_over_time(df_stacked_streaks), use_container_width=True
-        )
+        st.altair_chart(chart_streaks_over_time(df_stacked_streaks), use_container_width=True)
         st.markdown(
             """
             **Interpretation**:
@@ -990,120 +1011,122 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         df_steel = df_backup[
             (
                 ((df_backup["Score1"] == 11) & (df_backup["Score2"] == 9))
-                or ((df_backup["Score1"] == 9) & (df_backup["Score2"] == 11))
+                | ((df_backup["Score1"] == 9) & (df_backup["Score2"] == 11))
             )
         ].copy()
 
-        # Summaries
-        final_summary_steel = generate_wins_points_summary(df_steel)
-        final_summary_wins_steel = final_summary_steel.copy()
-        final_summary_points_steel = final_summary_steel.copy()
-        final_summary_wins_steel.sort_values(by="Wins", ascending=False, inplace=True)
-        final_summary_points_steel.sort_values(
-            by="Points", ascending=False, inplace=True
-        )
+        if df_steel.empty:
+            st.warning("No matches ended with a tight 11:9 or 9:11 score under current filters.")
+        else:
+            # Summaries
+            final_summary_steel = generate_wins_points_summary(df_steel)
+            final_summary_wins_steel = final_summary_steel.copy()
+            final_summary_points_steel = final_summary_steel.copy()
+            final_summary_wins_steel.sort_values(by="Wins", ascending=False, inplace=True)
+            final_summary_points_steel.sort_values(by="Points", ascending=False, inplace=True)
 
-        # Charts
-        wins_chart_steel = chart_wins_barchart(final_summary_wins_steel)
-        points_chart_steel = chart_points_barchart(final_summary_points_steel)
-        non_cum_wins_steel, cum_wins_steel = chart_wins_over_time(df_steel)
-        non_cum_points_steel, cum_points_steel = chart_points_over_time(df_steel)
+            # Charts
+            wins_chart_steel = chart_wins_barchart(final_summary_wins_steel)
+            points_chart_steel = chart_points_barchart(final_summary_points_steel)
+            non_cum_wins_steel, cum_wins_steel = chart_wins_over_time(df_steel)
+            non_cum_points_steel, cum_points_steel = chart_points_over_time(df_steel)
 
-        chart_tab_wins_steel, chart_tab_points_steel = st.tabs(["Wins", "Points"])
+            chart_tab_wins_steel, chart_tab_points_steel = st.tabs(["Wins", "Points"])
 
-        # Wins Tab
-        with chart_tab_wins_steel:
-            subtab_curr, subtab_trend = st.tabs(
-                ["Current Standings", "Trends Over Time"]
-            )
-            with subtab_curr:
-                st.subheader("Wins per Player (Current)")
-                st.altair_chart(wins_chart_steel, use_container_width=True)
-            with subtab_trend:
-                subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
-                with subtab_non_cum:
-                    st.subheader("Non-Cumulative Wins")
-                    st.altair_chart(non_cum_wins_steel, use_container_width=True)
-                with subtab_cum:
-                    st.subheader("Cumulative Wins")
-                    st.altair_chart(cum_wins_steel, use_container_width=True)
+            # Wins Tab
+            with chart_tab_wins_steel:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Wins per Player (Current)")
+                    st.altair_chart(wins_chart_steel, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Wins")
+                        st.altair_chart(non_cum_wins_steel, use_container_width=True)
+                    with subtab_cum:
+                        st.subheader("Cumulative Wins")
+                        st.altair_chart(cum_wins_steel, use_container_width=True)
 
-        # Points Tab
-        with chart_tab_points_steel:
-            subtab_curr, subtab_trend = st.tabs(
-                ["Current Standings", "Trends Over Time"]
-            )
-            with subtab_curr:
-                st.subheader("Points per Player (Current)")
-                st.altair_chart(points_chart_steel, use_container_width=True)
-            with subtab_trend:
-                subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
-                with subtab_non_cum:
-                    st.subheader("Non-Cumulative Points")
-                    st.altair_chart(non_cum_points_steel, use_container_width=True)
-                with subtab_cum:
-                    st.subheader("Cumulative Points")
-                    st.altair_chart(cum_points_steel, use_container_width=True)
+            # Points Tab
+            with chart_tab_points_steel:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Points per Player (Current)")
+                    st.altair_chart(points_chart_steel, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Points")
+                        st.altair_chart(non_cum_points_steel, use_container_width=True)
+                    with subtab_cum:
+                        st.subheader("Cumulative Points")
+                        st.altair_chart(cum_points_steel, use_container_width=True)
 
     # --- 3) Balls of Adamantium: >=12:10 or >=10:12 ---
     with endurance_tabs[2]:
         df_adamantium = df_backup[
             (
                 ((df_backup["Score1"] >= 12) & (df_backup["Score2"] >= 10))
-                or ((df_backup["Score1"] >= 10) & (df_backup["Score2"] >= 12))
+                | ((df_backup["Score1"] >= 10) & (df_backup["Score2"] >= 12))
             )
         ].copy()
 
-        # Summaries
-        final_summary_adam = generate_wins_points_summary(df_adamantium)
-        final_summary_wins_adam = final_summary_adam.copy()
-        final_summary_points_adam = final_summary_adam.copy()
-        final_summary_wins_adam.sort_values(by="Wins", ascending=False, inplace=True)
-        final_summary_points_adam.sort_values(
-            by="Points", ascending=False, inplace=True
-        )
+        if df_adamantium.empty:
+            st.warning("No matches ended with >=12:10 or >=10:12 under current filters.")
+        else:
+            # Summaries
+            final_summary_adam = generate_wins_points_summary(df_adamantium)
+            final_summary_wins_adam = final_summary_adam.copy()
+            final_summary_points_adam = final_summary_adam.copy()
+            final_summary_wins_adam.sort_values(by="Wins", ascending=False, inplace=True)
+            final_summary_points_adam.sort_values(by="Points", ascending=False, inplace=True)
 
-        # Charts
-        wins_chart_adam = chart_wins_barchart(final_summary_wins_adam)
-        points_chart_adam = chart_points_barchart(final_summary_points_adam)
-        non_cum_wins_adam, cum_wins_adam = chart_wins_over_time(df_adamantium)
-        non_cum_points_adam, cum_points_adam = chart_points_over_time(df_adamantium)
+            # Charts
+            wins_chart_adam = chart_wins_barchart(final_summary_wins_adam)
+            points_chart_adam = chart_points_barchart(final_summary_points_adam)
+            non_cum_wins_adam, cum_wins_adam = chart_wins_over_time(df_adamantium)
+            non_cum_points_adam, cum_points_adam = chart_points_over_time(df_adamantium)
 
-        chart_tab_wins_adam, chart_tab_points_adam = st.tabs(["Wins", "Points"])
+            chart_tab_wins_adam, chart_tab_points_adam = st.tabs(["Wins", "Points"])
 
-        # Wins Tab
-        with chart_tab_wins_adam:
-            subtab_curr, subtab_trend = st.tabs(
-                ["Current Standings", "Trends Over Time"]
-            )
-            with subtab_curr:
-                st.subheader("Wins per Player (Current)")
-                st.altair_chart(wins_chart_adam, use_container_width=True)
-            with subtab_trend:
-                subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
-                with subtab_non_cum:
-                    st.subheader("Non-Cumulative Wins")
-                    st.altair_chart(non_cum_wins_adam, use_container_width=True)
-                with subtab_cum:
-                    st.subheader("Cumulative Wins")
-                    st.altair_chart(cum_wins_adam, use_container_width=True)
+            # Wins Tab
+            with chart_tab_wins_adam:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Wins per Player (Current)")
+                    st.altair_chart(wins_chart_adam, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Wins")
+                        st.altair_chart(non_cum_wins_adam, use_container_width=True)
+                    with subtab_cum:
+                        st.subheader("Cumulative Wins")
+                        st.altair_chart(cum_wins_adam, use_container_width=True)
 
-        # Points Tab
-        with chart_tab_points_adam:
-            subtab_curr, subtab_trend = st.tabs(
-                ["Current Standings", "Trends Over Time"]
-            )
-            with subtab_curr:
-                st.subheader("Points per Player (Current)")
-                st.altair_chart(points_chart_adam, use_container_width=True)
-            with subtab_trend:
-                subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
-                with subtab_non_cum:
-                    st.subheader("Non-Cumulative Points")
-                    st.altair_chart(non_cum_points_adam, use_container_width=True)
-                with subtab_cum:
-                    st.subheader("Cumulative Points")
-                    st.altair_chart(cum_points_adam, use_container_width=True)
+            # Points Tab
+            with chart_tab_points_adam:
+                subtab_curr, subtab_trend = st.tabs(
+                    ["Current Standings", "Trends Over Time"]
+                )
+                with subtab_curr:
+                    st.subheader("Points per Player (Current)")
+                    st.altair_chart(points_chart_adam, use_container_width=True)
+                with subtab_trend:
+                    subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+                    with subtab_non_cum:
+                        st.subheader("Non-Cumulative Points")
+                        st.altair_chart(non_cum_points_adam, use_container_width=True)
+                    with subtab_cum:
+                        st.subheader("Cumulative Points")
+                        st.altair_chart(cum_points_adam, use_container_width=True)
 
 
 def generate_analysis_content(df_filtered: pd.DataFrame, include_elo: bool):
@@ -1141,7 +1164,7 @@ def generate_analysis_content(df_filtered: pd.DataFrame, include_elo: bool):
     # 2) RATINGS (Optional)
     if include_elo:
         with tabs[idx]:
-            display_elo_ratings(df_filtered)
+            display_elo_and_alternative_ratings(df_filtered)
         idx += 1
 
     # 3) WINS & POINTS
@@ -1183,7 +1206,7 @@ def main():
     # ------------- DATA PREPROCESSING -------------
     df["date"] = pd.to_datetime(df["date"], format="%Y%m%d", errors="coerce")
 
-    # Correct name references
+    # Some name corrections if needed
     df["Player1"] = df["Player1"].replace("Friede", "Friedemann")
     df["Player2"] = df["Player2"].replace("Friede", "Friedemann")
 
@@ -1199,8 +1222,8 @@ def main():
     df["WinnerScore"] = df[["Score1", "Score2"]].max(axis=1)
     df["LoserScore"] = df[["Score1", "Score2"]].min(axis=1)
     df["PointDiff"] = df["WinnerScore"] - df["LoserScore"]
-    # Negative margin for the loser
     df["LoserPointDiff"] = df["LoserScore"] - df["WinnerScore"]
+    # day_of_week column
     df["day_of_week"] = df["date"].dt.day_name()
 
     # ------------- SIDEBAR FILTERS -------------
@@ -1215,6 +1238,7 @@ def main():
         min_value=min_date,
         max_value=max_date,
     )
+    # Ensure they are Timestamps
     if not isinstance(start_date, pd.Timestamp):
         start_date = pd.to_datetime(start_date)
     if not isinstance(end_date, pd.Timestamp):
@@ -1239,16 +1263,12 @@ def main():
         (df["date"] >= start_date)
         & (df["date"] <= end_date)
         & (df["day_of_week"].isin(selected_days))
-        & (
-            (df["Player1"].isin(selected_players))
-            & (df["Player2"].isin(selected_players))
-        )
+        & (df["Player1"].isin(selected_players))
+        & (df["Player2"].isin(selected_players))
     ].copy()
 
     # ------------- MAIN TABS -------------
-    main_tab_overall, main_tab_head2head = st.tabs(
-        ["Overall Overanalysis", "Head-to-Head"]
-    )
+    main_tab_overall, main_tab_head2head = st.tabs(["Overall Overanalysis", "Head-to-Head"])
 
     # Overall Analysis Tab
     with main_tab_overall:
@@ -1279,17 +1299,13 @@ def main():
                 | ((df["Player1"] == player2) & (df["Player2"] == player1))
             ]
             if df_head2head.empty:
-                st.write(
-                    f"No head-to-head matches found between {player1} and {player2}."
-                )
+                st.write(f"No head-to-head matches found between {player1} and {player2}.")
             else:
-                # For head-to-head, we do NOT include additional rating systems
-                # (But you can enable them if you want).
+                # Optionally include Elo, Glicko2, TrueSkill for head2head
+                # but let's leave it out to keep it simpler.
                 generate_analysis_content(df_head2head, include_elo=False)
         else:
-            st.write(
-                "Please select two players to compare their head-to-head statistics!"
-            )
+            st.write("Please select two players to compare their head-to-head statistics!")
 
 
 # Run the app
