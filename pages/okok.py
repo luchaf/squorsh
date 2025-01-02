@@ -169,51 +169,47 @@ def generate_glicko2_ratings(df_in: pd.DataFrame) -> pd.DataFrame:
     """
     from glicko2 import Player as Glicko2Player
 
+    # Sort by date and match_number_total to ensure chronological processing
     df_sorted = df_in.sort_values(["date", "match_number_total"]).copy()
 
     # Create a dictionary of Glicko2Player objects
-    players_dict = {}
     all_players = sorted(set(df_sorted["Player1"]) | set(df_sorted["Player2"]))
-    for p in all_players:
-        players_dict[p] = Glicko2Player()  # default rating=1500, RD=350, vol=0.06
+    players_dict = {p: Glicko2Player() for p in all_players}
 
+    # Process each match in chronological order
     for _, row in df_sorted.iterrows():
         p1, p2 = row["Player1"], row["Player2"]
         player1 = players_dict[p1]
         player2 = players_dict[p2]
 
-        # We fetch their current rating, RD, vol
-        r1, rd1, vol1 = player1.getRating(), player1.getRd(), player1.getVol()
-        r2, rd2, vol2 = player2.getRating(), player2.getRd(), player2.getVol()
+        # Current rating, rating deviation (RD), and volatility
+        r1, rd1, vol1 = player1.rating, player1.rd, player1.vol
+        r2, rd2, vol2 = player2.rating, player2.rd, player2.vol
 
-        # Determine the outcome for p1
+        # Determine outcome from perspective of p1
         if row["Winner"] == p1:
-            score_p1 = 1.0
-            score_p2 = 0.0
+            score_p1, score_p2 = 1.0, 0.0
         else:
-            score_p1 = 0.0
-            score_p2 = 1.0
+            score_p1, score_p2 = 0.0, 1.0
 
-        # Update p1's rating with p2 as the only opponent
-        # The library's update_player() signature is:
-        #   update_player(opponent_rating_list, opponent_rd_list, score_list)
+        # Update p1's rating with p2 as the opponent
         player1.update_player([r2], [rd2], [score_p1])
-        # Then update p2
+        # Update p2's rating with p1 as the opponent
         player2.update_player([r1], [rd1], [score_p2])
 
-    # After processing all matches, read final rating & RD from each player
-    data_out = []
+    # Build output DataFrame
+    results = []
     for p in all_players:
         pl = players_dict[p]
-        data_out.append(
+        results.append(
             {
                 "Player": p,
-                "Glicko2 Rating": pl.getRating(),
-                "RD": pl.getRd(),
-                "Volatility": pl.getVol(),
+                "Glicko2 Rating": pl.rating,
+                "RD": pl.rd,
+                "Volatility": pl.vol,
             }
         )
-    df_glicko = pd.DataFrame(data_out)
+    df_glicko = pd.DataFrame(results)
     df_glicko.sort_values("Glicko2 Rating", ascending=False, inplace=True)
     df_glicko.reset_index(drop=True, inplace=True)
     return df_glicko
