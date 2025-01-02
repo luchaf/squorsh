@@ -712,7 +712,25 @@ def display_match_stats(df_filtered: pd.DataFrame):
             chart_match_intensity_over_time(df_filtered), use_container_width=True
         )
 
-        # Optional: Top 10 Most Intense Matches
+        st.subheader("The Ten Most Legendary Matches")
+        legendary_df = get_legendary_matches(df_filtered, n_closest=10)
+        legendary_df["date"] = pd.to_datetime(legendary_df["date"]).dt.date
+        st.dataframe(
+            legendary_df[
+                [
+                    "match_number_total",
+                    "date",
+                    "Player1",
+                    "Score1",
+                    "Player2",
+                    "Score2",
+                    "TotalPoints",
+                ]
+            ].reset_index(drop=True),
+            use_container_width=True,
+        )
+
+        # Top 10 Most Intense Matches
         temp = df_filtered.copy()
         temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
         temp.sort_values("TotalPoints", ascending=False, inplace=True)
