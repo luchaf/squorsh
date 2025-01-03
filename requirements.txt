@@ -18,3 +18,4 @@ fuzzywuzzy
 st-gsheets-connection
 glicko2
 trueskill
+statsmodels
