@@ -67,9 +67,9 @@ match_number_total,match_number_day,Player1,Score1,Player2,Score2,date
 66,4,Friedemann,11,Lucas,4,20231017
 67,5,Simon,11,Lucas,2,20231017
 68,6,Friedemann,11,Simon,5,20231017
-69,7,Tobias,11,Lucas,5,20231017
-70,8,Tobias,11,Friedemann,5,20231017
-71,9,Tobias,11,Simon,2,20231017
+69,7,Tobias A.,11,Lucas,5,20231017
+70,8,Tobias A.,11,Friedemann,5,20231017
+71,9,Tobias A.,11,Simon,2,20231017
 72,10,Lucas,11,Friedemann,6,20231017
 73,11,Simon,11,Friedemann,9,20231017
 74,12,Lucas,13,Simon,11,20231017
