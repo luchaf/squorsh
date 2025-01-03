@@ -2,7 +2,7 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-from mount.src.squorsh.rating_utils import (
+from .rating_utils import (
     generate_elo_ratings,
     generate_glicko2_ratings,
     generate_trueskill_ratings,
