@@ -2,7 +2,7 @@ import pandas as pd
 import altair as alt
 from typing import Tuple
 import streamlit as st
-from .general_utils import meltdown_day_matches
+from general_utils import meltdown_day_matches
 from collections import defaultdict
 
 
