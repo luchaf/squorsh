@@ -286,7 +286,7 @@ def display_win_loss_streaks(df_filtered: pd.DataFrame):
     st.subheader("Winning and Losing Streaks")
 
     tabs_streaks = st.tabs(
-        ["Longest Streaks (Overall)", "Hot & Cold Streaks Over Time"]
+        ["Longest Streaks (Overall)", "Win & Loss Streaks Over Time"]
     )
 
     # ---- Tab 1: Overall Longest Streaks ----
