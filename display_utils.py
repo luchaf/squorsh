@@ -18,13 +18,12 @@ from visualization_utils import (
     chart_wins_over_time,
     chart_points_over_time,
     chart_streaks_over_time,
-    get_legendary_matches,
-    display_records_leaderboards,
-    compute_streak_timeseries,
 )
-from general_utils import (
+from dataframe_utils import (
     generate_wins_points_summary,
     meltdown_day_matches,
+    get_legendary_matches,
+    compute_streak_timeseries,
 )
 
 
@@ -534,6 +533,54 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     with subtab_cum:
                         st.subheader("Cumulative Points")
                         st.altair_chart(cum_points_adam, use_container_width=True)
+
+
+def display_records_leaderboards(df_in: pd.DataFrame):
+    """
+    Shows a variety of interesting records/leaderboards:
+      - Biggest Blowout (largest PointDiff)
+      - Highest Combined Score
+      - Most Matches in a Single Day
+      - Longest Rivalry (by number of matches)
+      - Highest Single-Game Score
+    """
+    st.subheader("Records & Leaderboards")
+
+    temp = df_in.copy()
+    temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
+
+    # 1) Biggest Blowout
+    st.markdown("**Biggest Blowout (Largest PointDiff):**")
+    biggest_blowout = temp.sort_values("PointDiff", ascending=False).head(1)
+    st.dataframe(
+        biggest_blowout[
+            ["date", "Player1", "Score1", "Player2", "Score2", "PointDiff"]
+        ].reset_index(drop=True)
+    )
+
+    # 2) Highest Combined Score
+    st.markdown("**Highest Combined Score (Longest/Most Intense Match):**")
+    highest_score = temp.sort_values("TotalPoints", ascending=False).head(1)
+    st.dataframe(
+        highest_score[
+            ["date", "Player1", "Score1", "Player2", "Score2", "TotalPoints"]
+        ].reset_index(drop=True)
+    )
+
+    # 3) Most Matches in a Single Day
+    st.markdown("**Most Matches in a Single Day:**")
+    matches_by_day = temp.groupby("date").size().reset_index(name="Matches")
+    busiest_day = matches_by_day.sort_values("Matches", ascending=False).head(1)
+    st.dataframe(busiest_day.reset_index(drop=True))
+
+    # 4) Longest Rivalry (by total H2H matches)
+    st.markdown("**Longest Rivalry (by total H2H matches):**")
+    temp["pair"] = temp.apply(
+        lambda row: tuple(sorted([row["Player1"], row["Player2"]])), axis=1
+    )
+    pair_counts = temp.groupby("pair").size().reset_index(name="match_count")
+    top_rivalry = pair_counts.sort_values("match_count", ascending=False).head(1)
+    st.dataframe(top_rivalry.reset_index(drop=True))
 
 
 def generate_analysis_content(df_filtered: pd.DataFrame, include_ratings: bool):

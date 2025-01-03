@@ -1,9 +1,7 @@
 import pandas as pd
 import altair as alt
 from typing import Tuple
-import streamlit as st
-from general_utils import meltdown_day_matches
-from collections import defaultdict
+from dataframe_utils import meltdown_day_matches
 
 
 def chart_matches_over_time(df_in: pd.DataFrame) -> alt.Chart:
@@ -42,19 +40,6 @@ def chart_match_distribution(df_in: pd.DataFrame) -> alt.Chart:
         )
     )
     return results_chart
-
-
-def get_legendary_matches(df_in: pd.DataFrame, n_closest: int = 10) -> pd.DataFrame:
-    """
-    Returns the top N 'closest' matches by minimal PointDiff and highest total points.
-    """
-    temp_df = df_in.copy()
-    temp_df["TotalPoints"] = temp_df["Score1"] + temp_df["Score2"]
-    # Sort by ascending PointDiff, then descending total points
-    df_closest_sorted = temp_df.sort_values(
-        ["PointDiff", "TotalPoints"], ascending=[True, False]
-    )
-    return df_closest_sorted.head(n_closest).copy()
 
 
 def chart_wins_barchart(df_summary: pd.DataFrame) -> alt.Chart:
@@ -268,38 +253,6 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
     return heatmap
 
 
-def compute_streak_timeseries(df_in: pd.DataFrame) -> pd.DataFrame:
-    """
-    For each player, track a rolling 'streak' value over time.
-    +1 for a win, -1 for a loss, cumulatively extended until broken by opposite outcome.
-    """
-    df_stacked = meltdown_day_matches(df_in).sort_values(["date", "match_number_total"])
-
-    streak_vals = []
-    current_streaks = defaultdict(int)
-    last_outcome = defaultdict(lambda: None)
-
-    for _, row in df_stacked.iterrows():
-        player = row["player"]
-        if row["did_win"] == 1:
-            if last_outcome[player] == "win":
-                current_streaks[player] += 1
-            else:
-                current_streaks[player] = 1
-            last_outcome[player] = "win"
-        else:
-            if last_outcome[player] == "loss":
-                current_streaks[player] -= 1
-            else:
-                current_streaks[player] = -1
-            last_outcome[player] = "loss"
-
-        streak_vals.append(current_streaks[player])
-
-    df_stacked["streak_value"] = streak_vals
-    return df_stacked
-
-
 def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
     """
     Plot the player's streak_value over time.
@@ -322,51 +275,3 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
         )
     )
     return chart
-
-
-def display_records_leaderboards(df_in: pd.DataFrame):
-    """
-    Shows a variety of interesting records/leaderboards:
-      - Biggest Blowout (largest PointDiff)
-      - Highest Combined Score
-      - Most Matches in a Single Day
-      - Longest Rivalry (by number of matches)
-      - Highest Single-Game Score
-    """
-    st.subheader("Records & Leaderboards")
-
-    temp = df_in.copy()
-    temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
-
-    # 1) Biggest Blowout
-    st.markdown("**Biggest Blowout (Largest PointDiff):**")
-    biggest_blowout = temp.sort_values("PointDiff", ascending=False).head(1)
-    st.dataframe(
-        biggest_blowout[
-            ["date", "Player1", "Score1", "Player2", "Score2", "PointDiff"]
-        ].reset_index(drop=True)
-    )
-
-    # 2) Highest Combined Score
-    st.markdown("**Highest Combined Score (Longest/Most Intense Match):**")
-    highest_score = temp.sort_values("TotalPoints", ascending=False).head(1)
-    st.dataframe(
-        highest_score[
-            ["date", "Player1", "Score1", "Player2", "Score2", "TotalPoints"]
-        ].reset_index(drop=True)
-    )
-
-    # 3) Most Matches in a Single Day
-    st.markdown("**Most Matches in a Single Day:**")
-    matches_by_day = temp.groupby("date").size().reset_index(name="Matches")
-    busiest_day = matches_by_day.sort_values("Matches", ascending=False).head(1)
-    st.dataframe(busiest_day.reset_index(drop=True))
-
-    # 4) Longest Rivalry (by total H2H matches)
-    st.markdown("**Longest Rivalry (by total H2H matches):**")
-    temp["pair"] = temp.apply(
-        lambda row: tuple(sorted([row["Player1"], row["Player2"]])), axis=1
-    )
-    pair_counts = temp.groupby("pair").size().reset_index(name="match_count")
-    top_rivalry = pair_counts.sort_values("match_count", ascending=False).head(1)
-    st.dataframe(top_rivalry.reset_index(drop=True))

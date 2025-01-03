@@ -1,6 +1,5 @@
 import pandas as pd
 from collections import defaultdict
-from typing import Dict
 
 
 def meltdown_day_matches(df_in: pd.DataFrame) -> pd.DataFrame:
@@ -109,3 +108,48 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
     final_summary.sort_values("Wins", ascending=False, inplace=True, ignore_index=True)
 
     return final_summary
+
+
+def get_legendary_matches(df_in: pd.DataFrame, n_closest: int = 10) -> pd.DataFrame:
+    """
+    Returns the top N 'closest' matches by minimal PointDiff and highest total points.
+    """
+    temp_df = df_in.copy()
+    temp_df["TotalPoints"] = temp_df["Score1"] + temp_df["Score2"]
+    # Sort by ascending PointDiff, then descending total points
+    df_closest_sorted = temp_df.sort_values(
+        ["PointDiff", "TotalPoints"], ascending=[True, False]
+    )
+    return df_closest_sorted.head(n_closest).copy()
+
+
+def compute_streak_timeseries(df_in: pd.DataFrame) -> pd.DataFrame:
+    """
+    For each player, track a rolling 'streak' value over time.
+    +1 for a win, -1 for a loss, cumulatively extended until broken by opposite outcome.
+    """
+    df_stacked = meltdown_day_matches(df_in).sort_values(["date", "match_number_total"])
+
+    streak_vals = []
+    current_streaks = defaultdict(int)
+    last_outcome = defaultdict(lambda: None)
+
+    for _, row in df_stacked.iterrows():
+        player = row["player"]
+        if row["did_win"] == 1:
+            if last_outcome[player] == "win":
+                current_streaks[player] += 1
+            else:
+                current_streaks[player] = 1
+            last_outcome[player] = "win"
+        else:
+            if last_outcome[player] == "loss":
+                current_streaks[player] -= 1
+            else:
+                current_streaks[player] = -1
+            last_outcome[player] = "loss"
+
+        streak_vals.append(current_streaks[player])
+
+    df_stacked["streak_value"] = streak_vals
+    return df_stacked
