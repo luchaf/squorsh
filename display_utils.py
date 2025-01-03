@@ -354,6 +354,32 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         st.subheader("Endurance Metrics: Performance by N-th Match of Day")
         df_daycount = meltdown_day_matches(df_filtered)
 
+        import numpy as np
+        import pandas as pd
+        import statsmodels.api as sm
+
+        # Function to calculate weighted regression
+        def calculate_weighted_regression(df, x_col, y_col, weight_col, group_col):
+            regression_results = []
+
+            for player, group in df.groupby(group_col):
+                X = group[x_col]
+                y = group[y_col]
+                weights = group[weight_col]
+                X = sm.add_constant(X)  # Add constant for the intercept
+
+                # Weighted least squares regression
+                model = sm.WLS(y, X, weights=weights)
+                results = model.fit()
+
+                # Create regression line
+                predicted = results.predict(X)
+                group["regression"] = predicted
+                regression_results.append(group)
+
+            return pd.concat(regression_results)
+
+        # Prepare the data
         df_day_agg = (
             df_daycount.groupby(["player", "MatchOfDay"])["did_win"]
             .agg(["sum", "count"])
@@ -361,7 +387,17 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         )
         df_day_agg["win_rate"] = df_day_agg["sum"] / df_day_agg["count"]
 
-        base = alt.Chart(df_day_agg).encode(
+        # Calculate weighted regression
+        df_with_regression = calculate_weighted_regression(
+            df_day_agg,
+            x_col="MatchOfDay",
+            y_col="win_rate",
+            weight_col="count",
+            group_col="player",
+        )
+
+        # Plot in Altair
+        base = alt.Chart(df_with_regression).encode(
             x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
             y=alt.Y("win_rate:Q", title="Win Rate (0-1)"),
             color=alt.Color("player:N", title="Player"),
@@ -376,17 +412,16 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
 
         lines_layer = base.mark_line(point=True)
         trend_layer = (
-            base.transform_regression(
-                "MatchOfDay",
-                "win_rate",
-                groupby=["player"],
-                method="linear",  # Use linear regression
-                params=True,  # Include regression parameters
-                weight="count",  # Apply weights based on the "count" column
-            )
+            alt.Chart(df_with_regression)
             .mark_line(strokeDash=[4, 4])
-            .encode(opacity=alt.value(0.7))
+            .encode(
+                x=alt.X("MatchOfDay:Q"),
+                y=alt.Y("regression:Q", title="Weighted Regression"),
+                color=alt.Color("player:N", title="Player"),
+                opacity=alt.value(0.7),
+            )
         )
+
         chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
             width="container", height=400
         )
@@ -395,7 +430,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         st.markdown(
             """
             This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
-            The **solid line** is their actual data, and the **dashed line** is a linear trend line weighted by the number of matches played.
+            The **solid line** is their actual data, and the **dashed line** is a weighted linear trend line.
             """
         )
 
