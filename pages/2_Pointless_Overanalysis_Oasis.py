@@ -77,12 +77,12 @@ def main():
 
     # ------------- MAIN TABS -------------
     main_tab_overall, main_tab_head2head = st.tabs(
-        ["Overall Overanalysis", "Head-to-Head"]
+        ["Overall Overanalysis", "Head-to-Head Overanalysis"]
     )
 
     # Overall Analysis Tab
     with main_tab_overall:
-        generate_analysis_content(df_filtered, include_elo=True)
+        generate_analysis_content(df_filtered, include_ratings=True)
 
     # Head-to-Head Analysis Tab
     with main_tab_head2head:
@@ -115,7 +115,7 @@ def main():
             else:
                 # Optionally include Elo, Glicko2, TrueSkill for head2head
                 # but let's leave it out to keep it simpler.
-                generate_analysis_content(df_head2head, include_elo=False)
+                generate_analysis_content(df_head2head, include_ratings=False)
         else:
             st.write(
                 "Please select two players to compare their head-to-head statistics!"

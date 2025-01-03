@@ -534,7 +534,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                         st.altair_chart(cum_points_adam, use_container_width=True)
 
 
-def generate_analysis_content(df_filtered: pd.DataFrame, include_elo: bool):
+def generate_analysis_content(df_filtered: pd.DataFrame, include_ratings: bool):
     """
     Creates the sub-tabs for Overall Overanalysis:
       1) Match Stats
@@ -554,7 +554,7 @@ def generate_analysis_content(df_filtered: pd.DataFrame, include_elo: bool):
         "Endurance and Grit",
         "Records & Leaderboards",
     ]
-    if not include_elo:
+    if not include_ratings:
         # If we skip the rating systems entirely
         list_of_tabs.remove("Ratings")
 
@@ -567,7 +567,7 @@ def generate_analysis_content(df_filtered: pd.DataFrame, include_elo: bool):
     idx += 1
 
     # 2) RATINGS (Optional)
-    if include_elo:
+    if include_ratings:
         with tabs[idx]:
             display_elo_and_alternative_ratings(df_filtered)
         idx += 1
