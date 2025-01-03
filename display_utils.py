@@ -376,7 +376,14 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
 
         lines_layer = base.mark_line(point=True)
         trend_layer = (
-            base.transform_regression("MatchOfDay", "win_rate", groupby=["player"])
+            base.transform_regression(
+                "MatchOfDay",
+                "win_rate",
+                groupby=["player"],
+                method="linear",  # Use linear regression
+                params=True,  # Include regression parameters
+                weight="count",  # Apply weights based on the "count" column
+            )
             .mark_line(strokeDash=[4, 4])
             .encode(opacity=alt.value(0.7))
         )
@@ -388,7 +395,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
         st.markdown(
             """
             This chart shows how each **selected** player performs in their 1st, 2nd, 3rd, etc. match **per day**.  
-            The **solid line** is their actual data, and the **dashed line** is a linear trend line.
+            The **solid line** is their actual data, and the **dashed line** is a linear trend line weighted by the number of matches played.
             """
         )
 
