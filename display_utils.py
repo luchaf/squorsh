@@ -18,11 +18,11 @@ from visualization_utils import (
     chart_wins_over_time,
     chart_points_over_time,
     chart_streaks_over_time,
+    get_legendary_matches,
     display_records_leaderboards,
 )
 from general_utils import (
     generate_wins_points_summary,
-    get_legendary_matches,
     compute_streak_timeseries,
     meltdown_day_matches,
 )
