@@ -123,9 +123,9 @@ def generate_trueskill_ratings(df_in: pd.DataFrame) -> pd.DataFrame:
         data_out.append(
             {
                 "Player": p,
+                "TrueSkill Rating": round(r.mu - 3 * r.sigma, 2),
                 "TrueSkill Mu": round(r.mu, 2),
                 "TrueSkill Sigma": round(r.sigma, 2),
-                "TrueSkill Rating": round(r.mu - 3 * r.sigma, 2),  # conservative rating
             }
         )
     df_ts = pd.DataFrame(data_out)
