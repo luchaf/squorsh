@@ -586,22 +586,22 @@ def display_records_leaderboards(df_in: pd.DataFrame):
 def generate_analysis_content(df_filtered: pd.DataFrame, include_ratings: bool):
     """
     Creates the sub-tabs for Overall Overanalysis:
-      1) Match Stats
-      2) Ratings (Elo, Glicko2, TrueSkill) (if include_elo=True)
-      3) Wins & Points
-      4) Avg. Margin
-      5) Win/Loss Streaks
-      6) Endurance and Grit
-      7) Records & Leaderboards
+      1) Ratings (Elo, Glicko2, TrueSkill) (if include_elo=True)
+      2) Wins & Points
+      3) Avg. Margin
+      4) Win/Loss Streaks
+      5) Endurance and Grit
+      6) Records & Leaderboards
+      7) Match Stats
     """
     list_of_tabs = [
-        "Match Stats",
         "Ratings",
         "Wins & Points",
         "Avg. Margin",
         "Win/Loss Streaks",
         "Endurance and Grit",
         "Records & Leaderboards",
+        "Match Stats",
     ]
     if not include_ratings:
         # If we skip the rating systems entirely
@@ -610,38 +610,38 @@ def generate_analysis_content(df_filtered: pd.DataFrame, include_ratings: bool):
     tabs = st.tabs(list_of_tabs)
     idx = 0
 
-    # 1) MATCH STATS
-    with tabs[idx]:
-        display_match_stats(df_filtered)
-    idx += 1
-
-    # 2) RATINGS (Optional)
+    # 1) RATINGS (Optional)
     if include_ratings:
         with tabs[idx]:
             display_elo_and_alternative_ratings(df_filtered)
         idx += 1
 
-    # 3) WINS & POINTS
+    # 2) WINS & POINTS
     with tabs[idx]:
         display_wins_and_points(df_filtered)
     idx += 1
 
-    # 4) AVERAGE MARGIN
+    # 3) AVERAGE MARGIN
     with tabs[idx]:
         display_avg_margin(df_filtered)
     idx += 1
 
-    # 5) WIN/LOSS STREAKS
+    # 4) WIN/LOSS STREAKS
     with tabs[idx]:
         display_win_loss_streaks(df_filtered)
     idx += 1
 
-    # 6) ENDURANCE & GRIT
+    # 5) ENDURANCE & GRIT
     with tabs[idx]:
         display_endurance_and_grit(df_filtered)
     idx += 1
 
-    # 7) RECORDS & LEADERBOARDS
+    # 6) RECORDS & LEADERBOARDS
     with tabs[idx]:
         display_records_leaderboards(df_filtered)
+    idx += 1
+
+    # 7) MATCH STATS
+    with tabs[idx]:
+        display_match_stats(df_filtered)
     idx += 1
