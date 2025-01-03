@@ -78,7 +78,7 @@ def generate_glicko2_ratings(df_in: pd.DataFrame) -> pd.DataFrame:
         results.append(
             {
                 "Player": p,
-                "Glicko2 Rating": pl.rating,
+                "Glicko2 Rating": int(pl.rating),
                 "RD": pl.rd,
                 "Volatility": pl.vol,
             }
