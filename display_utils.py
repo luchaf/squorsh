@@ -96,16 +96,11 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
     """
     Section: "Ratings Systems"
     Subtabs:
-      1) "Elo Ratings"
-      2) "Glicko2 Ratings"
+      1) "Glicko2 Ratings"
+      2) "Elo Ratings"
       3) "TrueSkill Ratings"
     """
-    elo_tab, glicko_tab, trueskill_tab = st.tabs(["Elo", "Glicko2", "TrueSkill"])
-
-    with elo_tab:
-        st.subheader("Elo Ratings")
-        elo_df = generate_elo_ratings(df_filtered, base_elo=1500, K=20)
-        st.dataframe(elo_df, use_container_width=True)
+    glicko_tab, elo_tab, trueskill_tab = st.tabs(["Glicko2", "Elo", "TrueSkill"])
 
     with glicko_tab:
         st.subheader("Glicko2 Ratings")
@@ -114,6 +109,11 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
         st.markdown(
             "Above are the **live** Glicko2 ratings after processing each match in chronological order."
         )
+
+    with elo_tab:
+        st.subheader("Elo Ratings")
+        elo_df = generate_elo_ratings(df_filtered, base_elo=1500, K=20)
+        st.dataframe(elo_df, use_container_width=True)
 
     with trueskill_tab:
         st.subheader("TrueSkill Ratings")
