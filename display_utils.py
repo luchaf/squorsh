@@ -2,13 +2,13 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-from .rating_utils import (
+from rating_utils import (
     generate_elo_ratings,
     generate_glicko2_ratings,
     generate_trueskill_ratings,
 )
 
-from .visualization_utils import (
+from visualization_utils import (
     chart_match_distribution,
     chart_matches_over_time,
     chart_match_intensity_over_time,
@@ -20,7 +20,7 @@ from .visualization_utils import (
     chart_streaks_over_time,
     display_records_leaderboards,
 )
-from .general_utils import (
+from general_utils import (
     generate_wins_points_summary,
     get_legendary_matches,
     compute_streak_timeseries,
