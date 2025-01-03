@@ -28,11 +28,12 @@ def generate_elo_ratings(
             elo_ratings[p2] = r2 + K * (1.0 - exp2)
 
     elo_df = pd.DataFrame(
-        [(player, rating) for player, rating in elo_ratings.items()],
+        [(player, int(rating)) for player, rating in elo_ratings.items()],
         columns=["Player", "Elo Rating"],
     )
     elo_df.sort_values("Elo Rating", ascending=False, inplace=True)
     elo_df.reset_index(drop=True, inplace=True)
+
     return elo_df
 
 
