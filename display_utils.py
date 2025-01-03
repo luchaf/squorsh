@@ -341,11 +341,11 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
     Section: "Endurance and Grit"
     Subtabs:
       1) "N-th Match of the Day"
-      2) "Balls of Steel" (filter: 11:9 or 9:11)
-      3) "Balls of Adamantium" (filter: >= 12:10 or >= 10:12)
+      2) "Nerves of Steel" (filter: 11:9 or 9:11)
+      3) "Nerves of Adamantium" (filter: >= 12:10 or >= 10:12)
     """
     endurance_tabs = st.tabs(
-        ["N-th Match of the Day", "Balls of Steel", "Balls of Adamantium"]
+        ["N-th Match of the Day", "Nerves of Steel", "Nerves of Adamantium"]
     )
     df_backup = df_filtered.copy()
 
@@ -392,7 +392,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
             """
         )
 
-    # --- 2) Balls of Steel: 11:9 or 9:11 ---
+    # --- 2) Nerves of Steel: 11:9 or 9:11 ---
     with endurance_tabs[1]:
         df_steel = df_backup[
             (
@@ -463,7 +463,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                         st.subheader("Cumulative Points")
                         st.altair_chart(cum_points_steel, use_container_width=True)
 
-    # --- 3) Balls of Adamantium: >=12:10 or >=10:12 ---
+    # --- 3) Nerves of Adamantium: >=12:10 or >=10:12 ---
     with endurance_tabs[2]:
         df_adamantium = df_backup[
             (
