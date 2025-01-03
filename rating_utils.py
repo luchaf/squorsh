@@ -79,7 +79,7 @@ def generate_glicko2_ratings(df_in: pd.DataFrame) -> pd.DataFrame:
             {
                 "Player": p,
                 "Glicko2 Rating": int(pl.rating),
-                "RD": pl.rd,
+                "RD": round(pl.rd, 1),
                 "Volatility": pl.vol,
             }
         )
