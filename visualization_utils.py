@@ -372,6 +372,7 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
     daily_stats = pd.merge(
         daily_stats, total_matches, on=["date", "Player"], how="right"
     ).fillna(0)
+    daily_stats.dropna(subset=["Player"], inplace=True)
     daily_stats["WinRate"] = daily_stats["Wins"] / daily_stats["Matches"]
 
     selection = alt.selection_multi(fields=["Player"], bind="legend")
