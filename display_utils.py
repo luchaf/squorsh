@@ -425,8 +425,10 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
             )
         )
 
-        chart_match_of_day = alt.layer(lines_layer, trend_layer).properties(
-            width="container", height=400
+        chart_match_of_day = (
+            alt.layer(lines_layer, trend_layer)
+            .properties(width="container", height=400)
+            .add_selection(selection)
         )
         st.altair_chart(chart_match_of_day, use_container_width=True)
 
