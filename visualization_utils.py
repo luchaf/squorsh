@@ -96,6 +96,7 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         .properties(
             title="Non-Cumulative Wins Development Over Time", width=700, height=400
         )
+        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
     )
 
     # Cumulative
@@ -112,6 +113,7 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         .properties(
             title="Cumulative Wins Development Over Time", width=700, height=400
         )
+        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
     )
 
     return non_cumulative, cumulative
@@ -145,6 +147,7 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         .properties(
             title="Non-Cumulative Points Development Over Time", width=700, height=400
         )
+        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
     )
 
     # Cumulative
@@ -163,6 +166,7 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         .properties(
             title="Cumulative Points Development Over Time", width=700, height=400
         )
+        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
     )
 
     return non_cumulative, cumulative
@@ -273,5 +277,6 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
             width=800,
             height=400,
         )
+        .add_selection(alt.selection_multi(fields=["player"], bind="legend"))
     )
     return chart
