@@ -313,7 +313,6 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
             y=alt.Y("streak_value:Q", title="Streak Value"),
             color=alt.Color(
                 "player:N",
-                scale=alt.Scale(range=SEQUENCE),
                 legend=alt.Legend(title="Player"),
             ),
             tooltip=["date:T", "player:N", "streak_value:Q"],
