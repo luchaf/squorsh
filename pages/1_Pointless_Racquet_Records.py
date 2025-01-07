@@ -65,7 +65,7 @@ with online_form:
                 st.rerun()  # Rerun to reset the form
         else:
             # Display the form to log match results
-            st.title("Log Your Match Results", color=PRIMARY)
+            st.title("Log Your Match Results")
 
             # Widgets with session state management
             player1_name = st.selectbox(
