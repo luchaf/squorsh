@@ -2,8 +2,8 @@ import streamlit as st
 from color_palette import PRIMARY, SECONDARY, TERTIARY
 
 # App title
-st.title('Welcome to "Pointless Squash Stats"!', color=PRIMARY)
-st.write("Where squash isn't just a vegetable.", color=SECONDARY)
+st.title('Welcome to "Pointless Squash Stats"!')
+st.write("Where squash isn't just a vegetable.")
 
 # Intro content
 st.write(
@@ -14,7 +14,7 @@ In the realm of squash, where every swing, smash, and slide counts, it's often t
 )
 
 # Section 1
-st.subheader("1. Racquet Records: Document your match results", color=PRIMARY)
+st.subheader("1. Racquet Records: Document your match results")
 st.write(
     """
 Document each exhilarating (or ego-crushing) match result. Rest easy — entries are encrypted in our database. Remember, you'll need your seed later to relive (or regret) those game stats.
@@ -29,7 +29,7 @@ Step into our digital hall of fame (and occasional shame). Each match you play, 
 )
 
 # Section 2
-st.subheader("2. Overanalysis Oasis: Delving Deep into Data Details.", color=PRIMARY)
+st.subheader("2. Overanalysis Oasis: Delving Deep into Data Details.")
 st.write(
     """
 Data has a story to tell, and boy, do we love to narrate! From the trajectory of your winning streaks to the pattern of your losses, we dissect every detail. Want to know how often you've beaten Chris on a Wednesday evening? Or which month you truly peaked? We're on it, with charts, graphs, and narratives that are almost obsessively granular.
