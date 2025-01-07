@@ -2,11 +2,12 @@ import streamlit as st
 import pandas as pd
 from display_utils import generate_analysis_content
 from streamlit_gsheets import GSheetsConnection
+from color_palette import PRIMARY, SECONDARY, TERTIARY
 
 
 def main():
     # ------------- SETUP -------------
-    st.set_page_config(layout="wide")
+    st.set_page_config(layout="wide", primaryColor=PRIMARY)
     conn = st.connection("gsheets", type=GSheetsConnection)
     worksheet_name = "match_results"
     df = conn.read(worksheet=worksheet_name)
@@ -35,7 +36,7 @@ def main():
     df["day_of_week"] = df["date"].dt.day_name()
 
     # ------------- SIDEBAR FILTERS -------------
-    st.sidebar.header("Filters")
+    st.sidebar.header("Filters", color=PRIMARY)
 
     # Date Range Filter
     min_date = df["date"].min()
@@ -86,7 +87,7 @@ def main():
 
     # Head-to-Head Analysis Tab
     with main_tab_head2head:
-        st.subheader("Select Players for Head-to-Head Analysis")
+        st.subheader("Select Players for Head-to-Head Analysis", color=SECONDARY)
         players = [""] + sorted(set(df["Player1"]) | set(df["Player2"]))
 
         col1, col2 = st.columns(2)
@@ -118,7 +119,8 @@ def main():
                 generate_analysis_content(df_head2head, include_ratings=False)
         else:
             st.write(
-                "Please select two players to compare their head-to-head statistics!"
+                "Please select two players to compare their head-to-head statistics!",
+                color=TERTIARY,
             )
 
 

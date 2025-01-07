@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import date
+from color_palette import PRIMARY, SECONDARY, TERTIARY
 
 
 # Create GSheets connection
@@ -64,7 +65,7 @@ with online_form:
                 st.rerun()  # Rerun to reset the form
         else:
             # Display the form to log match results
-            st.title("Log Your Match Results")
+            st.title("Log Your Match Results", color=PRIMARY)
 
             # Widgets with session state management
             player1_name = st.selectbox(
@@ -100,7 +101,7 @@ with online_form:
             )
 
             # Submit button to save the match result
-            if st.button("Submit Match Result"):
+            if st.button("Submit Match Result", color=SECONDARY):
                 # Calculate match_number_total
                 if not df.empty:
                     match_number_total = df["match_number_total"].max() + 1
@@ -138,4 +139,4 @@ with online_form:
     display_enter_match_results(df)
 
 with show_me_the_list:
-    st.dataframe(df)
+    st.dataframe(df, color=TERTIARY)

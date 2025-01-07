@@ -2,6 +2,14 @@ import pandas as pd
 import altair as alt
 from typing import Tuple
 from dataframe_utils import meltdown_day_matches
+from color_palette import (
+    SEQUENCE,
+    HEATMAP_SCHEME,
+    BAR_COLOR,
+    SECONDARY_BAR_COLOR,
+    LINE_OPACITY,
+    DESELECTED_OPACITY,
+)
 
 
 def chart_matches_over_time(df_in: pd.DataFrame) -> alt.Chart:
@@ -11,7 +19,7 @@ def chart_matches_over_time(df_in: pd.DataFrame) -> alt.Chart:
     matches_over_time = df_in.groupby("date").size().reset_index(name="Matches")
     chart = (
         alt.Chart(matches_over_time)
-        .mark_bar()
+        .mark_bar(color=BAR_COLOR)
         .encode(x="date:T", y="Matches:Q", tooltip=["date:T", "Matches:Q"])
         .properties(width="container", height=400)
     )
@@ -32,7 +40,7 @@ def chart_match_distribution(df_in: pd.DataFrame) -> alt.Chart:
 
     results_chart = (
         alt.Chart(pair_counts)
-        .mark_bar()
+        .mark_bar(color=SECONDARY_BAR_COLOR)
         .encode(
             x=alt.X("Count:Q", title="Number of Matches"),
             y=alt.Y("ResultPair:N", sort="-x", title="Score Category"),
@@ -48,7 +56,7 @@ def chart_wins_barchart(df_summary: pd.DataFrame) -> alt.Chart:
     """
     chart = (
         alt.Chart(df_summary)
-        .mark_bar(color="blue")
+        .mark_bar(color=BAR_COLOR)
         .encode(
             x=alt.X("Player:N", sort=list(df_summary["Player"]), title="Player"),
             y=alt.Y("Wins:Q", title="Number of Wins"),
@@ -65,7 +73,7 @@ def chart_points_barchart(df_summary: pd.DataFrame) -> alt.Chart:
     """
     chart = (
         alt.Chart(df_summary)
-        .mark_bar(color="orange")
+        .mark_bar(color=SECONDARY_BAR_COLOR)
         .encode(
             x=alt.X("Player:N", sort=list(df_summary["Player"]), title="Player"),
             y=alt.Y("Points:Q", title="Total Points"),
@@ -88,13 +96,19 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     # Non-cumulative
     non_cumulative = (
         alt.Chart(wins_over_time)
-        .mark_line()
+        .mark_line(opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("Wins:Q", title="Wins Per Day"),
-            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+            color=alt.Color(
+                "Player:N",
+                scale=alt.Scale(range=SEQUENCE),
+                legend=alt.Legend(title="Player"),
+            ),
             tooltip=["date:T", "Player:N", "Wins:Q"],
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
         )
         .properties(
             title="Non-Cumulative Wins Development Over Time", width=700, height=400
@@ -106,13 +120,19 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     wins_over_time["CumulativeWins"] = wins_over_time.groupby("Player")["Wins"].cumsum()
     cumulative = (
         alt.Chart(wins_over_time)
-        .mark_line()
+        .mark_line(opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
-            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+            color=alt.Color(
+                "Player:N",
+                scale=alt.Scale(range=SEQUENCE),
+                legend=alt.Legend(title="Player"),
+            ),
             tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
         )
         .properties(
             title="Cumulative Wins Development Over Time", width=700, height=400
@@ -143,13 +163,19 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     # Non-cumulative
     non_cumulative = (
         alt.Chart(points_over_time)
-        .mark_line()
+        .mark_line(opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("Points:Q", title="Points Per Day"),
-            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+            color=alt.Color(
+                "Player:N",
+                scale=alt.Scale(range=SEQUENCE),
+                legend=alt.Legend(title="Player"),
+            ),
             tooltip=["date:T", "Player:N", "Points:Q"],
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
         )
         .properties(
             title="Non-Cumulative Points Development Over Time", width=700, height=400
@@ -163,13 +189,19 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     ].cumsum()
     cumulative = (
         alt.Chart(points_over_time)
-        .mark_line()
+        .mark_line(opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("CumulativePoints:Q", title="Cumulative Points"),
-            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+            color=alt.Color(
+                "Player:N",
+                scale=alt.Scale(range=SEQUENCE),
+                legend=alt.Legend(title="Player"),
+            ),
             tooltip=["date:T", "Player:N", "CumulativePoints:Q"],
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
         )
         .properties(
             title="Cumulative Points Development Over Time", width=700, height=400
@@ -189,7 +221,7 @@ def chart_match_intensity_over_time(df_in: pd.DataFrame) -> alt.Chart:
     intensity_over_time = temp.groupby("date")["TotalPoints"].mean().reset_index()
     chart = (
         alt.Chart(intensity_over_time)
-        .mark_line(point=True)
+        .mark_line(point=True, opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("TotalPoints:Q", title="Avg Total Points"),
@@ -250,7 +282,7 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
                 title="Player",
             ),
             color=alt.Color(
-                "win_rate:Q", scale=alt.Scale(scheme="greens"), title="Win Rate"
+                "win_rate:Q", scale=alt.Scale(scheme=HEATMAP_SCHEME), title="Win Rate"
             ),
             tooltip=[
                 alt.Tooltip("day_of_week:N", title="Day"),
@@ -275,13 +307,19 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
 
     chart = (
         alt.Chart(df_stacked)
-        .mark_line(point=True)
+        .mark_line(point=True, opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("streak_value:Q", title="Streak Value"),
-            color="player:N",
+            color=alt.Color(
+                "player:N",
+                scale=alt.Scale(range=SEQUENCE),
+                legend=alt.Legend(title="Player"),
+            ),
             tooltip=["date:T", "player:N", "streak_value:Q"],
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
         )
         .properties(
             title="Win/Loss Streak Progression Over Time",

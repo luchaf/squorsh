@@ -1,6 +1,7 @@
 import pandas as pd
 import altair as alt
 import streamlit as st
+from color_palette import PRIMARY, SECONDARY, TERTIARY
 
 from rating_utils import (
     generate_elo_ratings,
@@ -51,20 +52,20 @@ def display_match_stats(df_filtered: pd.DataFrame):
     )
 
     with match_time_tab:
-        st.subheader("Matches Over Time")
+        st.subheader("Matches Over Time", color=PRIMARY)
         st.altair_chart(chart_matches_over_time(df_filtered), use_container_width=True)
 
     with match_dist_tab:
-        st.subheader("Match Result Distribution")
+        st.subheader("Match Result Distribution", color=SECONDARY)
         st.altair_chart(chart_match_distribution(df_filtered), use_container_width=True)
 
     with intensity_tab:
-        st.subheader("Match Intensity (Average Total Points Over Time)")
+        st.subheader("Match Intensity (Average Total Points Over Time)", color=TERTIARY)
         st.altair_chart(
             chart_match_intensity_over_time(df_filtered), use_container_width=True
         )
 
-        st.subheader("The Ten Most Legendary Matches")
+        st.subheader("The Ten Most Legendary Matches", color=PRIMARY)
         legendary_df = get_legendary_matches(df_filtered, n_closest=10)
         legendary_df["date"] = pd.to_datetime(legendary_df["date"]).dt.date
         st.dataframe(
@@ -83,12 +84,13 @@ def display_match_stats(df_filtered: pd.DataFrame):
         )
 
     with dayofweek_tab:
-        st.subheader("Detailed Win Rate by Day of Week")
+        st.subheader("Detailed Win Rate by Day of Week", color=SECONDARY)
         st.altair_chart(
             chart_win_rate_by_day_of_week(df_filtered), use_container_width=True
         )
         st.write(
-            "Hover over the chart to see each player's matches, wins, and computed win rate by day of the week."
+            "Hover over the chart to see each player's matches, wins, and computed win rate by day of the week.",
+            color=TERTIARY,
         )
 
 
@@ -103,7 +105,7 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
     glicko_tab, elo_tab, trueskill_tab = st.tabs(["Glicko2", "Elo", "TrueSkill"])
 
     with glicko_tab:
-        st.subheader("Glicko2 Ratings")
+        st.subheader("Glicko2 Ratings", color=PRIMARY)
         glicko_df = generate_glicko2_ratings(df_filtered)
         st.dataframe(glicko_df, use_container_width=True)
         st.markdown(
@@ -111,12 +113,12 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
         )
 
     with elo_tab:
-        st.subheader("Elo Ratings")
+        st.subheader("Elo Ratings", color=SECONDARY)
         elo_df = generate_elo_ratings(df_filtered, base_elo=1500, K=20)
         st.dataframe(elo_df, use_container_width=True)
 
     with trueskill_tab:
-        st.subheader("TrueSkill Ratings")
+        st.subheader("TrueSkill Ratings", color=TERTIARY)
         ts_df = generate_trueskill_ratings(df_filtered)
         st.dataframe(ts_df, use_container_width=True)
         st.markdown(
@@ -151,30 +153,30 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     with chart_tab_wins:
         subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
         with subtab_curr:
-            st.subheader("Wins per Player (Current)")
+            st.subheader("Wins per Player (Current)", color=PRIMARY)
             st.altair_chart(wins_chart, use_container_width=True)
         with subtab_trend:
             subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
             with subtab_non_cum:
-                st.subheader("Non-Cumulative Wins Over Time")
+                st.subheader("Non-Cumulative Wins Over Time", color=SECONDARY)
                 st.altair_chart(non_cum_wins, use_container_width=True)
             with subtab_cum:
-                st.subheader("Cumulative Wins Over Time")
+                st.subheader("Cumulative Wins Over Time", color=TERTIARY)
                 st.altair_chart(cum_wins, use_container_width=True)
 
     # --- Points Tab ---
     with chart_tab_points:
         subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
         with subtab_curr:
-            st.subheader("Points per Player (Current)")
+            st.subheader("Points per Player (Current)", color=PRIMARY)
             st.altair_chart(points_chart, use_container_width=True)
         with subtab_trend:
             subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
             with subtab_non_cum:
-                st.subheader("Non-Cumulative Points Over Time")
+                st.subheader("Non-Cumulative Points Over Time", color=SECONDARY)
                 st.altair_chart(non_cum_points, use_container_width=True)
             with subtab_cum:
-                st.subheader("Cumulative Points Over Time")
+                st.subheader("Cumulative Points Over Time", color=TERTIARY)
                 st.altair_chart(cum_points, use_container_width=True)
 
 
@@ -484,17 +486,17 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     ["Current Standings", "Trends Over Time"]
                 )
                 with subtab_curr:
-                    st.subheader("Wins per Player (Current)")
+                    st.subheader("Wins per Player (Current)", color=PRIMARY)
                     st.altair_chart(wins_chart_steel, use_container_width=True)
                 with subtab_trend:
                     subtab_non_cum, subtab_cum = st.tabs(
                         ["Non-Cumulative", "Cumulative"]
                     )
                     with subtab_non_cum:
-                        st.subheader("Non-Cumulative Wins")
+                        st.subheader("Non-Cumulative Wins", color=SECONDARY)
                         st.altair_chart(non_cum_wins_steel, use_container_width=True)
                     with subtab_cum:
-                        st.subheader("Cumulative Wins")
+                        st.subheader("Cumulative Wins", color=TERTIARY)
                         st.altair_chart(cum_wins_steel, use_container_width=True)
 
             # Points Tab
@@ -503,17 +505,17 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     ["Current Standings", "Trends Over Time"]
                 )
                 with subtab_curr:
-                    st.subheader("Points per Player (Current)")
+                    st.subheader("Points per Player (Current)", color=PRIMARY)
                     st.altair_chart(points_chart_steel, use_container_width=True)
                 with subtab_trend:
                     subtab_non_cum, subtab_cum = st.tabs(
                         ["Non-Cumulative", "Cumulative"]
                     )
                     with subtab_non_cum:
-                        st.subheader("Non-Cumulative Points")
+                        st.subheader("Non-Cumulative Points", color=SECONDARY)
                         st.altair_chart(non_cum_points_steel, use_container_width=True)
                     with subtab_cum:
-                        st.subheader("Cumulative Points")
+                        st.subheader("Cumulative Points", color=TERTIARY)
                         st.altair_chart(cum_points_steel, use_container_width=True)
 
     # --- 3) Nerves of Adamantium: >=12:10 or >=10:12 ---
@@ -555,17 +557,17 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     ["Current Standings", "Trends Over Time"]
                 )
                 with subtab_curr:
-                    st.subheader("Wins per Player (Current)")
+                    st.subheader("Wins per Player (Current)", color=PRIMARY)
                     st.altair_chart(wins_chart_adam, use_container_width=True)
                 with subtab_trend:
                     subtab_non_cum, subtab_cum = st.tabs(
                         ["Non-Cumulative", "Cumulative"]
                     )
                     with subtab_non_cum:
-                        st.subheader("Non-Cumulative Wins")
+                        st.subheader("Non-Cumulative Wins", color=SECONDARY)
                         st.altair_chart(non_cum_wins_adam, use_container_width=True)
                     with subtab_cum:
-                        st.subheader("Cumulative Wins")
+                        st.subheader("Cumulative Wins", color=TERTIARY)
                         st.altair_chart(cum_wins_adam, use_container_width=True)
 
             # Points Tab
@@ -574,17 +576,17 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                     ["Current Standings", "Trends Over Time"]
                 )
                 with subtab_curr:
-                    st.subheader("Points per Player (Current)")
+                    st.subheader("Points per Player (Current)", color=PRIMARY)
                     st.altair_chart(points_chart_adam, use_container_width=True)
                 with subtab_trend:
                     subtab_non_cum, subtab_cum = st.tabs(
                         ["Non-Cumulative", "Cumulative"]
                     )
                     with subtab_non_cum:
-                        st.subheader("Non-Cumulative Points")
+                        st.subheader("Non-Cumulative Points", color=SECONDARY)
                         st.altair_chart(non_cum_points_adam, use_container_width=True)
                     with subtab_cum:
-                        st.subheader("Cumulative Points")
+                        st.subheader("Cumulative Points", color=TERTIARY)
                         st.altair_chart(cum_points_adam, use_container_width=True)
 
 
