@@ -396,6 +396,8 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
             group_col="player",
         )
 
+        selection = alt.selection_multi(fields=["player"], bind="legend")
+
         # Plot in Altair
         base = alt.Chart(df_with_regression).encode(
             x=alt.X("MatchOfDay:Q", title="Nth Match of the Day"),
@@ -408,6 +410,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                 alt.Tooltip("sum:Q", title="Wins"),
                 alt.Tooltip("count:Q", title="Matches"),
             ],
+            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
         )
 
         lines_layer = base.mark_line(point=True)
@@ -418,7 +421,7 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
                 x=alt.X("MatchOfDay:Q"),
                 y=alt.Y("regression:Q", title="Weighted Regression"),
                 color=alt.Color("player:N", title="Player"),
-                opacity=alt.value(0.7),
+                opacity=alt.condition(selection, alt.value(0.7), alt.value(0.1)),
             )
         )
 
