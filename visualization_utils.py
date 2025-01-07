@@ -3,8 +3,6 @@ import altair as alt
 from typing import Tuple
 from dataframe_utils import meltdown_day_matches
 from color_palette import (
-    SEQUENCE,
-    HEATMAP_SCHEME,
     BAR_COLOR,
     SECONDARY_BAR_COLOR,
     LINE_OPACITY,
