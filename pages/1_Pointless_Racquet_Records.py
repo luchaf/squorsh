@@ -101,7 +101,7 @@ with online_form:
             )
 
             # Submit button to save the match result
-            if st.button("Submit Match Result", color=SECONDARY):
+            if st.button("Submit Match Result"):
                 # Calculate match_number_total
                 if not df.empty:
                     match_number_total = df["match_number_total"].max() + 1
@@ -139,4 +139,4 @@ with online_form:
     display_enter_match_results(df)
 
 with show_me_the_list:
-    st.dataframe(df, color=TERTIARY)
+    st.dataframe(df)
