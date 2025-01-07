@@ -18,6 +18,8 @@ from visualization_utils import (
     chart_wins_over_time,
     chart_points_over_time,
     chart_streaks_over_time,
+    chart_win_rate_barchart,
+    chart_win_rate_over_time,
 )
 from dataframe_utils import (
     generate_wins_points_summary,
@@ -127,7 +129,7 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
 def display_wins_and_points(df_filtered: pd.DataFrame):
     """
     Section: "Wins & Points"
-    Subtabs: "Wins" & "Points"
+    Subtabs: "Wins", "Points", "Win Rate"
     Each has "Current Standings" and "Trends Over Time"
     """
     st.subheader("Wins & Points")
@@ -138,14 +140,19 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     final_summary_points = final_summary.copy()
     final_summary_wins.sort_values(by="Wins", ascending=False, inplace=True)
     final_summary_points.sort_values(by="Points", ascending=False, inplace=True)
+    final_summary["WinRate"] = final_summary["Wins"] / final_summary["Matches"]
 
     # Charts
     wins_chart = chart_wins_barchart(final_summary_wins)
     points_chart = chart_points_barchart(final_summary_points)
+    win_rate_chart = chart_win_rate_barchart(final_summary)
     non_cum_wins, cum_wins = chart_wins_over_time(df_filtered)
     non_cum_points, cum_points = chart_points_over_time(df_filtered)
+    non_cum_win_rate, cum_win_rate = chart_win_rate_over_time(df_filtered)
 
-    chart_tab_wins, chart_tab_points = st.tabs(["Wins", "Points"])
+    chart_tab_wins, chart_tab_points, chart_tab_win_rate = st.tabs(
+        ["Wins", "Points", "Win Rate"]
+    )
 
     # --- Wins Tab ---
     with chart_tab_wins:
@@ -176,6 +183,21 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
             with subtab_cum:
                 st.subheader("Cumulative Points Over Time")
                 st.altair_chart(cum_points, use_container_width=True)
+
+    # --- Win Rate Tab ---
+    with chart_tab_win_rate:
+        subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
+        with subtab_curr:
+            st.subheader("Win Rate per Player (Current)")
+            st.altair_chart(win_rate_chart, use_container_width=True)
+        with subtab_trend:
+            subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+            with subtab_non_cum:
+                st.subheader("Non-Cumulative Win Rate Over Time")
+                st.altair_chart(non_cum_win_rate, use_container_width=True)
+            with subtab_cum:
+                st.subheader("Cumulative Win Rate Over Time")
+                st.altair_chart(cum_win_rate, use_container_width=True)
 
 
 def display_avg_margin(df_filtered: pd.DataFrame):
