@@ -350,43 +350,48 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
     """
     # Get all unique players
     all_players = sorted(set(df_in["Player1"]) | set(df_in["Player2"]))
+    all_dates = pd.date_range(df_in["date"].min(), df_in["date"].max(), freq="D")
 
-    # Calculate daily wins per player (including zero wins)
-    daily_wins = df_in.groupby(["date", "Winner"]).size().reset_index(name="Wins")
-    daily_wins.rename(columns={"Winner": "Player"}, inplace=True)
+    # Create initial daily stats DataFrame with all player-date combinations
+    daily_stats = pd.DataFrame(
+        [(date, player) for date in all_dates for player in all_players],
+        columns=["date", "Player"],
+    )
 
-    # Calculate daily matches per player
-    matches_p1 = (
-        df_in.groupby(["date", "Player1"]).size().reset_index(name="P1_Matches")
-    )
-    matches_p2 = (
-        df_in.groupby(["date", "Player2"]).size().reset_index(name="P2_Matches")
-    )
+    # Calculate wins for each player per day
+    wins = df_in.groupby(["date", "Winner"]).size().reset_index(name="Wins")
+    wins.columns = ["date", "Player", "Wins"]
+
+    # Calculate matches for each player per day
+    matches_p1 = df_in.groupby(["date", "Player1"]).size().reset_index(name="Matches1")
+    matches_p2 = df_in.groupby(["date", "Player2"]).size().reset_index(name="Matches2")
     matches_p1.columns = ["date", "Player", "Matches"]
     matches_p2.columns = ["date", "Player", "Matches"]
-    total_matches = (
+    matches = (
         pd.concat([matches_p1, matches_p2])
         .groupby(["date", "Player"])
         .sum()
         .reset_index()
     )
 
-    # Create complete date-player combinations
-    all_dates = pd.date_range(df_in["date"].min(), df_in["date"].max(), freq="D")
-    date_player_combos = pd.MultiIndex.from_product(
-        [all_dates, all_players], names=["date", "Player"]
-    ).to_frame(index=False)
-
-    # Merge wins and matches with all combinations
-    daily_stats = (
-        date_player_combos.merge(daily_wins, on=["date", "Player"], how="left")
-        .merge(total_matches, on=["date", "Player"], how="left")
-        .fillna(0)
+    # Merge everything together
+    daily_stats = daily_stats.merge(wins, on=["date", "Player"], how="left").merge(
+        matches, on=["date", "Player"], how="left"
     )
+    daily_stats.fillna(0, inplace=True)
 
-    # Calculate win rates
-    daily_stats["WinRate"] = daily_stats["Wins"] / daily_stats["Matches"].replace(0, 1)
-    daily_stats.loc[daily_stats["Matches"] == 0, "WinRate"] = None
+    # Calculate win rates (handle division by zero)
+    daily_stats["WinRate"] = (daily_stats["Wins"] / daily_stats["Matches"]).fillna(0)
+
+    # For the cumulative calculations
+    daily_stats["CumWins"] = daily_stats.groupby("Player")["Wins"].cumsum()
+    daily_stats["CumMatches"] = daily_stats.groupby("Player")["Matches"].cumsum()
+    daily_stats["CumWinRate"] = (
+        daily_stats["CumWins"] / daily_stats["CumMatches"]
+    ).fillna(0)
+
+    # Remove rows where player had no matches that day for cleaner visualization
+    daily_stats = daily_stats[daily_stats["Matches"] > 0]
 
     selection = alt.selection_multi(fields=["Player"], bind="legend")
 
@@ -396,7 +401,12 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
         .mark_line(opacity=LINE_OPACITY)
         .encode(
             x=alt.X("date:T", title="Date"),
-            y=alt.Y("WinRate:Q", title="Daily Win Rate", axis=alt.Axis(format=".0%")),
+            y=alt.Y(
+                "WinRate:Q",
+                title="Daily Win Rate",
+                axis=alt.Axis(format=".0%"),
+                scale=alt.Scale(domain=[0, 1]),
+            ),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=[
                 alt.Tooltip("date:T"),
@@ -413,11 +423,6 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
         .add_selection(selection)
     )
 
-    # Calculate cumulative stats
-    daily_stats["CumWins"] = daily_stats.groupby("Player")["Wins"].cumsum()
-    daily_stats["CumMatches"] = daily_stats.groupby("Player")["Matches"].cumsum()
-    daily_stats["CumWinRate"] = daily_stats["CumWins"] / daily_stats["CumMatches"]
-
     # Cumulative chart
     cumulative = (
         alt.Chart(daily_stats)
@@ -425,12 +430,12 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y(
-                "CumWinRate:Q", title="Cumulative Win Rate", axis=alt.Axis(format=".0%")
+                "CumWinRate:Q",
+                title="Cumulative Win Rate",
+                axis=alt.Axis(format=".0%"),
+                scale=alt.Scale(domain=[0, 1]),
             ),
-            color=alt.Color(
-                "Player:N",
-                legend=alt.Legend(title="Player"),
-            ),
+            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=[
                 alt.Tooltip("date:T"),
                 alt.Tooltip("Player:N"),
