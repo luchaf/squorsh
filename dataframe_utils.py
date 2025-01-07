@@ -75,7 +75,7 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
     """
     Given a DataFrame of matches (already filtered) with columns:
     - Winner, Player1, Player2, Score1, Score2
-    returns a summary DataFrame with total Wins and total Points.
+    returns a summary DataFrame with total Wins, total Points, and total Matches.
     """
     # Wins
     wins_df = df_in.groupby("Winner").size().reset_index(name="Wins")
@@ -92,18 +92,30 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
 
-    # Merge Wins + Points
+    # Matches
+    matches_p1 = df_in.groupby("Player1").size().reset_index(name="Matches")
+    matches_p1.columns = ["Player", "Matches"]
+    matches_p2 = df_in.groupby("Player2").size().reset_index(name="Matches")
+    matches_p2.columns = ["Player", "Matches"]
+    total_matches = (
+        pd.concat([matches_p1, matches_p2], ignore_index=True)
+        .groupby("Player")["Matches"]
+        .sum()
+        .reset_index()
+    )
+
+    # Merge Wins, Points, and Matches
     summary_df = pd.merge(
         wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
     ).drop(columns="Player")
     summary_df.rename(columns={"Winner": "Player"}, inplace=True)
     summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
 
-    # Create final summary
     final_summary = pd.merge(
-        total_points, summary_df[["Player", "Wins"]], on="Player", how="outer"
-    )
-    final_summary["Wins"] = final_summary["Wins"].fillna(0).astype(int)
+        summary_df, total_matches, on="Player", how="outer"
+    ).fillna(0)
+    final_summary["Wins"] = final_summary["Wins"].astype(int)
+    final_summary["Matches"] = final_summary["Matches"].astype(int)
     final_summary.dropna(subset=["Player"], inplace=True)
     final_summary.sort_values("Wins", ascending=False, inplace=True, ignore_index=True)
 
