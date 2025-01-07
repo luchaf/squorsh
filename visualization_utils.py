@@ -139,7 +139,7 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     return non_cumulative, cumulative
 
 
-def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
+def chart_points_over_time(df_in: pd.DataFrame) -> Tuple<alt.Chart, alt.Chart]:
     """
     Returns a tuple (non_cumulative_chart, cumulative_chart) for Points over time.
     """
@@ -325,13 +325,34 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
 def chart_win_rate_barchart(df_summary: pd.DataFrame) -> alt.Chart:
     """
     Given a summary DataFrame with 'Player' and 'WinRate', returns a bar chart of Win Rates.
+    Handles players with zero wins gracefully.
     """
+    # Create a copy to avoid modifying the original
+    df = df_summary.copy()
+    
+    # Ensure all required columns exist and have proper values
+    df["WinRate"] = df["WinRate"].fillna(0)
+    df["Wins"] = df["Wins"].fillna(0).astype(int)
+    df["Matches"] = df["Matches"].fillna(0).astype(int)
+    
+    # Sort by win rate descending
+    df = df.sort_values("WinRate", ascending=False)
+    
     chart = (
-        alt.Chart(df_summary)
+        alt.Chart(df)
         .mark_bar(color=BAR_COLOR)
         .encode(
-            x=alt.X("Player:N", sort=list(df_summary["Player"]), title="Player"),
-            y=alt.Y("WinRate:Q", title="Win Rate", axis=alt.Axis(format=".0%")),
+            x=alt.X(
+                "Player:N",
+                sort=list(df["Player"]),  # Use the pre-sorted order
+                title="Player"
+            ),
+            y=alt.Y(
+                "WinRate:Q",
+                title="Win Rate",
+                axis=alt.Axis(format=".0%"),
+                scale=alt.Scale(domain=[0, 1])  # Force scale from 0 to 100%
+            ),
             tooltip=[
                 alt.Tooltip("Player:N"),
                 alt.Tooltip("WinRate:Q", format=".1%"),
