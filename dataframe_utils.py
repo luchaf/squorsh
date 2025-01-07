@@ -115,12 +115,14 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
         summary_df, total_matches, on="Player", how="outer"
     ).fillna(0)
 
+    final_summary.dropna(subset=["Player"], inplace=True)
+
     # Calculate win rate
     final_summary["WinRate"] = final_summary["Wins"] / final_summary["Matches"]
 
     final_summary["Wins"] = final_summary["Wins"].astype(int)
     final_summary["Matches"] = final_summary["Matches"].astype(int)
-    final_summary.dropna(subset=["Player"], inplace=True)
+
     final_summary.sort_values(
         "WinRate", ascending=False, inplace=True, ignore_index=True
     )
