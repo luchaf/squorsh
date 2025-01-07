@@ -18,6 +18,8 @@ from visualization_utils import (
     chart_wins_over_time,
     chart_points_over_time,
     chart_streaks_over_time,
+    chart_win_rate_barchart,
+    chart_win_rate_over_time,
 )
 from dataframe_utils import (
     generate_wins_points_summary,
