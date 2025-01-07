@@ -348,11 +348,14 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
     """
     Returns a tuple (non_cumulative_chart, cumulative_chart) for Win Rates over time.
     """
-    # Calculate daily win rates
-    daily_stats = df_in.groupby(["date", "Winner"]).size().reset_index(name="Wins")
-    daily_stats.rename(columns={"Winner": "Player"}, inplace=True)
+    # Get all unique players
+    all_players = sorted(set(df_in["Player1"]) | set(df_in["Player2"]))
 
-    # Calculate total matches per player per day
+    # Calculate daily wins per player (including zero wins)
+    daily_wins = df_in.groupby(["date", "Winner"]).size().reset_index(name="Wins")
+    daily_wins.rename(columns={"Winner": "Player"}, inplace=True)
+
+    # Calculate daily matches per player
     matches_p1 = (
         df_in.groupby(["date", "Player1"]).size().reset_index(name="P1_Matches")
     )
@@ -368,12 +371,22 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
         .reset_index()
     )
 
-    # Merge wins and matches
-    daily_stats = pd.merge(
-        daily_stats, total_matches, on=["date", "Player"], how="right"
-    ).fillna(0)
-    daily_stats.dropna(subset=["Player"], inplace=True)
-    daily_stats["WinRate"] = daily_stats["Wins"] / daily_stats["Matches"]
+    # Create complete date-player combinations
+    all_dates = pd.date_range(df_in["date"].min(), df_in["date"].max(), freq="D")
+    date_player_combos = pd.MultiIndex.from_product(
+        [all_dates, all_players], names=["date", "Player"]
+    ).to_frame(index=False)
+
+    # Merge wins and matches with all combinations
+    daily_stats = (
+        date_player_combos.merge(daily_wins, on=["date", "Player"], how="left")
+        .merge(total_matches, on=["date", "Player"], how="left")
+        .fillna(0)
+    )
+
+    # Calculate win rates
+    daily_stats["WinRate"] = daily_stats["Wins"] / daily_stats["Matches"].replace(0, 1)
+    daily_stats.loc[daily_stats["Matches"] == 0, "WinRate"] = None
 
     selection = alt.selection_multi(fields=["Player"], bind="legend")
 
@@ -384,10 +397,7 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
         .encode(
             x=alt.X("date:T", title="Date"),
             y=alt.Y("WinRate:Q", title="Daily Win Rate", axis=alt.Axis(format=".0%")),
-            color=alt.Color(
-                "Player:N",
-                legend=alt.Legend(title="Player"),
-            ),
+            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=[
                 alt.Tooltip("date:T"),
                 alt.Tooltip("Player:N"),
