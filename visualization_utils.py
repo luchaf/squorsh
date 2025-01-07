@@ -102,7 +102,6 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("Wins:Q", title="Wins Per Day"),
             color=alt.Color(
                 "Player:N",
-                scale=alt.Scale(range=SEQUENCE),
                 legend=alt.Legend(title="Player"),
             ),
             tooltip=["date:T", "Player:N", "Wins:Q"],
@@ -126,7 +125,6 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
             color=alt.Color(
                 "Player:N",
-                scale=alt.Scale(range=SEQUENCE),
                 legend=alt.Legend(title="Player"),
             ),
             tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
@@ -169,7 +167,6 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("Points:Q", title="Points Per Day"),
             color=alt.Color(
                 "Player:N",
-                scale=alt.Scale(range=SEQUENCE),
                 legend=alt.Legend(title="Player"),
             ),
             tooltip=["date:T", "Player:N", "Points:Q"],
@@ -195,7 +192,6 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("CumulativePoints:Q", title="Cumulative Points"),
             color=alt.Color(
                 "Player:N",
-                scale=alt.Scale(range=SEQUENCE),
                 legend=alt.Legend(title="Player"),
             ),
             tooltip=["date:T", "Player:N", "CumulativePoints:Q"],
@@ -281,9 +277,7 @@ def chart_win_rate_by_day_of_week(df_in: pd.DataFrame) -> alt.Chart:
                 sort=alt.EncodingSortField(field="win_rate", order="descending"),
                 title="Player",
             ),
-            color=alt.Color(
-                "win_rate:Q", scale=alt.Scale(scheme=HEATMAP_SCHEME), title="Win Rate"
-            ),
+            color=alt.Color("win_rate:Q", title="Win Rate"),
             tooltip=[
                 alt.Tooltip("day_of_week:N", title="Day"),
                 alt.Tooltip("player:N", title="Player"),
