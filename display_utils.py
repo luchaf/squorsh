@@ -232,6 +232,7 @@ def display_avg_margin(df_filtered: pd.DataFrame):
                 .reset_index()
                 .rename(columns={"Winner": "Player", "PointDiff": "Avg_margin_victory"})
             )
+            selection = alt.selection_multi(fields=["Player"], bind="legend")
             victory_chart = (
                 alt.Chart(df_margin_vic2)
                 .mark_line(point=True)
@@ -240,12 +241,14 @@ def display_avg_margin(df_filtered: pd.DataFrame):
                     y=alt.Y("Avg_margin_victory:Q", title="Average Margin of Victory"),
                     color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
                     tooltip=["date:T", "Player:N", "Avg_margin_victory:Q"],
+                    opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
                 )
                 .properties(
                     title="Trends in Average Margin of Victory Over Time",
                     width=700,
                     height=400,
                 )
+                .add_selection(selection)
             )
             st.altair_chart(victory_chart, use_container_width=True)
 
@@ -258,6 +261,7 @@ def display_avg_margin(df_filtered: pd.DataFrame):
                     columns={"Loser": "Player", "LoserPointDiff": "Avg_margin_defeat"}
                 )
             )
+            selection = alt.selection_multi(fields=["Player"], bind="legend")
             defeat_chart = (
                 alt.Chart(df_margin_def2)
                 .mark_line(point=True)
@@ -266,12 +270,14 @@ def display_avg_margin(df_filtered: pd.DataFrame):
                     y=alt.Y("Avg_margin_defeat:Q", title="Average Margin of Defeat"),
                     color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
                     tooltip=["date:T", "Player:N", "Avg_margin_defeat:Q"],
+                    opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
                 )
                 .properties(
                     title="Trends in Average Margin of Defeat Over Time",
                     width=700,
                     height=400,
                 )
+                .add_selection(selection)
             )
             st.altair_chart(defeat_chart, use_container_width=True)
 
