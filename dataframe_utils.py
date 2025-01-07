@@ -111,10 +111,7 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
     summary_df.rename(columns={"Winner": "Player"}, inplace=True)
     summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
 
-    final_summary = pd.merge(
-        summary_df, total_matches, on="Player", how="outer"
-    ).fillna(0)
-
+    final_summary = pd.merge(summary_df, total_matches, on="Player", how="outer")
     final_summary.dropna(subset=["Player"], inplace=True)
 
     # Calculate win rate
