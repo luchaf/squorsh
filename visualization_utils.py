@@ -82,23 +82,6 @@ def chart_points_barchart(df_summary: pd.DataFrame) -> alt.Chart:
     return chart
 
 
-def chart_win_rate_barchart(df_summary: pd.DataFrame) -> alt.Chart:
-    """
-    Given a summary DataFrame with 'Player' and 'WinRate', returns a bar chart of Win Rates.
-    """
-    chart = (
-        alt.Chart(df_summary)
-        .mark_bar(color=BAR_COLOR)
-        .encode(
-            x=alt.X("Player:N", sort=list(df_summary["Player"]), title="Player"),
-            y=alt.Y("WinRate:Q", title="Win Rate"),
-            tooltip=["Player:N", "WinRate:Q"],
-        )
-        .properties(title="Win Rate by Player", width=700, height=400)
-    )
-    return chart
-
-
 def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     """
     Returns a tuple (non_cumulative_chart, cumulative_chart) for Wins over time.
@@ -216,79 +199,6 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         )
         .properties(
             title="Cumulative Points Development Over Time", width=700, height=400
-        )
-        .add_selection(selection)
-    )
-
-    return non_cumulative, cumulative
-
-
-def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
-    """
-    Returns a tuple (non_cumulative_chart, cumulative_chart) for Win Rates over time.
-    """
-    df_in["Win"] = df_in["Winner"].notna().astype(int)
-    win_rate_over_time = (
-        df_in.groupby(["date", "Winner"])
-        .agg(Wins=("Win", "sum"), Matches=("Win", "count"))
-        .reset_index()
-    )
-    win_rate_over_time["WinRate"] = (
-        win_rate_over_time["Wins"] / win_rate_over_time["Matches"]
-    )
-    win_rate_over_time.rename(columns={"Winner": "Player"}, inplace=True)
-
-    selection = alt.selection_multi(fields=["Player"], bind="legend")
-
-    # Non-cumulative
-    non_cumulative = (
-        alt.Chart(win_rate_over_time)
-        .mark_line(opacity=LINE_OPACITY)
-        .encode(
-            x=alt.X("date:T", title="Date"),
-            y=alt.Y("WinRate:Q", title="Win Rate Per Day"),
-            color=alt.Color(
-                "Player:N",
-                legend=alt.Legend(title="Player"),
-            ),
-            tooltip=["date:T", "Player:N", "WinRate:Q"],
-            opacity=alt.condition(
-                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
-            ),
-        )
-        .properties(
-            title="Non-Cumulative Win Rate Development Over Time", width=700, height=400
-        )
-        .add_selection(selection)
-    )
-
-    # Cumulative
-    win_rate_over_time["CumulativeWins"] = win_rate_over_time.groupby("Player")[
-        "Wins"
-    ].cumsum()
-    win_rate_over_time["CumulativeMatches"] = win_rate_over_time.groupby("Player")[
-        "Matches"
-    ].cumsum()
-    win_rate_over_time["CumulativeWinRate"] = (
-        win_rate_over_time["CumulativeWins"] / win_rate_over_time["CumulativeMatches"]
-    )
-    cumulative = (
-        alt.Chart(win_rate_over_time)
-        .mark_line(opacity=LINE_OPACITY)
-        .encode(
-            x=alt.X("date:T", title="Date"),
-            y=alt.Y("CumulativeWinRate:Q", title="Cumulative Win Rate"),
-            color=alt.Color(
-                "Player:N",
-                legend=alt.Legend(title="Player"),
-            ),
-            tooltip=["date:T", "Player:N", "CumulativeWinRate:Q"],
-            opacity=alt.condition(
-                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
-            ),
-        )
-        .properties(
-            title="Cumulative Win Rate Development Over Time", width=700, height=400
         )
         .add_selection(selection)
     )
