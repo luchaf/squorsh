@@ -2,7 +2,7 @@ import streamlit as st
 from color_palette import PRIMARY, SECONDARY, TERTIARY
 
 # App title
-st.title('Welcome to "Pointless Squash Stats"!', anchor_color=PRIMARY)
+st.title('Welcome to "Pointless Squash Stats"!', color=PRIMARY)
 st.write("Where squash isn't just a vegetable.", color=SECONDARY)
 
 # Intro content
