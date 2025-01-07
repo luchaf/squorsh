@@ -7,7 +7,7 @@ from color_palette import PRIMARY, SECONDARY, TERTIARY
 
 def main():
     # ------------- SETUP -------------
-    st.set_page_config(layout="wide", primaryColor=PRIMARY)
+    st.set_page_config(layout="wide")
     conn = st.connection("gsheets", type=GSheetsConnection)
     worksheet_name = "match_results"
     df = conn.read(worksheet=worksheet_name)
