@@ -320,3 +320,119 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
         .add_selection(selection)
     )
     return chart
+
+
+def chart_win_rate_barchart(df_summary: pd.DataFrame) -> alt.Chart:
+    """
+    Given a summary DataFrame with 'Player' and 'WinRate', returns a bar chart of Win Rates.
+    """
+    chart = (
+        alt.Chart(df_summary)
+        .mark_bar(color=BAR_COLOR)
+        .encode(
+            x=alt.X("Player:N", sort=list(df_summary["Player"]), title="Player"),
+            y=alt.Y("WinRate:Q", title="Win Rate", axis=alt.Axis(format=".0%")),
+            tooltip=[
+                alt.Tooltip("Player:N"),
+                alt.Tooltip("WinRate:Q", format=".1%"),
+                alt.Tooltip("Wins:Q", format="d"),
+                alt.Tooltip("Matches:Q", format="d"),
+            ],
+        )
+        .properties(title="Win Rate by Player", width=700, height=400)
+    )
+    return chart
+
+
+def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
+    """
+    Returns a tuple (non_cumulative_chart, cumulative_chart) for Win Rates over time.
+    """
+    # Calculate daily win rates
+    daily_stats = df_in.groupby(["date", "Winner"]).size().reset_index(name="Wins")
+    daily_stats.rename(columns={"Winner": "Player"}, inplace=True)
+
+    # Calculate total matches per player per day
+    matches_p1 = (
+        df_in.groupby(["date", "Player1"]).size().reset_index(name="P1_Matches")
+    )
+    matches_p2 = (
+        df_in.groupby(["date", "Player2"]).size().reset_index(name="P2_Matches")
+    )
+    matches_p1.columns = ["date", "Player", "Matches"]
+    matches_p2.columns = ["date", "Player", "Matches"]
+    total_matches = (
+        pd.concat([matches_p1, matches_p2])
+        .groupby(["date", "Player"])
+        .sum()
+        .reset_index()
+    )
+
+    # Merge wins and matches
+    daily_stats = pd.merge(
+        daily_stats, total_matches, on=["date", "Player"], how="right"
+    ).fillna(0)
+    daily_stats["WinRate"] = daily_stats["Wins"] / daily_stats["Matches"]
+
+    selection = alt.selection_multi(fields=["Player"], bind="legend")
+
+    # Non-cumulative chart
+    non_cumulative = (
+        alt.Chart(daily_stats)
+        .mark_line(opacity=LINE_OPACITY)
+        .encode(
+            x=alt.X("date:T", title="Date"),
+            y=alt.Y("WinRate:Q", title="Daily Win Rate", axis=alt.Axis(format=".0%")),
+            color=alt.Color(
+                "Player:N",
+                legend=alt.Legend(title="Player"),
+            ),
+            tooltip=[
+                alt.Tooltip("date:T"),
+                alt.Tooltip("Player:N"),
+                alt.Tooltip("WinRate:Q", format=".1%"),
+                alt.Tooltip("Wins:Q", format="d"),
+                alt.Tooltip("Matches:Q", format="d"),
+            ],
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
+        )
+        .properties(title="Daily Win Rate Over Time", width=700, height=400)
+        .add_selection(selection)
+    )
+
+    # Calculate cumulative stats
+    daily_stats["CumWins"] = daily_stats.groupby("Player")["Wins"].cumsum()
+    daily_stats["CumMatches"] = daily_stats.groupby("Player")["Matches"].cumsum()
+    daily_stats["CumWinRate"] = daily_stats["CumWins"] / daily_stats["CumMatches"]
+
+    # Cumulative chart
+    cumulative = (
+        alt.Chart(daily_stats)
+        .mark_line(opacity=LINE_OPACITY)
+        .encode(
+            x=alt.X("date:T", title="Date"),
+            y=alt.Y(
+                "CumWinRate:Q", title="Cumulative Win Rate", axis=alt.Axis(format=".0%")
+            ),
+            color=alt.Color(
+                "Player:N",
+                legend=alt.Legend(title="Player"),
+            ),
+            tooltip=[
+                alt.Tooltip("date:T"),
+                alt.Tooltip("Player:N"),
+                alt.Tooltip("CumWinRate:Q", format=".1%"),
+                alt.Tooltip("CumWins:Q", format="d"),
+                alt.Tooltip("CumMatches:Q", format="d"),
+            ],
+            opacity=alt.condition(
+                selection, alt.value(LINE_OPACITY), alt.value(DESELECTED_OPACITY)
+            ),
+        )
+        .properties(title="Cumulative Win Rate Over Time", width=700, height=400)
+        .add_selection(selection)
+    )
+
+    return non_cumulative, cumulative
