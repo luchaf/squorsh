@@ -83,6 +83,8 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
     wins_over_time = df_in.groupby(["date", "Winner"]).size().reset_index(name="Wins")
     wins_over_time.rename(columns={"Winner": "Player"}, inplace=True)
 
+    selection = alt.selection_multi(fields=["Player"], bind="legend")
+
     # Non-cumulative
     non_cumulative = (
         alt.Chart(wins_over_time)
@@ -92,11 +94,12 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("Wins:Q", title="Wins Per Day"),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=["date:T", "Player:N", "Wins:Q"],
+            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
         )
         .properties(
             title="Non-Cumulative Wins Development Over Time", width=700, height=400
         )
-        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
+        .add_selection(selection)
     )
 
     # Cumulative
@@ -109,11 +112,12 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
+            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
         )
         .properties(
             title="Cumulative Wins Development Over Time", width=700, height=400
         )
-        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
+        .add_selection(selection)
     )
 
     return non_cumulative, cumulative
@@ -134,6 +138,8 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
         points_over_time.groupby(["date", "Player"])["Points"].sum().reset_index()
     )
 
+    selection = alt.selection_multi(fields=["Player"], bind="legend")
+
     # Non-cumulative
     non_cumulative = (
         alt.Chart(points_over_time)
@@ -143,11 +149,12 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("Points:Q", title="Points Per Day"),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=["date:T", "Player:N", "Points:Q"],
+            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
         )
         .properties(
             title="Non-Cumulative Points Development Over Time", width=700, height=400
         )
-        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
+        .add_selection(selection)
     )
 
     # Cumulative
@@ -162,11 +169,12 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("CumulativePoints:Q", title="Cumulative Points"),
             color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
             tooltip=["date:T", "Player:N", "CumulativePoints:Q"],
+            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
         )
         .properties(
             title="Cumulative Points Development Over Time", width=700, height=400
         )
-        .add_selection(alt.selection_multi(fields=["Player"], bind="legend"))
+        .add_selection(selection)
     )
 
     return non_cumulative, cumulative
@@ -263,6 +271,8 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
     Positive streak_value => consecutive wins.
     Negative => consecutive losses.
     """
+    selection = alt.selection_multi(fields=["player"], bind="legend")
+
     chart = (
         alt.Chart(df_stacked)
         .mark_line(point=True)
@@ -271,12 +281,13 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
             y=alt.Y("streak_value:Q", title="Streak Value"),
             color="player:N",
             tooltip=["date:T", "player:N", "streak_value:Q"],
+            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
         )
         .properties(
             title="Win/Loss Streak Progression Over Time",
             width=800,
             height=400,
         )
-        .add_selection(alt.selection_multi(fields=["player"], bind="legend"))
+        .add_selection(selection)
     )
     return chart
