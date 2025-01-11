@@ -145,16 +145,34 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     match_day_winners = (
         df_filtered.groupby(["date", "Winner"]).size().reset_index(name="Wins")
     )
-    match_day_winners = (
+
+    # Identify the top winner for each day
+    daily_top_winner = (
         match_day_winners.groupby("date")
         .apply(lambda x: x.loc[x["Wins"].idxmax()])
         .reset_index(drop=True)
     )
-    match_day_winners_summary = (
-        match_day_winners.groupby("Winner").size().reset_index(name="MatchDayWins")
+
+    # Count how many distinct days each player was the match day winner
+    match_day_winner_counts = (
+        daily_top_winner.groupby("Winner").size().reset_index(name="MatchDaysWon")
     )
-    match_day_winners_summary.sort_values(
-        by="MatchDayWins", ascending=False, inplace=True
+
+    # Sort the results
+    match_day_winner_counts.sort_values(
+        by="MatchDaysWon", ascending=False, inplace=True
+    )
+
+    # Visualization: Bar chart for Match Day Wins
+    match_day_winner_chart = (
+        alt.Chart(match_day_winner_counts)
+        .mark_bar()
+        .encode(
+            x=alt.X("Winner:N", title="Player", sort="-y"),
+            y=alt.Y("MatchDaysWon:Q", title="Match Days Won"),
+            tooltip=["Winner:N", "MatchDaysWon:Q"],
+        )
+        .properties(title="Match Days Won by Each Player", height=400)
     )
 
     # Charts
@@ -217,17 +235,36 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     # --- Match Day Winner Tab ---
     with chart_tab_match_day_winner:
         subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
+
         with subtab_curr:
-            st.subheader("Match Day Winner per Player (Current)")
-            st.altair_chart(wins_chart, use_container_width=True)
+            st.subheader("Match Days Won per Player (Current)")
+            st.altair_chart(match_day_winner_chart, use_container_width=True)
+
         with subtab_trend:
-            subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
-            with subtab_non_cum:
-                st.subheader("Non-Cumulative Match Day Winner Over Time")
-                st.altair_chart(non_cum_wins, use_container_width=True)
-            with subtab_cum:
-                st.subheader("Cumulative Match Day Winner Over Time")
-                st.altair_chart(cum_wins, use_container_width=True)
+            st.subheader("Match Days Won Over Time")
+            daily_top_winner["date"] = pd.to_datetime(daily_top_winner["date"])
+            cumulative_match_days = (
+                daily_top_winner.groupby(["date", "Winner"])
+                .size()
+                .groupby(level=1)
+                .cumsum()
+                .reset_index(name="CumulativeMatchDaysWon")
+            )
+
+            trend_chart = (
+                alt.Chart(cumulative_match_days)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("date:T", title="Date"),
+                    y=alt.Y(
+                        "CumulativeMatchDaysWon:Q", title="Cumulative Match Days Won"
+                    ),
+                    color=alt.Color("Winner:N", title="Player"),
+                    tooltip=["date:T", "Winner:N", "CumulativeMatchDaysWon:Q"],
+                )
+                .properties(title="Cumulative Match Day Wins Over Time", height=400)
+            )
+            st.altair_chart(trend_chart, use_container_width=True)
 
 
 def display_avg_margin(df_filtered: pd.DataFrame):
