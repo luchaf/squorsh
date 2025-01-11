@@ -102,7 +102,12 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
         with static_tab:
             glicko_df = generate_glicko2_ratings_over_time(df_filtered)
-            latest_glicko_df = glicko_df.groupby("Player").last().reset_index()
+            latest_glicko_df = (
+                glicko_df.groupby("Player")
+                .last()
+                .reset_index()
+                .sort_values("Glicko2 Rating")
+            )
             st.dataframe(latest_glicko_df, use_container_width=True)
         with dynamic_tab:
             st.altair_chart(
