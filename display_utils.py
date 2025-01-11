@@ -107,6 +107,7 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
                 .last()
                 .reset_index()
                 .sort_values("Glicko2 Rating", ascending=False)
+                .drop(columns=["date"])
             )
             st.dataframe(latest_glicko_df, use_container_width=True)
         with dynamic_tab:
@@ -122,7 +123,11 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         with static_tab:
             elo_df = generate_elo_ratings_over_time(df_filtered)
             latest_elo_df = (
-                elo_df.sort_values("date").groupby("Player").last().reset_index()
+                elo_df.groupby("Player")
+                .last()
+                .reset_index()
+                .sort_values("Elo Rating")
+                .drop(columns=["date"])
             )
             st.dataframe(latest_elo_df, use_container_width=True)
         with dynamic_tab:
@@ -136,7 +141,11 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         with static_tab:
             ts_df = generate_trueskill_ratings_over_time(df_filtered)
             latest_ts_df = (
-                ts_df.sort_values("date").groupby("Player").last().reset_index()
+                ts_df.groupby("Player")
+                .last()
+                .reset_index()
+                .sort_values("TrueSkill Rating")
+                .drop(columns=["date"])
             )
             st.dataframe(latest_ts_df, use_container_width=True)
         with dynamic_tab:
