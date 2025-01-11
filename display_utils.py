@@ -9,6 +9,7 @@ from rating_utils import (
     generate_glicko2_ratings_over_time,
     generate_elo_ratings_over_time,
     generate_trueskill_ratings_over_time,
+    plot_ratings_over_time,
 )
 
 from visualization_utils import (
