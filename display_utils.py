@@ -106,7 +106,7 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
                 glicko_df.groupby("Player")
                 .last()
                 .reset_index()
-                .sort_values("Glicko2 Rating")
+                .sort_values("Glicko2 Rating", ascending=False)
             )
             st.dataframe(latest_glicko_df, use_container_width=True)
         with dynamic_tab:
