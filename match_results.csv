@@ -323,3 +323,55 @@ match_number_total,match_number_day,Player1,Score1,Player2,Score2,date
 322,13,Simon,7,Lucas,11,20241212
 323,14,Friedemann,12,Lucas,10,20241212
 324,15,Friedemann,11,Simon,4,20241212
+325,1,Friedemann,11,Tobias K.,3,20250103
+326,2,Lucas,9,Simon,11,20250103
+327,3,Simon,11,Friedemann,6,20250103
+328,4,Lucas,11,Tobias K.,6,20250103
+329,5,Lucas,10,Friedemann,12,20250103
+330,6,Simon,11,Tobias K.,4,20250103
+331,7,Friedemann,11,Tobias K.,2,20250103
+332,8,Simon,13,Lucas,11,20250103
+333,9,Simon,11,Friedemann,5,20250103
+334,10,Tobias K.,4,Lucas,11,20250103
+335,11,Lucas,11,Friedemann,8,20250103
+336,12,Tobias K.,6,Simon,11,20250103
+337,13,Friedemann,11,Tobias K.,7,20250103
+338,14,Lucas,3,Simon,11,20250103
+339,15,Friedemann,7,Simon,11,20250103
+340,16,Tobias K.,7,Lucas,11,20250103
+341,17,Simon,11,Tobias K.,1,20250103
+342,18,Lucas,13,Friedemann,11,20250103
+343,19,Friedemann,11,Tobias K.,1,20250103
+344,20,Lucas,11,Simon,3,20250103
+345,21,Simon,11,Friedemann,5,20250103
+346,22,Lucas,11,Friedemann,2,20250103
+347,23,Simon,11,Tobias K.,4,20250103
+348,24,Friedemann,11,Tobias K.,4,20250103
+349,25,Lucas,15,Simon,13,20250103
+350,26,Friedemann,7,Simon,11,20250103
+351,27,Friedemann,11,Lucas,4,20250103
+352,1,Lucas,11,Tobias K.,7,20250109
+353,2,Lucas,11,Simon,5,20250109
+354,3,Tobias K.,1,Simon,11,20250109
+355,4,Lucas,11,Simon,3,20250109
+356,5,Friedemann,11,Tobias K.,3,20250109
+357,6,Simon,11,Friedemann,8,20250109
+358,7,Lucas,12,Tobias K.,10,20250109
+359,8,Friedemann,11,Lucas,6,20250109
+360,9,Lucas,11,Tobias K.,5,20250109
+361,10,Friedemann,12,Simon,10,20250109
+362,11,Lucas,11,Simon,7,20250109
+363,12,Friedemann,11,Tobias K.,4,20250109
+364,13,Lucas,3,Friedemann,11,20250109
+365,14,Friedemann,11,Tobias K.,7,20250109
+366,15,Simon,11,Lucas,9,20250109
+367,16,Simon,11,Friedemann,4,20250109
+368,17,Lucas,12,Tobias K.,10,20250109
+369,18,Friedemann,11,Lucas,4,20250109
+370,19,Friedemann,11,Tobias K.,5,20250109
+371,20,Simon,11,Lucas,9,20250109
+372,21,Friedemann,11,Simon,9,20250109
+373,22,Lucas,9,Friedemann,11,20250109
+374,23,Lucas,11,Simon,8,20250109
+375,24,Friedemann,11,Tobias K.,0,20250109
+376,25,Lucas,11,Tobias K.,3,20250109
