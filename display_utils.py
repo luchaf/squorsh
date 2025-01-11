@@ -146,24 +146,22 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
         df_filtered.groupby(["date", "Winner"]).size().reset_index(name="Wins")
     )
 
-    # Identify the top winner for each day
+    # Identify the player with the most wins per day
     daily_top_winner = (
         match_day_winners.groupby("date")
         .apply(lambda x: x.loc[x["Wins"].idxmax()])
         .reset_index(drop=True)
     )
 
-    # Count how many distinct days each player was the match day winner
+    # Count how many distinct days each player has won
     match_day_winner_counts = (
         daily_top_winner.groupby("Winner").size().reset_index(name="MatchDaysWon")
     )
-
-    # Sort the results
     match_day_winner_counts.sort_values(
         by="MatchDaysWon", ascending=False, inplace=True
     )
 
-    # Visualization: Bar chart for Match Day Wins
+    # --- Visualization: Bar Chart for Current Standings ---
     match_day_winner_chart = (
         alt.Chart(match_day_winner_counts)
         .mark_bar()
@@ -173,6 +171,48 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
             tooltip=["Winner:N", "MatchDaysWon:Q"],
         )
         .properties(title="Match Days Won by Each Player", height=400)
+    )
+
+    # --- Non-Cumulative Match Day Wins Over Time ---
+    non_cum_match_days = (
+        daily_top_winner.groupby(["date", "Winner"])
+        .size()
+        .reset_index(name="MatchDayWins")
+    )
+
+    non_cum_chart = (
+        alt.Chart(non_cum_match_days)
+        .mark_bar()
+        .encode(
+            x=alt.X("date:T", title="Date"),
+            y=alt.Y("MatchDayWins:Q", title="Match Day Wins"),
+            color=alt.Color("Winner:N", title="Player"),
+            tooltip=["date:T", "Winner:N", "MatchDayWins:Q"],
+        )
+        .properties(title="Non-Cumulative Match Day Wins Over Time", height=400)
+    )
+
+    # --- Cumulative Match Day Wins Over Time ---
+    cumulative_match_days = (
+        non_cum_match_days.groupby("Winner")
+        .apply(
+            lambda x: x.sort_values("date").assign(
+                CumulativeWins=x["MatchDayWins"].cumsum()
+            )
+        )
+        .reset_index(drop=True)
+    )
+
+    cum_chart = (
+        alt.Chart(cumulative_match_days)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("date:T", title="Date"),
+            y=alt.Y("CumulativeWins:Q", title="Cumulative Match Day Wins"),
+            color=alt.Color("Winner:N", title="Player"),
+            tooltip=["date:T", "Winner:N", "CumulativeWins:Q"],
+        )
+        .properties(title="Cumulative Match Day Wins Over Time", height=400)
     )
 
     # Charts
@@ -236,35 +276,24 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     with chart_tab_match_day_winner:
         subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
 
+        # --- Current Standings ---
         with subtab_curr:
             st.subheader("Match Days Won per Player (Current)")
             st.altair_chart(match_day_winner_chart, use_container_width=True)
 
+        # --- Trends Over Time with Non-Cumulative and Cumulative Tabs ---
         with subtab_trend:
-            st.subheader("Match Days Won Over Time")
-            daily_top_winner["date"] = pd.to_datetime(daily_top_winner["date"])
-            cumulative_match_days = (
-                daily_top_winner.groupby(["date", "Winner"])
-                .size()
-                .groupby(level=1)
-                .cumsum()
-                .reset_index(name="CumulativeMatchDaysWon")
-            )
+            subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
 
-            trend_chart = (
-                alt.Chart(cumulative_match_days)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("date:T", title="Date"),
-                    y=alt.Y(
-                        "CumulativeMatchDaysWon:Q", title="Cumulative Match Days Won"
-                    ),
-                    color=alt.Color("Winner:N", title="Player"),
-                    tooltip=["date:T", "Winner:N", "CumulativeMatchDaysWon:Q"],
-                )
-                .properties(title="Cumulative Match Day Wins Over Time", height=400)
-            )
-            st.altair_chart(trend_chart, use_container_width=True)
+            # --- Non-Cumulative Tab ---
+            with subtab_non_cum:
+                st.subheader("Non-Cumulative Match Day Wins Over Time")
+                st.altair_chart(non_cum_chart, use_container_width=True)
+
+            # --- Cumulative Tab ---
+            with subtab_cum:
+                st.subheader("Cumulative Match Day Wins Over Time")
+                st.altair_chart(cum_chart, use_container_width=True)
 
 
 def display_avg_margin(df_filtered: pd.DataFrame):
