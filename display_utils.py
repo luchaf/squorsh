@@ -3,9 +3,6 @@ import altair as alt
 import streamlit as st
 
 from rating_utils import (
-    generate_elo_ratings,
-    generate_glicko2_ratings,
-    generate_trueskill_ratings,
     generate_glicko2_ratings_over_time,
     generate_elo_ratings_over_time,
     generate_trueskill_ratings_over_time,
@@ -137,7 +134,10 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
         with static_tab:
             glicko_df = generate_glicko2_ratings_over_time(df_filtered)
-            st.dataframe(glicko_df, use_container_width=True)
+            latest_glicko_df = (
+                glicko_df.sort_values("date").groupby("Player").last().reset_index()
+            )
+            st.dataframe(latest_glicko_df, use_container_width=True)
         with dynamic_tab:
             st.altair_chart(
                 plot_ratings_over_time(
@@ -150,7 +150,10 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
         with static_tab:
             elo_df = generate_elo_ratings_over_time(df_filtered)
-            st.dataframe(elo_df, use_container_width=True)
+            latest_elo_df = (
+                elo_df.sort_values("date").groupby("Player").last().reset_index()
+            )
+            st.dataframe(latest_elo_df, use_container_width=True)
         with dynamic_tab:
             st.altair_chart(
                 plot_ratings_over_time(elo_df, "Elo Rating", "Elo Rating Over Time"),
@@ -161,7 +164,10 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
         with static_tab:
             ts_df = generate_trueskill_ratings_over_time(df_filtered)
-            st.dataframe(ts_df, use_container_width=True)
+            latest_ts_df = (
+                ts_df.sort_values("date").groupby("Player").last().reset_index()
+            )
+            st.dataframe(latest_ts_df, use_container_width=True)
         with dynamic_tab:
             st.altair_chart(
                 plot_ratings_over_time(
