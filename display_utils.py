@@ -223,9 +223,32 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     non_cum_points, cum_points = chart_points_over_time(df_filtered)
     non_cum_win_rate, cum_win_rate = chart_win_rate_over_time(df_filtered)
 
-    chart_tab_win_rate, chart_tab_wins, chart_tab_points, chart_tab_match_day_winner = (
-        st.tabs(["Win Rate", "Wins", "Points", "Match Day Winner"])
+    chart_tab_match_day_winner, chart_tab_win_rate, chart_tab_wins, chart_tab_points = (
+        st.tabs(["Match Day Wins", "Total Win Rate", "Total Wins", "Total Points"])
     )
+
+    # --- Match Day Winner Tab ---
+    with chart_tab_match_day_winner:
+        subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
+
+        # --- Current Standings ---
+        with subtab_curr:
+            st.subheader("Match Days Won per Player (Current)")
+            st.altair_chart(match_day_winner_chart, use_container_width=True)
+
+        # --- Trends Over Time with Non-Cumulative and Cumulative Tabs ---
+        with subtab_trend:
+            subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
+
+            # --- Non-Cumulative Tab ---
+            with subtab_non_cum:
+                st.subheader("Non-Cumulative Match Day Wins Over Time")
+                st.altair_chart(non_cum_chart, use_container_width=True)
+
+            # --- Cumulative Tab ---
+            with subtab_cum:
+                st.subheader("Cumulative Match Day Wins Over Time")
+                st.altair_chart(cum_chart, use_container_width=True)
 
     # --- Win Rate Tab ---
     with chart_tab_win_rate:
@@ -271,29 +294,6 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
             with subtab_cum:
                 st.subheader("Cumulative Points Over Time")
                 st.altair_chart(cum_points, use_container_width=True)
-
-    # --- Match Day Winner Tab ---
-    with chart_tab_match_day_winner:
-        subtab_curr, subtab_trend = st.tabs(["Current Standings", "Trends Over Time"])
-
-        # --- Current Standings ---
-        with subtab_curr:
-            st.subheader("Match Days Won per Player (Current)")
-            st.altair_chart(match_day_winner_chart, use_container_width=True)
-
-        # --- Trends Over Time with Non-Cumulative and Cumulative Tabs ---
-        with subtab_trend:
-            subtab_non_cum, subtab_cum = st.tabs(["Non-Cumulative", "Cumulative"])
-
-            # --- Non-Cumulative Tab ---
-            with subtab_non_cum:
-                st.subheader("Non-Cumulative Match Day Wins Over Time")
-                st.altair_chart(non_cum_chart, use_container_width=True)
-
-            # --- Cumulative Tab ---
-            with subtab_cum:
-                st.subheader("Cumulative Match Day Wins Over Time")
-                st.altair_chart(cum_chart, use_container_width=True)
 
 
 def display_avg_margin(df_filtered: pd.DataFrame):
