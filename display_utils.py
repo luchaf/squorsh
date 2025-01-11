@@ -6,6 +6,9 @@ from rating_utils import (
     generate_elo_ratings,
     generate_glicko2_ratings,
     generate_trueskill_ratings,
+    generate_glicko2_ratings_over_time,
+    generate_elo_ratings_over_time,
+    generate_trueskill_ratings_over_time,
 )
 
 from visualization_utils import (
@@ -124,6 +127,47 @@ def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
         st.markdown(
             "Column **TrueSkill Rating** = `mu - 3*sigma`, a conservative estimate."
         )
+
+
+def display_ratings_tabs(df_filtered: pd.DataFrame):
+    glicko_tab, elo_tab, trueskill_tab = st.tabs(["Glicko2", "Elo", "TrueSkill"])
+
+    with glicko_tab:
+        static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
+        with static_tab:
+            glicko_df = generate_glicko2_ratings_over_time(df_filtered)
+            st.dataframe(glicko_df, use_container_width=True)
+        with dynamic_tab:
+            st.altair_chart(
+                plot_ratings_over_time(
+                    glicko_df, "Glicko2 Rating", "Glicko2 Rating Over Time"
+                ),
+                use_container_width=True,
+            )
+
+    with elo_tab:
+        static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
+        with static_tab:
+            elo_df = generate_elo_ratings_over_time(df_filtered)
+            st.dataframe(elo_df, use_container_width=True)
+        with dynamic_tab:
+            st.altair_chart(
+                plot_ratings_over_time(elo_df, "Elo Rating", "Elo Rating Over Time"),
+                use_container_width=True,
+            )
+
+    with trueskill_tab:
+        static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
+        with static_tab:
+            ts_df = generate_trueskill_ratings_over_time(df_filtered)
+            st.dataframe(ts_df, use_container_width=True)
+        with dynamic_tab:
+            st.altair_chart(
+                plot_ratings_over_time(
+                    ts_df, "TrueSkill Rating", "TrueSkill Rating Over Time"
+                ),
+                use_container_width=True,
+            )
 
 
 def display_wins_and_points(df_filtered: pd.DataFrame):
@@ -784,7 +828,7 @@ def generate_analysis_content(df_filtered: pd.DataFrame, include_ratings: bool):
     # 1) RATINGS (Optional)
     if include_ratings:
         with tabs[idx]:
-            display_elo_and_alternative_ratings(df_filtered)
+            display_ratings_tabs(df_filtered)
         idx += 1
 
     # 2) WINS & POINTS
