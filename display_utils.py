@@ -95,38 +95,6 @@ def display_match_stats(df_filtered: pd.DataFrame):
         )
 
 
-def display_elo_and_alternative_ratings(df_filtered: pd.DataFrame):
-    """
-    Section: "Ratings Systems"
-    Subtabs:
-      1) "Glicko2 Ratings"
-      2) "Elo Ratings"
-      3) "TrueSkill Ratings"
-    """
-    glicko_tab, elo_tab, trueskill_tab = st.tabs(["Glicko2", "Elo", "TrueSkill"])
-
-    with glicko_tab:
-        st.subheader("Glicko2 Ratings")
-        glicko_df = generate_glicko2_ratings(df_filtered)
-        st.dataframe(glicko_df, use_container_width=True)
-        st.markdown(
-            "Above are the **live** Glicko2 ratings after processing each match in chronological order."
-        )
-
-    with elo_tab:
-        st.subheader("Elo Ratings")
-        elo_df = generate_elo_ratings(df_filtered, base_elo=1500, K=20)
-        st.dataframe(elo_df, use_container_width=True)
-
-    with trueskill_tab:
-        st.subheader("TrueSkill Ratings")
-        ts_df = generate_trueskill_ratings(df_filtered)
-        st.dataframe(ts_df, use_container_width=True)
-        st.markdown(
-            "Column **TrueSkill Rating** = `mu - 3*sigma`, a conservative estimate."
-        )
-
-
 def display_ratings_tabs(df_filtered: pd.DataFrame):
     glicko_tab, elo_tab, trueskill_tab = st.tabs(["Glicko2", "Elo", "TrueSkill"])
 
@@ -134,10 +102,10 @@ def display_ratings_tabs(df_filtered: pd.DataFrame):
         static_tab, dynamic_tab = st.tabs(["Static Table", "Rating Over Time"])
         with static_tab:
             glicko_df = generate_glicko2_ratings_over_time(df_filtered)
-            latest_glicko_df = (
-                glicko_df.sort_values("date").groupby("Player").last().reset_index()
-            )
-            st.dataframe(latest_glicko_df, use_container_width=True)
+            # latest_glicko_df = (
+            #    glicko_df.sort_values("date").groupby("Player").last().reset_index()
+            # )
+            st.dataframe(glicko_df, use_container_width=True)
         with dynamic_tab:
             st.altair_chart(
                 plot_ratings_over_time(
