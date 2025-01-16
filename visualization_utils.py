@@ -100,7 +100,7 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("Wins:Q", title="Wins Per Day"),
             color=alt.Color(
                 "Player:N",
-                legend=alt.Legend(title="Player"),
+                legend=alt.Legend(title="Player", orient="bottom"),
             ),
             tooltip=["date:T", "Player:N", "Wins:Q"],
             opacity=alt.condition(
@@ -123,7 +123,7 @@ def chart_wins_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("CumulativeWins:Q", title="Cumulative Wins"),
             color=alt.Color(
                 "Player:N",
-                legend=alt.Legend(title="Player"),
+                legend=alt.Legend(title="Player", orient="bottom"),
             ),
             tooltip=["date:T", "Player:N", "CumulativeWins:Q"],
             opacity=alt.condition(
@@ -165,7 +165,7 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("Points:Q", title="Points Per Day"),
             color=alt.Color(
                 "Player:N",
-                legend=alt.Legend(title="Player"),
+                legend=alt.Legend(title="Player", orient="bottom"),
             ),
             tooltip=["date:T", "Player:N", "Points:Q"],
             opacity=alt.condition(
@@ -190,7 +190,7 @@ def chart_points_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]:
             y=alt.Y("CumulativePoints:Q", title="Cumulative Points"),
             color=alt.Color(
                 "Player:N",
-                legend=alt.Legend(title="Player"),
+                legend=alt.Legend(title="Player", orient="bottom"),
             ),
             tooltip=["date:T", "Player:N", "CumulativePoints:Q"],
             opacity=alt.condition(
@@ -305,7 +305,7 @@ def chart_streaks_over_time(df_stacked: pd.DataFrame) -> alt.Chart:
             y=alt.Y("streak_value:Q", title="Streak Value"),
             color=alt.Color(
                 "player:N",
-                legend=alt.Legend(title="Player"),
+                legend=alt.Legend(title="Player", orient="bottom"),
             ),
             tooltip=["date:T", "player:N", "streak_value:Q"],
             opacity=alt.condition(
@@ -428,7 +428,9 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
                 axis=alt.Axis(format=".0%"),
                 scale=alt.Scale(domain=[0, 1]),
             ),
-            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+            color=alt.Color(
+                "Player:N", legend=alt.Legend(title="Player", orient="bottom")
+            ),
             tooltip=[
                 alt.Tooltip("date:T"),
                 alt.Tooltip("Player:N"),
@@ -456,7 +458,9 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
                 axis=alt.Axis(format=".0%"),
                 scale=alt.Scale(domain=[0, 1]),
             ),
-            color=alt.Color("Player:N", legend=alt.Legend(title="Player")),
+            color=alt.Color(
+                "Player:N", legend=alt.Legend(title="Player", orient="bottom")
+            ),
             tooltip=[
                 alt.Tooltip("date:T"),
                 alt.Tooltip("Player:N"),
