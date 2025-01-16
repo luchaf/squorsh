@@ -106,9 +106,8 @@ def generate_wins_points_summary(df_in: pd.DataFrame) -> pd.DataFrame:
 
     # Merge all stats
     summary_df = pd.merge(
-        wins_df, total_points, left_on="Winner", right_on="Player", how="outer"
-    ).drop(columns="Player")
-    summary_df.rename(columns={"Winner": "Player"}, inplace=True)
+        total_points, wins_df, left_on="Player", right_on="Winner", how="outer"
+    ).drop(columns="Winner")
     summary_df["Wins"] = summary_df["Wins"].fillna(0).astype(int)
 
     final_summary = pd.merge(summary_df, total_matches, on="Player", how="outer")
