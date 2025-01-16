@@ -173,13 +173,13 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     final_summary_points.sort_values(by="Points", ascending=False, inplace=True)
 
     # Ensure all players are included in the points summary
-    all_players = sorted(set(df_filtered["Player1"]) | set(df_filtered["Player2"]))
-    final_summary_points = (
-        final_summary_points.set_index("Player")
-        .reindex(all_players)
-        .fillna(0)
-        .reset_index()
-    )
+    # all_players = sorted(set(df_filtered["Player1"]) | set(df_filtered["Player2"]))
+    # final_summary_points = (
+    #    final_summary_points.set_index("Player")
+    #    .reindex(all_players)
+    #    .fillna(0)
+    #    .reset_index()
+    # )
 
     # Calculate Match Day Winners
     match_day_winners = (
