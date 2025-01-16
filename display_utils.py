@@ -37,19 +37,19 @@ def display_match_stats(df_filtered: pd.DataFrame):
       1) "Matches Over Time"
       2) "Match Distribution"
       3) "Match Intensity"
-      4) "Day-of-Week Performance"
+      4) "Time-Based Performance"
     """
     (
         match_time_tab,
         match_dist_tab,
         intensity_tab,
-        dayofweek_tab,
+        time_based_tab,
     ) = st.tabs(
         [
             "Matches Over Time",
             "Match Distribution",
             "Match Intensity",
-            "Day-of-Week Performance",
+            "Time-Based Performance",
         ]
     )
 
@@ -85,14 +85,38 @@ def display_match_stats(df_filtered: pd.DataFrame):
             use_container_width=True,
         )
 
-    with dayofweek_tab:
-        st.subheader("Detailed Win Rate by Day of Week")
-        st.altair_chart(
-            chart_win_rate_by_day_of_week(df_filtered), use_container_width=True
+    with time_based_tab:
+        st.subheader("Time-Based Performance")
+        dayofweek_tab, monthofyear_tab, year_tab = st.tabs(
+            ["Day-of-Week Performance", "Month-of-Year Performance", "Year Performance"]
         )
-        st.write(
-            "Hover over the chart to see each player's matches, wins, and computed win rate by day of the week."
-        )
+
+        with dayofweek_tab:
+            st.subheader("Detailed Win Rate by Day of Week")
+            st.altair_chart(
+                chart_win_rate_by_day_of_week(df_filtered), use_container_width=True
+            )
+            st.write(
+                "Hover over the chart to see each player's matches, wins, and computed win rate by day of the week."
+            )
+
+        with monthofyear_tab:
+            st.subheader("Detailed Win Rate by Month of Year")
+            st.altair_chart(
+                chart_win_rate_by_month_of_year(df_filtered), use_container_width=True
+            )
+            st.write(
+                "Hover over the chart to see each player's matches, wins, and computed win rate by month of the year."
+            )
+
+        with year_tab:
+            st.subheader("Detailed Win Rate by Year")
+            st.altair_chart(
+                chart_win_rate_by_year(df_filtered), use_container_width=True
+            )
+            st.write(
+                "Hover over the chart to see each player's matches, wins, and computed win rate by year."
+            )
 
 
 def display_ratings_tabs(df_filtered: pd.DataFrame):
