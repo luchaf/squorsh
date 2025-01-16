@@ -473,3 +473,106 @@ def chart_win_rate_over_time(df_in: pd.DataFrame) -> Tuple[alt.Chart, alt.Chart]
     )
 
     return non_cumulative, cumulative
+
+
+def chart_win_rate_by_month_of_year(df_in: pd.DataFrame) -> alt.Chart:
+    """
+    Returns a heatmap of each player's win rate by month of year.
+    """
+    df_in["month_of_year"] = df_in["date"].dt.strftime("%B")
+    df_melt = meltdown_day_matches(df_in)
+    matches_per_month = (
+        df_melt.groupby(["month_of_year", "player"]).size().reset_index(name="matches")
+    )
+    wins_per_month = (
+        df_melt[df_melt["did_win"] == 1]
+        .groupby(["month_of_year", "player"])
+        .size()
+        .reset_index(name="wins")
+    )
+    merged = pd.merge(
+        matches_per_month, wins_per_month, on=["month_of_year", "player"], how="left"
+    ).fillna(0)
+    merged["win_rate"] = merged["wins"] / merged["matches"]
+
+    month_order = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]
+
+    heatmap = (
+        alt.Chart(merged)
+        .mark_rect()
+        .encode(
+            x=alt.X("month_of_year:N", sort=month_order, title="Month of Year"),
+            y=alt.Y(
+                "player:N",
+                sort=alt.EncodingSortField(field="win_rate", order="descending"),
+                title="Player",
+            ),
+            color=alt.Color("win_rate:Q", title="Win Rate"),
+            tooltip=[
+                alt.Tooltip("month_of_year:N", title="Month"),
+                alt.Tooltip("player:N", title="Player"),
+                alt.Tooltip("win_rate:Q", format=".2f", title="Win Rate"),
+                alt.Tooltip("matches:Q", title="Matches"),
+                alt.Tooltip("wins:Q", title="Wins"),
+            ],
+        )
+        .properties(title="Win Rate by Month of Year", width=600, height=400)
+    )
+    return heatmap
+
+
+def chart_win_rate_by_year(df_in: pd.DataFrame) -> alt.Chart:
+    """
+    Returns a heatmap of each player's win rate by year.
+    """
+    df_in["year"] = df_in["date"].dt.year
+    df_melt = meltdown_day_matches(df_in)
+    matches_per_year = (
+        df_melt.groupby(["year", "player"]).size().reset_index(name="matches")
+    )
+    wins_per_year = (
+        df_melt[df_melt["did_win"] == 1]
+        .groupby(["year", "player"])
+        .size()
+        .reset_index(name="wins")
+    )
+    merged = pd.merge(
+        matches_per_year, wins_per_year, on=["year", "player"], how="left"
+    ).fillna(0)
+    merged["win_rate"] = merged["wins"] / merged["matches"]
+
+    heatmap = (
+        alt.Chart(merged)
+        .mark_rect()
+        .encode(
+            x=alt.X("year:O", title="Year"),
+            y=alt.Y(
+                "player:N",
+                sort=alt.EncodingSortField(field="win_rate", order="descending"),
+                title="Player",
+            ),
+            color=alt.Color("win_rate:Q", title="Win Rate"),
+            tooltip=[
+                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("player:N", title="Player"),
+                alt.Tooltip("win_rate:Q", format=".2f", title="Win Rate"),
+                alt.Tooltip("matches:Q", title="Matches"),
+                alt.Tooltip("wins:Q", title="Wins"),
+            ],
+        )
+        .properties(title="Win Rate by Year", width=600, height=400)
+    )
+    return heatmap
