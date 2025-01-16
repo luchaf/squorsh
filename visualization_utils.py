@@ -481,6 +481,7 @@ def chart_win_rate_by_month_of_year(df_in: pd.DataFrame) -> alt.Chart:
     """
     df_in["month_of_year"] = df_in["date"].dt.strftime("%B")
     df_melt = meltdown_day_matches(df_in)
+    df_melt["month_of_year"] = df_melt["date"].dt.strftime("%B")
     matches_per_month = (
         df_melt.groupby(["month_of_year", "player"]).size().reset_index(name="matches")
     )
@@ -552,6 +553,7 @@ def chart_win_rate_by_year(df_in: pd.DataFrame) -> alt.Chart:
     """
     df_in["year"] = df_in["date"].dt.year
     df_melt = meltdown_day_matches(df_in)
+    df_melt["year"] = df_melt["date"].dt.year
     matches_per_year = (
         df_melt.groupby(["year", "player"]).size().reset_index(name="matches")
     )
