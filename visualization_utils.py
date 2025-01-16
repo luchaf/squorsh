@@ -495,7 +495,9 @@ def chart_win_rate_by_month_of_year(df_in: pd.DataFrame) -> alt.Chart:
     ).fillna(0)
     merged["win_rate"] = merged["wins"] / merged["matches"]
 
-    month_order = [
+    # Ensure all players and months are included
+    all_players = sorted(set(df_melt["player"]))
+    all_months = [
         "January",
         "February",
         "March",
@@ -509,12 +511,22 @@ def chart_win_rate_by_month_of_year(df_in: pd.DataFrame) -> alt.Chart:
         "November",
         "December",
     ]
+    merged = (
+        merged.set_index(["month_of_year", "player"])
+        .reindex(
+            pd.MultiIndex.from_product(
+                [all_months, all_players], names=["month_of_year", "player"]
+            ),
+            fill_value=0,
+        )
+        .reset_index()
+    )
 
     heatmap = (
         alt.Chart(merged)
         .mark_rect()
         .encode(
-            x=alt.X("month_of_year:N", sort=month_order, title="Month of Year"),
+            x=alt.X("month_of_year:N", sort=all_months, title="Month of Year"),
             y=alt.Y(
                 "player:N",
                 sort=alt.EncodingSortField(field="win_rate", order="descending"),
@@ -553,6 +565,20 @@ def chart_win_rate_by_year(df_in: pd.DataFrame) -> alt.Chart:
         matches_per_year, wins_per_year, on=["year", "player"], how="left"
     ).fillna(0)
     merged["win_rate"] = merged["wins"] / merged["matches"]
+
+    # Ensure all players and years are included
+    all_players = sorted(set(df_melt["player"]))
+    all_years = sorted(df_in["year"].unique())
+    merged = (
+        merged.set_index(["year", "player"])
+        .reindex(
+            pd.MultiIndex.from_product(
+                [all_years, all_players], names=["year", "player"]
+            ),
+            fill_value=0,
+        )
+        .reset_index()
+    )
 
     heatmap = (
         alt.Chart(merged)
