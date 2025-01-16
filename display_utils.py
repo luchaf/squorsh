@@ -21,6 +21,8 @@ from visualization_utils import (
     chart_streaks_over_time,
     chart_win_rate_barchart,
     chart_win_rate_over_time,
+    chart_win_rate_by_year,
+    chart_win_rate_by_month_of_year,
 )
 from dataframe_utils import (
     generate_wins_points_summary,
