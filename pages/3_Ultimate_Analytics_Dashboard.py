@@ -23,24 +23,15 @@ from predictive_analytics import (
     calculate_head_to_head_probability,
     predict_score_distribution,
     calculate_upset_potential,
-    simulate_tournament_bracket,
-    calculate_performance_trajectory,
-    what_if_scenario_analysis
+    calculate_performance_trajectory
 )
 
 from enhanced_visualizations import (
     create_player_comparison_radar,
-    create_activity_heatmap,
     create_win_rate_opponent_heatmap,
-    create_calendar_view,
-    create_point_flow_sankey,
-    create_performance_scatter,
-    create_score_distribution_boxplot,
     create_bubble_performance_chart,
     create_sparklines_dataframe,
-    add_milestone_annotations,
-    create_momentum_indicator,
-    create_rating_trend_indicator
+    create_momentum_indicator
 )
 
 from rating_utils import generate_elo_ratings_over_time
@@ -145,10 +136,7 @@ def main():
         "🎯 Player Comparison",
         "🔮 Predictive Analytics",
         "💪 Performance Patterns",
-        "🧠 Psychological Insights",
-        "📈 Advanced Visualizations",
-        "🏆 Tournament Simulator",
-        "⚡ Real-time Dashboard"
+        "🧠 Psychological Insights"
     ])
     
     # Tab 1: Performance Overview
@@ -501,216 +489,6 @@ def main():
                         indicator = create_momentum_indicator(player['Momentum Score'])
                         st.write(indicator)
     
-    # Tab 6: Advanced Visualizations
-    with tabs[5]:
-        st.header("📈 Advanced Visualizations")
-        
-        viz_tabs = st.tabs(["Activity Patterns", "Score Analysis", "Calendar View", "Match Flow"])
-        
-        with viz_tabs[0]:
-            st.subheader("📅 Activity Patterns")
-            activity_heatmap = create_activity_heatmap(df_filtered)
-            st.altair_chart(activity_heatmap, use_container_width=True)
-        
-        with viz_tabs[1]:
-            st.subheader("📊 Score Distribution Analysis")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                scatter_chart = create_performance_scatter(df_filtered)
-                st.altair_chart(scatter_chart, use_container_width=True)
-            
-            with col2:
-                boxplot = create_score_distribution_boxplot(df_filtered)
-                st.altair_chart(boxplot, use_container_width=True)
-        
-        with viz_tabs[2]:
-            st.subheader("📆 Match Calendar")
-            cal_player = st.selectbox("Select player for calendar view (or leave empty for all)", 
-                                     ["All"] + all_players)
-            
-            if cal_player == "All":
-                calendar = create_calendar_view(df_filtered)
-            else:
-                calendar = create_calendar_view(df_filtered, cal_player)
-            
-            st.altair_chart(calendar, use_container_width=True)
-        
-        with viz_tabs[3]:
-            st.subheader("🌊 Match Point Flow")
-            recent_matches = df_filtered.sort_values('date', ascending=False).head(20)
-            
-            if not recent_matches.empty:
-                match_options = []
-                match_ids = []
-                for _, match in recent_matches.iterrows():
-                    match_options.append(
-                        f"Match {int(match['match_number_total'])}: {match['Player1']} vs {match['Player2']} "
-                        f"({int(match['Score1'])}-{int(match['Score2'])}) - {match['date'].strftime('%Y-%m-%d')}"
-                    )
-                    match_ids.append(int(match['match_number_total']))
-                
-                if match_options:
-                    selected_index = st.selectbox("Select a match to visualize", range(len(match_options)), 
-                                                 format_func=lambda x: match_options[x])
-                    selected_match_id = match_ids[selected_index]
-                    
-                    sankey_fig = create_point_flow_sankey(df_filtered, selected_match_id)
-                    st.plotly_chart(sankey_fig, use_container_width=True)
-                else:
-                    st.info("No matches available to visualize")
-            else:
-                st.info("No matches found in the selected date range")
-    
-    # Tab 7: Tournament Simulator
-    with tabs[6]:
-        st.header("🏆 Tournament Simulator")
-        
-        st.subheader("Configure Tournament")
-        
-        tournament_size = st.select_slider(
-            "Tournament Size",
-            options=[4, 8, 16],
-            value=8
-        )
-        
-        tournament_players = st.multiselect(
-            f"Select {tournament_size} players",
-            all_players,
-            default=all_players[:min(tournament_size, len(all_players))]
-        )
-        
-        if len(tournament_players) == tournament_size:
-            num_sims = st.slider("Number of simulations", 100, 5000, 1000, 100)
-            
-            if st.button("Run Tournament Simulation"):
-                with st.spinner("Running simulations..."):
-                    results = simulate_tournament_bracket(
-                        df_filtered, 
-                        tournament_players,
-                        metrics['elo_ratings'],
-                        num_sims
-                    )
-                
-                if 'error' not in results:
-                    st.subheader("Tournament Predictions")
-                    
-                    # Results table
-                    st.dataframe(
-                        results['predictions'].style.format({
-                            'Win %': '{:.1f}%',
-                            'Final %': '{:.1f}%',
-                            'Avg Wins': '{:.1f}'
-                        }).background_gradient(subset=['Win %'], cmap='RdYlGn'),
-                        use_container_width=True
-                    )
-                    
-                    # Most likely final
-                    st.info(f"Most likely final: **{results['most_likely_final'][0]}** vs **{results['most_likely_final'][1]}**")
-                else:
-                    st.error(results['error'])
-        else:
-            st.warning(f"Please select exactly {tournament_size} players")
-    
-    # Tab 8: Real-time Dashboard
-    with tabs[7]:
-        st.header("⚡ Real-time Performance Dashboard")
-        
-        # Create a grid layout
-        dashboard_player = st.selectbox("Select player for dashboard", all_players)
-        
-        if dashboard_player:
-            # Player header with key stats
-            col1, col2, col3, col4, col5 = st.columns(5)
-            
-            player_matches = df_filtered[
-                (df_filtered["Player1"] == dashboard_player) | 
-                (df_filtered["Player2"] == dashboard_player)
-            ]
-            
-            wins = len(player_matches[player_matches["Winner"] == dashboard_player])
-            total = len(player_matches)
-            
-            with col1:
-                st.metric("Win Rate", f"{wins/total*100:.1f}%")
-            
-            with col2:
-                if dashboard_player in metrics['elo_ratings']:
-                    rating = metrics['elo_ratings'][dashboard_player]
-                    st.metric("Elo Rating", f"{rating:.0f}")
-            
-            with col3:
-                momentum_player = metrics['momentum'][metrics['momentum']['Player'] == dashboard_player]
-                if not momentum_player.empty:
-                    st.metric("Form", momentum_player.iloc[0]['Last 10 Form'])
-            
-            with col4:
-                dominance_player = metrics['dominance'][metrics['dominance']['Player'] == dashboard_player]
-                if not dominance_player.empty:
-                    st.metric("Dominance", f"{dominance_player.iloc[0]['Dominance Score']:.1f}")
-            
-            with col5:
-                consistency_player = metrics['consistency'][metrics['consistency']['Player'] == dashboard_player]
-                if not consistency_player.empty:
-                    st.metric("Consistency", f"{consistency_player.iloc[0]['Consistency Rating']:.1f}%")
-            
-            # Performance trends
-            st.subheader("Performance Trends")
-            
-            # Get rating history for player
-            player_elo_history = metrics['elo_history'][
-                metrics['elo_history']['Player'] == dashboard_player
-            ].copy()
-            
-            if not player_elo_history.empty:
-                # Rating trend chart with milestones
-                rating_chart = alt.Chart(player_elo_history).mark_line(
-                    point=True,
-                    strokeWidth=3
-                ).encode(
-                    x='date:T',
-                    y='Elo Rating:Q',
-                    tooltip=['date:T', 'Elo Rating:Q']
-                ).properties(
-                    title=f'{dashboard_player} Rating Progression',
-                    height=300
-                )
-                
-                # Add milestone annotations
-                rating_chart = add_milestone_annotations(rating_chart, df_filtered)
-                
-                st.altair_chart(rating_chart, use_container_width=True)
-            
-            # What-if scenario analyzer
-            st.subheader("What-If Scenario Analyzer")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                scenario_wins = st.number_input("Hypothetical Wins", 0, 20, 5)
-            with col2:
-                scenario_losses = st.number_input("Hypothetical Losses", 0, 20, 2)
-            
-            if st.button("Calculate Impact"):
-                scenario_result = what_if_scenario_analysis(
-                    df_filtered,
-                    dashboard_player,
-                    scenario_wins,
-                    scenario_losses,
-                    metrics['elo_ratings']
-                )
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Record Change", 
-                             f"{scenario_result['current_record']} → {scenario_result['new_record']}")
-                with col2:
-                    st.metric("Win Rate Change",
-                             f"{scenario_result['win_rate_change']*100:+.1f}%",
-                             delta=f"{scenario_result['win_rate_change']*100:.1f}%")
-                with col3:
-                    st.metric("Rating Change",
-                             f"{scenario_result['rating_change']:+.0f}",
-                             delta=f"{scenario_result['rating_change']:.0f}")
 
 if __name__ == "__main__":
     main()
