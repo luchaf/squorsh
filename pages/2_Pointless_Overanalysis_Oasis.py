@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
-from display_utils import generate_analysis_content
+from display_utils import generate_analysis_content, display_enhanced_player_analysis
 from streamlit_gsheets import GSheetsConnection
 
 
 def main():
     # ------------- SETUP -------------
-    st.set_page_config(layout="wide")
+    st.set_page_config(page_title="Pointless Overanalysis Oasis", layout="wide", page_icon="📊")
+    
+    st.title("🏆 Pointless Overanalysis Oasis")
+    st.markdown("*Delving Deep into Data Details - Now with Advanced Analytics!*")
+    
     conn = st.connection("gsheets", type=GSheetsConnection)
     worksheet_name = "match_results"
     df = conn.read(worksheet=worksheet_name)
@@ -76,50 +80,17 @@ def main():
     ].copy()
 
     # ------------- MAIN TABS -------------
-    main_tab_overall, main_tab_head2head = st.tabs(
-        ["Overall Overanalysis", "Head-to-Head Overanalysis"]
+    main_tab_overall, main_tab_player = st.tabs(
+        ["Overall Overanalysis", "Player Analysis"]
     )
 
     # Overall Analysis Tab
     with main_tab_overall:
         generate_analysis_content(df_filtered, include_ratings=True)
 
-    # Head-to-Head Analysis Tab
-    with main_tab_head2head:
-        st.subheader("Select Players for Head-to-Head Analysis")
-        players = [""] + sorted(set(df["Player1"]) | set(df["Player2"]))
-
-        col1, col2 = st.columns(2)
-        with col1:
-            player1 = st.selectbox(
-                "Select Player 1",
-                players,
-                format_func=lambda x: "Select..." if x == "" else x,
-            )
-        with col2:
-            player2 = st.selectbox(
-                "Select Player 2",
-                players,
-                format_func=lambda x: "Select..." if x == "" else x,
-            )
-
-        if player1 and player2 and player1 != player2:
-            df_head2head = df[
-                ((df["Player1"] == player1) & (df["Player2"] == player2))
-                | ((df["Player1"] == player2) & (df["Player2"] == player1))
-            ]
-            if df_head2head.empty:
-                st.write(
-                    f"No head-to-head matches found between {player1} and {player2}."
-                )
-            else:
-                # Optionally include Elo, Glicko2, TrueSkill for head2head
-                # but let's leave it out to keep it simpler.
-                generate_analysis_content(df_head2head, include_ratings=False)
-        else:
-            st.write(
-                "Please select two players to compare their head-to-head statistics!",
-            )
+    # Player Analysis Tab (Enhanced)
+    with main_tab_player:
+        display_enhanced_player_analysis(df_filtered)
 
 
 # Run the app
