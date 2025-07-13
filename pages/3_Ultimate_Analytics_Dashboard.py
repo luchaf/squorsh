@@ -163,20 +163,36 @@ def main():
             st.metric("Active Players", len(selected_players))
         
         with col2:
-            most_wins = df_filtered.groupby("Winner").size().idxmax()
-            st.metric("Most Wins", most_wins)
-            st.metric("Win Count", df_filtered.groupby("Winner").size().max())
+            if not df_filtered.empty:
+                winner_counts = df_filtered.groupby("Winner").size()
+                if not winner_counts.empty:
+                    most_wins = winner_counts.idxmax()
+                    st.metric("Most Wins", most_wins)
+                    st.metric("Win Count", winner_counts.max())
+                else:
+                    st.metric("Most Wins", "N/A")
+                    st.metric("Win Count", 0)
+            else:
+                st.metric("Most Wins", "N/A")
+                st.metric("Win Count", 0)
         
         with col3:
-            highest_rated = max(metrics['elo_ratings'].items(), key=lambda x: x[1])
-            st.metric("Highest Rated", highest_rated[0])
-            st.metric("Elo Rating", f"{highest_rated[1]:.0f}")
+            if metrics['elo_ratings']:
+                highest_rated = max(metrics['elo_ratings'].items(), key=lambda x: x[1])
+                st.metric("Highest Rated", highest_rated[0])
+                st.metric("Elo Rating", f"{highest_rated[1]:.0f}")
+            else:
+                st.metric("Highest Rated", "N/A")
+                st.metric("Elo Rating", "N/A")
         
         with col4:
-            hottest_player = metrics['momentum'].iloc[0] if not metrics['momentum'].empty else {"Player": "N/A", "Momentum Score": 0}
-            st.metric("Hottest Player", hottest_player['Player'] if isinstance(hottest_player, dict) else hottest_player.iloc[0]['Player'])
-            momentum_val = hottest_player['Momentum Score'] if isinstance(hottest_player, dict) else hottest_player.iloc[0]['Momentum Score']
-            st.metric("Momentum", f"{momentum_val:.1f}")
+            if not metrics['momentum'].empty:
+                hottest_player = metrics['momentum'].iloc[0]
+                st.metric("Hottest Player", hottest_player['Player'])
+                st.metric("Momentum", f"{hottest_player['Momentum Score']:.1f}")
+            else:
+                st.metric("Hottest Player", "N/A")
+                st.metric("Momentum", "0.0")
         
         # Sparklines and recent form
         st.subheader("📈 Recent Form Tracker")
