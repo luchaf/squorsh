@@ -542,17 +542,25 @@ def main():
             
             if not recent_matches.empty:
                 match_options = []
+                match_ids = []
                 for _, match in recent_matches.iterrows():
                     match_options.append(
-                        f"Match {match['match_number_total']}: {match['Player1']} vs {match['Player2']} "
-                        f"({match['Score1']}-{match['Score2']}) - {match['date'].strftime('%Y-%m-%d')}"
+                        f"Match {int(match['match_number_total'])}: {match['Player1']} vs {match['Player2']} "
+                        f"({int(match['Score1'])}-{int(match['Score2'])}) - {match['date'].strftime('%Y-%m-%d')}"
                     )
+                    match_ids.append(int(match['match_number_total']))
                 
-                selected_match_str = st.selectbox("Select a match to visualize", match_options)
-                selected_match_id = int(selected_match_str.split(':')[0].split()[1])
-                
-                sankey_fig = create_point_flow_sankey(df_filtered, selected_match_id)
-                st.plotly_chart(sankey_fig, use_container_width=True)
+                if match_options:
+                    selected_index = st.selectbox("Select a match to visualize", range(len(match_options)), 
+                                                 format_func=lambda x: match_options[x])
+                    selected_match_id = match_ids[selected_index]
+                    
+                    sankey_fig = create_point_flow_sankey(df_filtered, selected_match_id)
+                    st.plotly_chart(sankey_fig, use_container_width=True)
+                else:
+                    st.info("No matches available to visualize")
+            else:
+                st.info("No matches found in the selected date range")
     
     # Tab 7: Tournament Simulator
     with tabs[6]:
