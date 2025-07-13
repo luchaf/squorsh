@@ -157,24 +157,32 @@ def predict_score_distribution(
     # Generate score probabilities
     score_probs = {}
     
-    # Common squash scores
+    # Common squash scores - only valid game-ending scores
     for p1_score in range(0, 16):
         for p2_score in range(0, 16):
-            # Valid squash score check
-            if (p1_score == 11 and p2_score < 10) or \
-               (p2_score == 11 and p1_score < 10) or \
-               (p1_score >= 11 and p2_score >= 10 and abs(p1_score - p2_score) == 2) or \
-               (p1_score < 11 and p2_score < 11):
-                
+            # Valid squash game-ending score check
+            is_valid_score = False
+            
+            # Standard win: reach 11 with opponent under 10
+            if (p1_score == 11 and p2_score < 10) or (p2_score == 11 and p1_score < 10):
+                is_valid_score = True
+            
+            # Deuce situation: must win by 2 after 10-10
+            elif p1_score >= 10 and p2_score >= 10:
+                if abs(p1_score - p2_score) == 2:
+                    is_valid_score = True
+            
+            if is_valid_score:
                 # Calculate probability using normal distribution
                 p1_prob = stats.norm.pdf(p1_score, expected_p1, std_p1)
                 p2_prob = stats.norm.pdf(p2_score, expected_p2, std_p2)
                 
-                # Adjust for game-ending conditions
-                if p1_score >= 11 or p2_score >= 11:
-                    score_prob = p1_prob * p2_prob * 2  # Boost game-ending scores
-                else:
-                    score_prob = p1_prob * p2_prob * 0.1  # Reduce incomplete game probability
+                # Combined probability
+                score_prob = p1_prob * p2_prob
+                
+                # Boost common scores
+                if (p1_score == 11 and p2_score <= 9) or (p2_score == 11 and p1_score <= 9):
+                    score_prob *= 1.5  # More likely to end before deuce
                 
                 score_probs[f"{p1_score}-{p2_score}"] = score_prob
     
@@ -187,8 +195,34 @@ def predict_score_distribution(
     sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)
     top_scores = sorted_scores[:5]
     
+    # Generate a valid expected score based on averages
+    exp_p1_int = int(round(expected_p1))
+    exp_p2_int = int(round(expected_p2))
+    
+    # Ensure it's a valid squash score
+    if exp_p1_int > exp_p2_int:
+        if exp_p1_int < 11:
+            exp_p1_int = 11
+        if exp_p1_int == 11 and exp_p2_int >= 10:
+            exp_p2_int = 9
+        elif exp_p1_int > 11 and exp_p1_int - exp_p2_int < 2:
+            exp_p2_int = exp_p1_int - 2
+    else:
+        if exp_p2_int < 11:
+            exp_p2_int = 11
+        if exp_p2_int == 11 and exp_p1_int >= 10:
+            exp_p1_int = 9
+        elif exp_p2_int > 11 and exp_p2_int - exp_p1_int < 2:
+            exp_p1_int = exp_p2_int - 2
+    
+    # Use most likely score if available
+    if top_scores:
+        expected_score = top_scores[0][0]
+    else:
+        expected_score = f"{exp_p1_int}-{exp_p2_int}"
+    
     return {
-        "expected_score": f"{int(expected_p1)}-{int(expected_p2)}",
+        "expected_score": expected_score,
         "player1_avg": expected_p1,
         "player2_avg": expected_p2,
         "top_predictions": top_scores,
