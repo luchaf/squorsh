@@ -17,7 +17,7 @@ In the realm of squash, where every swing, smash, and slide counts, it's often t
 st.subheader("1. Racquet Records: Document your match results")
 st.write(
     """
-Document each exhilarating (or ego-crushing) match result. Remember, you'll need your seed later to relive (or regret) those game stats.
+Document each exhilarating (or ego-crushing) match result.
 """,
     color=SECONDARY,
 )
