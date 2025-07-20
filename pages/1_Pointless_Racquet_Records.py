@@ -67,7 +67,8 @@ except Exception as e:
 (
     online_form,
     show_me_the_list,
-) = st.tabs(["Online form", "List of recorded matches"])
+    player_management,
+) = st.tabs(["Online form", "List of recorded matches", "Player Management"])
 
 
 with online_form:
@@ -187,3 +188,147 @@ with online_form:
 
 with show_me_the_list:
     st.dataframe(df)
+
+with player_management:
+    st.header("🎾 Player Management")
+    st.markdown(f"**Current Mode:** {mode}")
+    st.markdown(f"**Managing players for:** `{player_names_worksheet}`")
+    
+    # Display current players
+    st.subheader("Current Players")
+    if player_names:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            # Create a nice display of current players
+            players_df = pd.DataFrame({"Player Name": player_names})
+            players_df.index = players_df.index + 1  # Start numbering from 1
+            st.dataframe(players_df, use_container_width=True)
+        with col2:
+            st.metric("Total Players", len(player_names))
+    else:
+        st.info("No players found. Add some players below!")
+    
+    st.divider()
+    
+    # Add new player form
+    st.subheader("Add New Player")
+    
+    with st.form("add_player_form"):
+        new_player_name = st.text_input(
+            "Player Name",
+            placeholder="Enter player name...",
+            help="Enter the full name of the new player"
+        )
+        
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            submit_button = st.form_submit_button("Add Player", type="primary")
+        
+        if submit_button:
+            if new_player_name.strip():
+                # Check if player already exists
+                if new_player_name.strip() in player_names:
+                    st.error(f"Player '{new_player_name}' already exists!")
+                else:
+                    try:
+                        # Add new player to the list
+                        updated_player_names = player_names + [new_player_name.strip()]
+                        
+                        # Create dataframe for updating
+                        updated_players_df = pd.DataFrame({"player_names": updated_player_names})
+                        
+                        # Update the worksheet
+                        conn.update(worksheet=player_names_worksheet, data=updated_players_df)
+                        
+                        # Clear cache and show success
+                        st.cache_data.clear()
+                        st.success(f"✅ Player '{new_player_name}' added successfully!")
+                        st.info("🔄 Page will refresh to show the updated player list.")
+                        st.rerun()
+                        
+                    except Exception as e:
+                        if "Worksheet not found" in str(e) or "does not exist" in str(e):
+                            st.error(f"Worksheet '{player_names_worksheet}' doesn't exist yet. This will be created automatically when you add the first player.")
+                            try:
+                                # Try to create the worksheet by updating with initial data
+                                initial_players_df = pd.DataFrame({"player_names": [new_player_name.strip()]})
+                                conn.update(worksheet=player_names_worksheet, data=initial_players_df)
+                                st.cache_data.clear()
+                                st.success(f"✅ Created worksheet '{player_names_worksheet}' and added player '{new_player_name}'!")
+                                st.info("🔄 Page will refresh to show the updated player list.")
+                                st.rerun()
+                            except Exception as create_error:
+                                st.error(f"Error creating worksheet: {str(create_error)}")
+                        else:
+                            st.error(f"Error adding player: {str(e)}")
+            else:
+                st.error("Please enter a valid player name.")
+    
+    # Bulk add players (optional)
+    st.divider()
+    st.subheader("Bulk Add Players")
+    st.markdown("*Add multiple players at once (one per line)*")
+    
+    with st.form("bulk_add_players_form"):
+        bulk_players = st.text_area(
+            "Player Names (one per line)",
+            placeholder="Player 1\nPlayer 2\nPlayer 3\n...",
+            height=150,
+            help="Enter multiple player names, one per line"
+        )
+        
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            bulk_submit = st.form_submit_button("Add All Players", type="secondary")
+        
+        if bulk_submit:
+            if bulk_players.strip():
+                # Parse the input
+                new_players = [name.strip() for name in bulk_players.strip().split('\n') if name.strip()]
+                
+                if new_players:
+                    # Check for duplicates
+                    existing_players = set(player_names)
+                    unique_new_players = [p for p in new_players if p not in existing_players]
+                    duplicates = [p for p in new_players if p in existing_players]
+                    
+                    if duplicates:
+                        st.warning(f"Skipping duplicate players: {', '.join(duplicates)}")
+                    
+                    if unique_new_players:
+                        try:
+                            # Add new players to the list
+                            updated_player_names = player_names + unique_new_players
+                            
+                            # Create dataframe for updating
+                            updated_players_df = pd.DataFrame({"player_names": updated_player_names})
+                            
+                            # Update the worksheet
+                            conn.update(worksheet=player_names_worksheet, data=updated_players_df)
+                            
+                            # Clear cache and show success
+                            st.cache_data.clear()
+                            st.success(f"✅ Added {len(unique_new_players)} new players successfully!")
+                            st.info("🔄 Page will refresh to show the updated player list.")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            if "Worksheet not found" in str(e) or "does not exist" in str(e):
+                                try:
+                                    # Create worksheet with all players
+                                    initial_players_df = pd.DataFrame({"player_names": unique_new_players})
+                                    conn.update(worksheet=player_names_worksheet, data=initial_players_df)
+                                    st.cache_data.clear()
+                                    st.success(f"✅ Created worksheet '{player_names_worksheet}' and added {len(unique_new_players)} players!")
+                                    st.info("🔄 Page will refresh to show the updated player list.")
+                                    st.rerun()
+                                except Exception as create_error:
+                                    st.error(f"Error creating worksheet: {str(create_error)}")
+                            else:
+                                st.error(f"Error adding players: {str(e)}")
+                    else:
+                        st.info("No new players to add (all were duplicates).")
+                else:
+                    st.error("No valid player names found.")
+            else:
+                st.error("Please enter at least one player name.")
