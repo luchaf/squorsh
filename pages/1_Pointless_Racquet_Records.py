@@ -25,16 +25,33 @@ else:
     worksheet_name = "match_results"
     player_names_worksheet = "player_names"
 
-df = conn.read(worksheet=worksheet_name)
+try:
+    df = conn.read(worksheet=worksheet_name)
+    
+    # Handle empty worksheet (this is normal for new tournaments)
+    if df.empty:
+        if mode == "Tournament Mode":
+            st.info(f"📋 Tournament worksheet '{worksheet_name}' is empty. This is normal for a new tournament - you can start entering match results below!")
+            # Create an empty dataframe with the expected columns for tournament mode
+            df = pd.DataFrame(columns=["date", "Player1", "Player2", "Score1", "Score2", "match_number_total", "match_number_day"])
+        else:
+            st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
+            st.stop()
+            
+except Exception as e:
+    if mode == "Tournament Mode":
+        st.info(f"📋 Tournament worksheet '{worksheet_name}' doesn't exist yet. This is normal for a new tournament - you can start entering match results below!")
+        # Create an empty dataframe with the expected columns for tournament mode
+        df = pd.DataFrame(columns=["date", "Player1", "Player2", "Score1", "Score2", "match_number_total", "match_number_day"])
+    else:
+        st.error(f"Error loading worksheet '{worksheet_name}': {str(e)}")
+        st.stop()
 
-# Early data validation
-if df.empty:
-    st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
-    st.stop()
-
-df["date"] = df["date"].astype(int).astype(str)
-for i in ["match_number_total", "match_number_day", "Score1", "Score2"]:
-    df[i] = df[i].astype(int)
+# Only process data if dataframe is not empty
+if not df.empty:
+    df["date"] = df["date"].astype(int).astype(str)
+    for i in ["match_number_total", "match_number_day", "Score1", "Score2"]:
+        df[i] = df[i].astype(int)
 
 try:
     player_names_df = conn.read(worksheet=player_names_worksheet)

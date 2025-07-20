@@ -28,12 +28,27 @@ def main():
     else:
         worksheet_name = "match_results"
     
-    df = conn.read(worksheet=worksheet_name)
-    
-    # Early data validation
-    if df.empty:
-        st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
-        st.stop()
+    try:
+        df = conn.read(worksheet=worksheet_name)
+        
+        # Early data validation
+        if df.empty:
+            if mode == "Tournament Mode":
+                st.warning(f"📋 Tournament worksheet '{worksheet_name}' is empty or doesn't exist yet.")
+                st.info("🎾 Please go to the **Pointless Racquet Records** page to enter some match results first!")
+                st.stop()
+            else:
+                st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
+                st.stop()
+                
+    except Exception as e:
+        if mode == "Tournament Mode":
+            st.warning(f"📋 Tournament worksheet '{worksheet_name}' doesn't exist yet.")
+            st.info("🎾 Please go to the **Pointless Racquet Records** page to enter some match results first!")
+            st.stop()
+        else:
+            st.error(f"Error loading worksheet '{worksheet_name}': {str(e)}")
+            st.stop()
 
     # ------------- DATA PREPROCESSING -------------
     df["date"] = pd.to_datetime(df["date"], format="%Y%m%d", errors="coerce")
