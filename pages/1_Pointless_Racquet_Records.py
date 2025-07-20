@@ -8,14 +8,30 @@ from color_palette import PRIMARY, SECONDARY, TERTIARY
 # Create GSheets connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-worksheet_name = "match_results"
+# Mode selection in sidebar
+st.sidebar.header("Data Source")
+mode = st.sidebar.radio(
+    "Select Mode",
+    ["Season Mode", "Tournament Mode"],
+    index=0,
+    help="Season Mode uses regular match data, Tournament Mode uses tournament-specific data"
+)
+
+# Determine worksheet names based on mode
+if mode == "Tournament Mode":
+    worksheet_name = "match_results_tournament"
+    player_names_worksheet = "player_names_tournament"
+else:
+    worksheet_name = "match_results"
+    player_names_worksheet = "player_names"
+
 df = conn.read(worksheet=worksheet_name)
 
 df["date"] = df["date"].astype(int).astype(str)
 for i in ["match_number_total", "match_number_day", "Score1", "Score2"]:
     df[i] = df[i].astype(int)
 
-player_names = conn.read(worksheet="player_names")["player_names"].tolist()
+player_names = conn.read(worksheet=player_names_worksheet)["player_names"].tolist()
 
 (
     online_form,

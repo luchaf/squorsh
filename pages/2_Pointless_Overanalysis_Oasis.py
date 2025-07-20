@@ -12,7 +12,22 @@ def main():
     st.markdown("*Delving Deep into Data Details - Now with Advanced Analytics!*")
     
     conn = st.connection("gsheets", type=GSheetsConnection)
-    worksheet_name = "match_results"
+    
+    # Mode selection in sidebar
+    st.sidebar.header("Data Source")
+    mode = st.sidebar.radio(
+        "Select Mode",
+        ["Season Mode", "Tournament Mode"],
+        index=0,
+        help="Season Mode uses regular match data, Tournament Mode uses tournament-specific data"
+    )
+    
+    # Determine worksheet name based on mode
+    if mode == "Tournament Mode":
+        worksheet_name = "match_results_tournament"
+    else:
+        worksheet_name = "match_results"
+    
     df = conn.read(worksheet=worksheet_name)
 
     # ------------- DATA PREPROCESSING -------------
