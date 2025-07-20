@@ -3,6 +3,8 @@ import altair as alt
 import streamlit as st
 from typing import Dict
 
+from info_components import create_section_info, SECTION_EXPLANATIONS
+
 from rating_utils import (
     generate_glicko2_ratings_over_time,
     generate_elo_ratings_over_time,
@@ -97,6 +99,13 @@ def display_match_stats(df_filtered: pd.DataFrame):
       3) "Match Intensity"
       4) "Time-Based Performance"
     """
+    # Add info box explanation
+    create_section_info(
+        "Match Stats", 
+        SECTION_EXPLANATIONS["Match Stats"]["description"],
+        SECTION_EXPLANATIONS["Match Stats"]["metrics"]
+    )
+    
     (
         match_time_tab,
         match_dist_tab,
@@ -178,6 +187,13 @@ def display_match_stats(df_filtered: pd.DataFrame):
 
 
 def display_ratings_tabs(df_filtered: pd.DataFrame):
+    # Add info box explanation
+    create_section_info(
+        "Ratings", 
+        SECTION_EXPLANATIONS["Ratings"]["description"],
+        SECTION_EXPLANATIONS["Ratings"]["metrics"]
+    )
+    
     glicko_tab, elo_tab, trueskill_tab = st.tabs(["Glicko2", "Elo", "TrueSkill"])
 
     with glicko_tab:
@@ -246,6 +262,13 @@ def display_wins_and_points(df_filtered: pd.DataFrame):
     Each has "Current Standings" and "Trends Over Time"
     """
     st.subheader("Wins & Points")
+    
+    # Add info box explanation
+    create_section_info(
+        "Wins & Points", 
+        SECTION_EXPLANATIONS["Wins & Points"]["description"],
+        SECTION_EXPLANATIONS["Wins & Points"]["metrics"]
+    )
 
     # Summaries
     final_summary = generate_wins_points_summary(df_filtered)
@@ -416,6 +439,13 @@ def display_avg_margin(df_filtered: pd.DataFrame):
     Each with "Avg Margin of Victory" and "Avg Margin of Defeat"
     """
     st.subheader("Average Margin of Victory & Defeat")
+    
+    # Add info box explanation
+    create_section_info(
+        "Avg. Margin", 
+        SECTION_EXPLANATIONS["Avg. Margin"]["description"],
+        SECTION_EXPLANATIONS["Avg. Margin"]["metrics"]
+    )
 
     # Prepare data
     df_margin_vic = df_filtered.groupby("Winner")["PointDiff"].mean().reset_index()
@@ -521,6 +551,13 @@ def display_win_loss_streaks(df_filtered: pd.DataFrame):
       2) "Streaks Over Time"
     """
     st.subheader("Winning and Losing Streaks")
+    
+    # Add info box explanation
+    create_section_info(
+        "Win/Loss Streaks", 
+        SECTION_EXPLANATIONS["Win/Loss Streaks"]["description"],
+        SECTION_EXPLANATIONS["Win/Loss Streaks"]["metrics"]
+    )
 
     tabs_streaks = st.tabs(
         ["Longest Streaks (Overall)", "Win & Loss Streaks Over Time"]
@@ -581,6 +618,13 @@ def display_endurance_and_grit(df_filtered: pd.DataFrame):
       2) "Nerves of Steel" (filter: 11:9 or 9:11)
       3) "Nerves of Adamantium" (filter: >= 12:10 or >= 10:12)
     """
+    # Add info box explanation
+    create_section_info(
+        "Endurance and Grit", 
+        SECTION_EXPLANATIONS["Endurance and Grit"]["description"],
+        SECTION_EXPLANATIONS["Endurance and Grit"]["metrics"]
+    )
+    
     endurance_tabs = st.tabs(
         ["N-th Match of the Day", "Nerves of Steel", "Nerves of Adamantium"]
     )
@@ -829,6 +873,13 @@ def display_records_leaderboards(df_in: pd.DataFrame):
       - Highest Single-Game Score
     """
     st.subheader("Records & Leaderboards")
+    
+    # Add info box explanation
+    create_section_info(
+        "Records & Leaderboards", 
+        SECTION_EXPLANATIONS["Records & Leaderboards"]["description"],
+        SECTION_EXPLANATIONS["Records & Leaderboards"]["metrics"]
+    )
 
     temp = df_in.copy()
     temp["TotalPoints"] = temp["Score1"] + temp["Score2"]
@@ -870,6 +921,13 @@ def display_records_leaderboards(df_in: pd.DataFrame):
 def display_performance_overview(df_filtered: pd.DataFrame, metrics: Dict):
     """Display Performance Overview with key metrics, sparklines, and bubble chart"""
     st.header("Performance Overview")
+    
+    # Add info box explanation
+    create_section_info(
+        "Performance Overview", 
+        SECTION_EXPLANATIONS["Performance Overview"]["description"],
+        SECTION_EXPLANATIONS["Performance Overview"]["metrics"]
+    )
     
     # Key metrics cards
     col1, col2, col3, col4 = st.columns(4)
@@ -938,6 +996,13 @@ def display_performance_overview(df_filtered: pd.DataFrame, metrics: Dict):
 def display_predictive_analytics(df_filtered: pd.DataFrame, metrics: Dict):
     """Display Predictive Analytics section"""
     st.subheader("🔮 Predictive Analytics & Match Forecasting")
+    
+    # Add info box explanation
+    create_section_info(
+        "Predictive Analytics", 
+        SECTION_EXPLANATIONS["Predictive Analytics"]["description"],
+        SECTION_EXPLANATIONS["Predictive Analytics"]["metrics"]
+    )
     
     all_players = sorted(set(df_filtered["Player1"]) | set(df_filtered["Player2"]))
     
@@ -1016,6 +1081,13 @@ def display_predictive_analytics(df_filtered: pd.DataFrame, metrics: Dict):
 def display_performance_patterns(df_filtered: pd.DataFrame, metrics: Dict):
     """Display Performance Patterns analysis"""
     st.subheader("💪 Performance Patterns & Analytics")
+    
+    # Add info box explanation
+    create_section_info(
+        "Performance Patterns", 
+        SECTION_EXPLANATIONS["Performance Patterns"]["description"],
+        SECTION_EXPLANATIONS["Performance Patterns"]["metrics"]
+    )
     
     pattern_tabs = st.tabs(["Clutch Performance", "Comebacks", "Fatigue Analysis", "Optimal Rest"])
     
@@ -1108,6 +1180,13 @@ def display_psychological_insights(df_filtered: pd.DataFrame, metrics: Dict):
     """Display Psychological Insights section"""
     st.subheader("🧠 Psychological Insights & Mental Game")
     
+    # Add info box explanation
+    create_section_info(
+        "Psychological Insights", 
+        SECTION_EXPLANATIONS["Psychological Insights"]["description"],
+        SECTION_EXPLANATIONS["Psychological Insights"]["metrics"]
+    )
+    
     psych_tabs = st.tabs(["Pressure Performance", "Nemesis Analysis", "Momentum Tracking"])
     
     with psych_tabs[0]:
@@ -1190,6 +1269,13 @@ def display_enhanced_player_analysis(df_filtered: pd.DataFrame, metrics: Dict = 
     with analysis_tabs[0]:
         st.subheader("Multi-Player Performance Comparison")
         
+        # Add info box explanation
+        create_section_info(
+            "Multi-Player Comparison", 
+            SECTION_EXPLANATIONS["Multi-Player Comparison"]["description"],
+            SECTION_EXPLANATIONS["Multi-Player Comparison"]["metrics"]
+        )
+        
         comparison_players = st.multiselect(
             "Select players to compare (2-4 players)",
             all_players,
@@ -1256,6 +1342,13 @@ def display_enhanced_player_analysis(df_filtered: pd.DataFrame, metrics: Dict = 
     # Tab 2: Head-to-Head Deep Dive
     with analysis_tabs[1]:
         st.subheader("Head-to-Head Deep Dive Analysis")
+        
+        # Add info box explanation
+        create_section_info(
+            "Head-to-Head Deep Dive", 
+            SECTION_EXPLANATIONS["Head-to-Head Deep Dive"]["description"],
+            SECTION_EXPLANATIONS["Head-to-Head Deep Dive"]["metrics"]
+        )
         
         col1, col2 = st.columns(2)
         with col1:
