@@ -27,11 +27,25 @@ else:
 
 df = conn.read(worksheet=worksheet_name)
 
+# Early data validation
+if df.empty:
+    st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
+    st.stop()
+
 df["date"] = df["date"].astype(int).astype(str)
 for i in ["match_number_total", "match_number_day", "Score1", "Score2"]:
     df[i] = df[i].astype(int)
 
-player_names = conn.read(worksheet=player_names_worksheet)["player_names"].tolist()
+try:
+    player_names_df = conn.read(worksheet=player_names_worksheet)
+    if player_names_df.empty or "player_names" not in player_names_df.columns:
+        st.warning(f"No player names found in worksheet '{player_names_worksheet}'. Using players from match data.")
+        player_names = sorted(list(set(df["Player1"]) | set(df["Player2"])))
+    else:
+        player_names = player_names_df["player_names"].tolist()
+except Exception as e:
+    st.warning(f"Error loading player names: {str(e)}. Using players from match data.")
+    player_names = sorted(list(set(df["Player1"]) | set(df["Player2"])))
 
 (
     online_form,
