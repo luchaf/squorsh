@@ -187,7 +187,253 @@ with online_form:
     display_enter_match_results(df)
 
 with show_me_the_list:
-    st.dataframe(df)
+    st.header("🏓 Match Results Management")
+    st.markdown(f"**Current Mode:** {mode}")
+    st.markdown(f"**Managing matches for:** `{worksheet_name}`")
+    
+    # Display current matches
+    st.subheader("Current Matches")
+    if not df.empty:
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            # Create a formatted display of matches
+            display_df = df.copy()
+            # Format date for better readability
+            display_df["Date"] = pd.to_datetime(display_df["date"], format="%Y%m%d").dt.strftime("%Y-%m-%d")
+            # Create a match description column
+            display_df["Match"] = display_df.apply(
+                lambda row: f"{row['Player1']} ({row['Score1']}) vs {row['Player2']} ({row['Score2']})", axis=1
+            )
+            # Select and reorder columns for display
+            display_columns = ["match_number_total", "Date", "Match", "match_number_day"]
+            display_df = display_df[display_columns]
+            display_df.columns = ["Match #", "Date", "Match Result", "Day #"]
+            display_df.index = display_df.index + 1  # Start numbering from 1
+            st.dataframe(display_df, use_container_width=True)
+        with col2:
+            st.metric("Total Matches", len(df))
+            if not df.empty:
+                latest_date = pd.to_datetime(df["date"], format="%Y%m%d").max()
+                st.metric("Latest Match", latest_date.strftime("%Y-%m-%d"))
+    else:
+        st.info("No matches found. Add some matches in the 'Online form' tab!")
+    
+    # Only show edit/delete options if there are matches
+    if not df.empty:
+        st.divider()
+        
+        # Edit match section
+        st.subheader("Edit Match Result")
+        with st.form("edit_match_form"):
+            # Select match to edit
+            match_options = []
+            for _, row in df.iterrows():
+                match_date = pd.to_datetime(row["date"], format="%Y%m%d").strftime("%Y-%m-%d")
+                match_desc = f"Match #{row['match_number_total']} ({match_date}): {row['Player1']} ({row['Score1']}) vs {row['Player2']} ({row['Score2']})"
+                match_options.append((row['match_number_total'], match_desc))
+            
+            selected_match = st.selectbox(
+                "Select match to edit",
+                options=[opt[0] for opt in match_options],
+                format_func=lambda x: next(opt[1] for opt in match_options if opt[0] == x),
+                help="Choose a match to edit"
+            )
+            
+            if selected_match:
+                # Get the selected match data
+                match_row = df[df["match_number_total"] == selected_match].iloc[0]
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    edit_player1 = st.selectbox(
+                        "Player 1",
+                        options=player_names,
+                        index=player_names.index(match_row["Player1"]) if match_row["Player1"] in player_names else 0,
+                        key="edit_player1"
+                    )
+                    edit_score1 = st.number_input(
+                        "Player 1 Score",
+                        min_value=0,
+                        value=int(match_row["Score1"]),
+                        key="edit_score1"
+                    )
+                with col2:
+                    edit_player2 = st.selectbox(
+                        "Player 2",
+                        options=player_names,
+                        index=player_names.index(match_row["Player2"]) if match_row["Player2"] in player_names else 0,
+                        key="edit_player2"
+                    )
+                    edit_score2 = st.number_input(
+                        "Player 2 Score",
+                        min_value=0,
+                        value=int(match_row["Score2"]),
+                        key="edit_score2"
+                    )
+                
+                edit_date = st.date_input(
+                    "Match Date",
+                    value=pd.to_datetime(match_row["date"], format="%Y%m%d").date(),
+                    key="edit_date"
+                )
+                
+                edit_password = st.text_input(
+                    "Admin Password",
+                    type="password",
+                    help="Enter the admin password to confirm edit",
+                    key="edit_password"
+                )
+                
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    edit_button = st.form_submit_button("Update Match", type="primary")
+                
+                if edit_button:
+                    if not edit_password:
+                        st.error("Password is required to edit matches.")
+                    else:
+                        try:
+                            admin_password = st.secrets["admin_password"]
+                            if edit_password != admin_password:
+                                st.error("Incorrect password. Match edit denied.")
+                            else:
+                                try:
+                                    # Update the match data
+                                    updated_df = df.copy()
+                                    match_index = updated_df[updated_df["match_number_total"] == selected_match].index[0]
+                                    
+                                    # Update the row
+                                    updated_df.loc[match_index, "Player1"] = edit_player1
+                                    updated_df.loc[match_index, "Score1"] = edit_score1
+                                    updated_df.loc[match_index, "Player2"] = edit_player2
+                                    updated_df.loc[match_index, "Score2"] = edit_score2
+                                    updated_df.loc[match_index, "date"] = edit_date.strftime("%Y%m%d")
+                                    
+                                    # Recalculate match_number_day for the new date
+                                    new_date_str = edit_date.strftime("%Y%m%d")
+                                    day_matches = updated_df[updated_df["date"] == new_date_str]
+                                    if len(day_matches) > 1:
+                                        # There are other matches on this day, assign next number
+                                        other_day_matches = day_matches[day_matches["match_number_total"] != selected_match]
+                                        if not other_day_matches.empty:
+                                            updated_df.loc[match_index, "match_number_day"] = other_day_matches["match_number_day"].max() + 1
+                                        else:
+                                            updated_df.loc[match_index, "match_number_day"] = 1
+                                    else:
+                                        # This is the only match on this day
+                                        updated_df.loc[match_index, "match_number_day"] = 1
+                                    
+                                    # Update worksheet
+                                    conn.update(worksheet=worksheet_name, data=updated_df)
+                                    st.cache_data.clear()
+                                    st.success(f"✅ Match #{selected_match} updated successfully!")
+                                    st.info("🔄 Page will refresh to show the updated match list.")
+                                    st.rerun()
+                                    
+                                except Exception as e:
+                                    st.error(f"Error updating match: {str(e)}")
+                        except KeyError:
+                            st.error("Admin password not found in secrets. Please configure 'admin_password' in your Streamlit secrets.")
+        
+        st.divider()
+        
+        # Delete match section
+        st.subheader("Delete Match Result")
+        
+        # Single match deletion
+        st.markdown("**Remove Single Match**")
+        with st.form("delete_match_form"):
+            match_to_delete = st.selectbox(
+                "Select match to delete",
+                options=[opt[0] for opt in match_options],
+                format_func=lambda x: next(opt[1] for opt in match_options if opt[0] == x),
+                help="Choose a match to remove"
+            )
+            
+            delete_password = st.text_input(
+                "Admin Password",
+                type="password",
+                help="Enter the admin password to confirm deletion"
+            )
+            
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                delete_button = st.form_submit_button("Delete Match", type="secondary")
+            
+            if delete_button:
+                if not delete_password:
+                    st.error("Password is required to delete matches.")
+                elif not match_to_delete:
+                    st.error("Please select a match to delete.")
+                else:
+                    try:
+                        admin_password = st.secrets["admin_password"]
+                        if delete_password != admin_password:
+                            st.error("Incorrect password. Match deletion denied.")
+                        else:
+                            try:
+                                # Remove match from the dataframe
+                                updated_df = df[df["match_number_total"] != match_to_delete].copy()
+                                
+                                # Update worksheet
+                                conn.update(worksheet=worksheet_name, data=updated_df)
+                                st.cache_data.clear()
+                                st.success(f"✅ Match #{match_to_delete} deleted successfully!")
+                                st.info("🔄 Page will refresh to show the updated match list.")
+                                st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Error deleting match: {str(e)}")
+                    except KeyError:
+                        st.error("Admin password not found in secrets. Please configure 'admin_password' in your Streamlit secrets.")
+        
+        # Bulk match deletion
+        st.markdown("**Remove Multiple Matches**")
+        with st.form("bulk_delete_matches_form"):
+            matches_to_delete = st.multiselect(
+                "Select matches to delete",
+                options=[opt[0] for opt in match_options],
+                format_func=lambda x: next(opt[1] for opt in match_options if opt[0] == x),
+                help="Choose multiple matches to remove"
+            )
+            
+            bulk_delete_password = st.text_input(
+                "Admin Password",
+                type="password",
+                help="Enter the admin password to confirm deletion",
+                key="bulk_delete_match_password"
+            )
+            
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                bulk_delete_button = st.form_submit_button("Delete Selected", type="secondary")
+            
+            if bulk_delete_button:
+                if not bulk_delete_password:
+                    st.error("Password is required to delete matches.")
+                elif not matches_to_delete:
+                    st.error("Please select at least one match to delete.")
+                else:
+                    try:
+                        admin_password = st.secrets["admin_password"]
+                        if bulk_delete_password != admin_password:
+                            st.error("Incorrect password. Match deletion denied.")
+                        else:
+                            try:
+                                # Remove selected matches from the dataframe
+                                updated_df = df[~df["match_number_total"].isin(matches_to_delete)].copy()
+                                
+                                # Update worksheet
+                                conn.update(worksheet=worksheet_name, data=updated_df)
+                                st.cache_data.clear()
+                                st.success(f"✅ Deleted {len(matches_to_delete)} matches successfully!")
+                                st.info("🔄 Page will refresh to show the updated match list.")
+                                st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Error deleting matches: {str(e)}")
+                    except KeyError:
+                        st.error("Admin password not found in secrets. Please configure 'admin_password' in your Streamlit secrets.")
 
 with player_management:
     st.header("🎾 Player Management")
