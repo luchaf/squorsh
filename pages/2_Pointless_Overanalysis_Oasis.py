@@ -18,7 +18,7 @@ def main():
     mode = st.sidebar.radio(
         "Select Mode",
         ["Season Mode", "Tournament Mode"],
-        index=0,
+        index=1,
         help="Season Mode uses regular match data, Tournament Mode uses tournament-specific data"
     )
     
