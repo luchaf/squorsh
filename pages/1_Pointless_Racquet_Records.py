@@ -332,3 +332,99 @@ with player_management:
                     st.error("No valid player names found.")
             else:
                 st.error("Please enter at least one player name.")
+    
+    # Delete players section
+    if player_names:  # Only show delete options if there are players
+        st.divider()
+        st.subheader("Delete Players")
+        
+        # Single player deletion
+        st.markdown("**Remove Single Player**")
+        with st.form("delete_player_form"):
+            player_to_delete = st.selectbox(
+                "Select player to delete",
+                options=player_names,
+                help="Choose a player to remove from the list"
+            )
+            
+            delete_password = st.text_input(
+                "Admin Password",
+                type="password",
+                help="Enter the admin password to confirm deletion"
+            )
+            
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                delete_button = st.form_submit_button("Delete Player", type="secondary")
+            
+            if delete_button:
+                if not delete_password:
+                    st.error("Password is required to delete players.")
+                elif delete_password != st.secrets.get("admin_password", ""):
+                    st.error("Incorrect password. Player deletion denied.")
+                elif player_to_delete:
+                    try:
+                        # Remove player from the list
+                        updated_player_names = [p for p in player_names if p != player_to_delete]
+                        
+                        # Create dataframe for updating
+                        updated_players_df = pd.DataFrame({"player_names": updated_player_names})
+                        
+                        # Update the worksheet
+                        conn.update(worksheet=player_names_worksheet, data=updated_players_df)
+                        
+                        # Clear cache and show success
+                        st.cache_data.clear()
+                        st.success(f"✅ Player '{player_to_delete}' deleted successfully!")
+                        st.info("🔄 Page will refresh to show the updated player list.")
+                        st.rerun()
+                        
+                    except Exception as e:
+                        st.error(f"Error deleting player: {str(e)}")
+        
+        # Bulk player deletion
+        st.markdown("**Remove Multiple Players**")
+        with st.form("bulk_delete_players_form"):
+            players_to_delete = st.multiselect(
+                "Select players to delete",
+                options=player_names,
+                help="Choose multiple players to remove from the list"
+            )
+            
+            bulk_delete_password = st.text_input(
+                "Admin Password",
+                type="password",
+                help="Enter the admin password to confirm deletion",
+                key="bulk_delete_password"
+            )
+            
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                bulk_delete_button = st.form_submit_button("Delete Selected", type="secondary")
+            
+            if bulk_delete_button:
+                if not bulk_delete_password:
+                    st.error("Password is required to delete players.")
+                elif bulk_delete_password != st.secrets.get("admin_password", ""):
+                    st.error("Incorrect password. Player deletion denied.")
+                elif not players_to_delete:
+                    st.error("Please select at least one player to delete.")
+                else:
+                    try:
+                        # Remove selected players from the list
+                        updated_player_names = [p for p in player_names if p not in players_to_delete]
+                        
+                        # Create dataframe for updating
+                        updated_players_df = pd.DataFrame({"player_names": updated_player_names})
+                        
+                        # Update the worksheet
+                        conn.update(worksheet=player_names_worksheet, data=updated_players_df)
+                        
+                        # Clear cache and show success
+                        st.cache_data.clear()
+                        st.success(f"✅ Deleted {len(players_to_delete)} players successfully!")
+                        st.info("🔄 Page will refresh to show the updated player list.")
+                        st.rerun()
+                        
+                    except Exception as e:
+                        st.error(f"Error deleting players: {str(e)}")
