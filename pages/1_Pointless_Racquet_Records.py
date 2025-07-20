@@ -360,27 +360,35 @@ with player_management:
             if delete_button:
                 if not delete_password:
                     st.error("Password is required to delete players.")
-                elif delete_password != st.secrets.get("admin_password", ""):
-                    st.error("Incorrect password. Player deletion denied.")
-                elif player_to_delete:
+                elif not player_to_delete:
+                    st.error("Please select a player to delete.")
+                else:
                     try:
-                        # Remove player from the list
-                        updated_player_names = [p for p in player_names if p != player_to_delete]
-                        
-                        # Create dataframe for updating
-                        updated_players_df = pd.DataFrame({"player_names": updated_player_names})
-                        
-                        # Update the worksheet
-                        conn.update(worksheet=player_names_worksheet, data=updated_players_df)
-                        
-                        # Clear cache and show success
-                        st.cache_data.clear()
-                        st.success(f"✅ Player '{player_to_delete}' deleted successfully!")
-                        st.info("🔄 Page will refresh to show the updated player list.")
-                        st.rerun()
-                        
-                    except Exception as e:
-                        st.error(f"Error deleting player: {str(e)}")
+                        admin_password = st.secrets["admin_password"]
+                        if delete_password != admin_password:
+                            st.error("Incorrect password. Player deletion denied.")
+                        else:
+                            # Password is correct, proceed with deletion
+                            try:
+                                # Remove player from the list
+                                updated_player_names = [p for p in player_names if p != player_to_delete]
+                                
+                                # Create dataframe for updating
+                                updated_players_df = pd.DataFrame({"player_names": updated_player_names})
+                                
+                                # Update the worksheet
+                                conn.update(worksheet=player_names_worksheet, data=updated_players_df)
+                                
+                                # Clear cache and show success
+                                st.cache_data.clear()
+                                st.success(f"✅ Player '{player_to_delete}' deleted successfully!")
+                                st.info("🔄 Page will refresh to show the updated player list.")
+                                st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Error deleting player: {str(e)}")
+                    except KeyError:
+                        st.error("Admin password not found in secrets. Please configure 'admin_password' in your Streamlit secrets.")
         
         # Bulk player deletion
         st.markdown("**Remove Multiple Players**")
@@ -405,26 +413,32 @@ with player_management:
             if bulk_delete_button:
                 if not bulk_delete_password:
                     st.error("Password is required to delete players.")
-                elif bulk_delete_password != st.secrets.get("admin_password", ""):
-                    st.error("Incorrect password. Player deletion denied.")
                 elif not players_to_delete:
                     st.error("Please select at least one player to delete.")
                 else:
                     try:
-                        # Remove selected players from the list
-                        updated_player_names = [p for p in player_names if p not in players_to_delete]
-                        
-                        # Create dataframe for updating
-                        updated_players_df = pd.DataFrame({"player_names": updated_player_names})
-                        
-                        # Update the worksheet
-                        conn.update(worksheet=player_names_worksheet, data=updated_players_df)
-                        
-                        # Clear cache and show success
-                        st.cache_data.clear()
-                        st.success(f"✅ Deleted {len(players_to_delete)} players successfully!")
-                        st.info("🔄 Page will refresh to show the updated player list.")
-                        st.rerun()
-                        
-                    except Exception as e:
-                        st.error(f"Error deleting players: {str(e)}")
+                        admin_password = st.secrets["admin_password"]
+                        if bulk_delete_password != admin_password:
+                            st.error("Incorrect password. Player deletion denied.")
+                        else:
+                            # Password is correct, proceed with deletion
+                            try:
+                                # Remove selected players from the list
+                                updated_player_names = [p for p in player_names if p not in players_to_delete]
+                                
+                                # Create dataframe for updating
+                                updated_players_df = pd.DataFrame({"player_names": updated_player_names})
+                                
+                                # Update the worksheet
+                                conn.update(worksheet=player_names_worksheet, data=updated_players_df)
+                                
+                                # Clear cache and show success
+                                st.cache_data.clear()
+                                st.success(f"✅ Deleted {len(players_to_delete)} players successfully!")
+                                st.info("🔄 Page will refresh to show the updated player list.")
+                                st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Error deleting players: {str(e)}")
+                    except KeyError:
+                        st.error("Admin password not found in secrets. Please configure 'admin_password' in your Streamlit secrets.")
