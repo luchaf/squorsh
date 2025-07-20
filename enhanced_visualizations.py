@@ -39,35 +39,50 @@ def create_player_comparison_radar(
         values.append(win_rate)
         
         # Dominance Score (normalized to 0-100)
-        if 'dominance' in metrics_df and player in metrics_df['dominance']['Player'].values:
+        if ('dominance' in metrics_df and 
+            not metrics_df['dominance'].empty and 
+            'Player' in metrics_df['dominance'].columns and 
+            player in metrics_df['dominance']['Player'].values):
             dom_score = metrics_df['dominance'][metrics_df['dominance']['Player'] == player]['Dominance Score'].iloc[0]
             values.append(min(100, max(0, dom_score)))
         else:
             values.append(50)
         
         # Clutch Performance
-        if 'clutch' in metrics_df and player in metrics_df['clutch']['Player'].values:
+        if ('clutch' in metrics_df and 
+            not metrics_df['clutch'].empty and 
+            'Player' in metrics_df['clutch'].columns and 
+            player in metrics_df['clutch']['Player'].values):
             clutch_rating = metrics_df['clutch'][metrics_df['clutch']['Player'] == player]['Clutch Rating'].iloc[0]
             values.append(min(100, clutch_rating * 100))
         else:
             values.append(50)
         
         # Consistency
-        if 'consistency' in metrics_df and player in metrics_df['consistency']['Player'].values:
+        if ('consistency' in metrics_df and 
+            not metrics_df['consistency'].empty and 
+            'Player' in metrics_df['consistency'].columns and 
+            player in metrics_df['consistency']['Player'].values):
             consistency = metrics_df['consistency'][metrics_df['consistency']['Player'] == player]['Consistency Rating'].iloc[0]
             values.append(consistency)
         else:
             values.append(50)
         
         # Momentum
-        if 'momentum' in metrics_df and player in metrics_df['momentum']['Player'].values:
+        if ('momentum' in metrics_df and 
+            not metrics_df['momentum'].empty and 
+            'Player' in metrics_df['momentum'].columns and 
+            player in metrics_df['momentum']['Player'].values):
             momentum = metrics_df['momentum'][metrics_df['momentum']['Player'] == player]['Momentum Score'].iloc[0]
             values.append(momentum)
         else:
             values.append(50)
         
         # Mental Toughness
-        if 'pressure' in metrics_df and player in metrics_df['pressure']['Player'].values:
+        if ('pressure' in metrics_df and 
+            not metrics_df['pressure'].empty and 
+            'Player' in metrics_df['pressure'].columns and 
+            player in metrics_df['pressure']['Player'].values):
             mental = metrics_df['pressure'][metrics_df['pressure']['Player'] == player]['Mental Fortitude'].iloc[0]
             values.append(mental)
         else:
