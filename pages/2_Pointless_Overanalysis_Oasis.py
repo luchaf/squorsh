@@ -13,42 +13,88 @@ def main():
     
     conn = st.connection("gsheets", type=GSheetsConnection)
     
-    # Mode selection in sidebar
-    st.sidebar.header("Data Source")
-    mode = st.sidebar.radio(
-        "Select Mode",
-        ["Season Mode", "Tournament Mode"],
-        index=1,
-        help="Season Mode uses regular match data, Tournament Mode uses tournament-specific data"
-    )
+    # Session selection in sidebar
+    st.sidebar.header("Session Management")
     
-    # Determine worksheet name based on mode
-    if mode == "Tournament Mode":
-        worksheet_name = "match_results_tournament"
-    else:
-        worksheet_name = "match_results"
+    # Get current session from session state
+    current_session = st.session_state.get("current_session", "")
+    
+    # If no session is selected, try to load the active session from Google Sheets
+    if not current_session:
+        try:
+            sessions_df = conn.read(worksheet="sessions")
+            if not sessions_df.empty and "session_name" in sessions_df.columns:
+                # Check if there's an active session
+                if "active" in sessions_df.columns:
+                    active_sessions = sessions_df[sessions_df["active"] == True]
+                    if not active_sessions.empty:
+                        current_session = active_sessions.iloc[0]["session_name"]
+                        st.session_state["current_session"] = current_session
+                        st.sidebar.success(f"✅ Loaded active session: **{current_session}**")
+                    else:
+                        # No active session set, auto-select first available
+                        available_sessions = sessions_df["session_name"].dropna().tolist()
+                        if available_sessions:
+                            current_session = available_sessions[0]
+                            st.session_state["current_session"] = current_session
+                            st.sidebar.info(f"🔄 Auto-selected session: **{current_session}**")
+                            st.sidebar.info("🔧 Go to Settings to set an active session for all devices")
+                        else:
+                            st.sidebar.error("❌ No sessions found!")
+                            st.sidebar.markdown("**Please go to Settings to create a session:**")
+                            if st.sidebar.button("🔧 Go to Settings"):
+                                st.switch_page("pages/3_Settings.py")
+                            st.stop()
+                else:
+                    # No active column, auto-select first available
+                    available_sessions = sessions_df["session_name"].dropna().tolist()
+                    if available_sessions:
+                        current_session = available_sessions[0]
+                        st.session_state["current_session"] = current_session
+                        st.sidebar.info(f"🔄 Auto-selected session: **{current_session}**")
+                        st.sidebar.info("🔧 Go to Settings to set an active session for all devices")
+                    else:
+                        st.sidebar.error("❌ No sessions found!")
+                        st.sidebar.markdown("**Please go to Settings to create a session:**")
+                        if st.sidebar.button("🔧 Go to Settings"):
+                            st.switch_page("pages/3_Settings.py")
+                        st.stop()
+            else:
+                # Sessions worksheet exists but has no data
+                st.sidebar.error("❌ No sessions found!")
+                st.sidebar.markdown("**Please go to Settings to create a session:**")
+                if st.sidebar.button("🔧 Go to Settings"):
+                    st.switch_page("pages/3_Settings.py")
+                st.stop()
+        except Exception:
+            # Sessions worksheet doesn't exist
+            st.sidebar.error("❌ No sessions found!")
+            st.sidebar.markdown("**Please go to Settings to create your first session:**")
+            if st.sidebar.button("🔧 Go to Settings"):
+                st.switch_page("pages/3_Settings.py")
+            st.stop()
+    
+    # Show current session status
+    st.sidebar.success(f"✅ Active Session: **{current_session}**")
+    if st.sidebar.button("🔧 Change Session"):
+        st.switch_page("pages/3_Settings.py")
+    
+    # Determine worksheet name based on current session
+    worksheet_name = f"{current_session}_match_results"
     
     try:
         df = conn.read(worksheet=worksheet_name)
         
         # Early data validation
         if df.empty:
-            if mode == "Tournament Mode":
-                st.warning(f"📋 Tournament worksheet '{worksheet_name}' is empty or doesn't exist yet.")
-                st.info("🎾 Please go to the **Pointless Racquet Records** page to enter some match results first!")
-                st.stop()
-            else:
-                st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
-                st.stop()
-                
-    except Exception as e:
-        if mode == "Tournament Mode":
-            st.warning(f"📋 Tournament worksheet '{worksheet_name}' doesn't exist yet.")
+            st.warning(f"📋 Session worksheet '{worksheet_name}' is empty or doesn't exist yet.")
             st.info("🎾 Please go to the **Pointless Racquet Records** page to enter some match results first!")
             st.stop()
-        else:
-            st.error(f"Error loading worksheet '{worksheet_name}': {str(e)}")
-            st.stop()
+                
+    except Exception as e:
+        st.warning(f"📋 Session worksheet '{worksheet_name}' doesn't exist yet.")
+        st.info("🎾 Please go to the **Pointless Racquet Records** page to enter some match results first!")
+        st.stop()
 
     # ------------- DATA PREPROCESSING -------------
     df["date"] = pd.to_datetime(df["date"], format="%Y%m%d", errors="coerce")

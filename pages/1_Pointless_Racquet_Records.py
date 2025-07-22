@@ -8,44 +8,89 @@ from color_palette import PRIMARY, SECONDARY, TERTIARY
 # Create GSheets connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Mode selection in sidebar
-st.sidebar.header("Data Source")
-mode = st.sidebar.radio(
-    "Select Mode",
-    ["Season Mode", "Tournament Mode"],
-    index=1,
-    help="Season Mode uses regular match data, Tournament Mode uses tournament-specific data"
-)
+# Session selection in sidebar
+st.sidebar.header("Session Management")
 
-# Determine worksheet names based on mode
-if mode == "Tournament Mode":
-    worksheet_name = "match_results_tournament"
-    player_names_worksheet = "player_names_tournament"
-else:
-    worksheet_name = "match_results"
-    player_names_worksheet = "player_names"
+# Get current session from session state
+current_session = st.session_state.get("current_session", "")
+
+# If no session is selected, try to load the active session from Google Sheets
+if not current_session:
+    try:
+        sessions_df = conn.read(worksheet="sessions")
+        if not sessions_df.empty and "session_name" in sessions_df.columns:
+            # Check if there's an active session
+            if "active" in sessions_df.columns:
+                active_sessions = sessions_df[sessions_df["active"] == True]
+                if not active_sessions.empty:
+                    current_session = active_sessions.iloc[0]["session_name"]
+                    st.session_state["current_session"] = current_session
+                    st.sidebar.success(f"✅ Loaded active session: **{current_session}**")
+                else:
+                    # No active session set, auto-select first available
+                    available_sessions = sessions_df["session_name"].dropna().tolist()
+                    if available_sessions:
+                        current_session = available_sessions[0]
+                        st.session_state["current_session"] = current_session
+                        st.sidebar.info(f"🔄 Auto-selected session: **{current_session}**")
+                        st.sidebar.info("🔧 Go to Settings to set an active session for all devices")
+                    else:
+                        st.sidebar.error("❌ No sessions found!")
+                        st.sidebar.markdown("**Please go to Settings to create a session:**")
+                        if st.sidebar.button("🔧 Go to Settings"):
+                            st.switch_page("pages/3_Settings.py")
+                        st.stop()
+            else:
+                # No active column, auto-select first available
+                available_sessions = sessions_df["session_name"].dropna().tolist()
+                if available_sessions:
+                    current_session = available_sessions[0]
+                    st.session_state["current_session"] = current_session
+                    st.sidebar.info(f"🔄 Auto-selected session: **{current_session}**")
+                    st.sidebar.info("🔧 Go to Settings to set an active session for all devices")
+                else:
+                    st.sidebar.error("❌ No sessions found!")
+                    st.sidebar.markdown("**Please go to Settings to create a session:**")
+                    if st.sidebar.button("🔧 Go to Settings"):
+                        st.switch_page("pages/3_Settings.py")
+                    st.stop()
+        else:
+            # Sessions worksheet exists but has no data
+            st.sidebar.error("❌ No sessions found!")
+            st.sidebar.markdown("**Please go to Settings to create a session:**")
+            if st.sidebar.button("🔧 Go to Settings"):
+                st.switch_page("pages/3_Settings.py")
+            st.stop()
+    except Exception:
+        # Sessions worksheet doesn't exist
+        st.sidebar.error("❌ No sessions found!")
+        st.sidebar.markdown("**Please go to Settings to create your first session:**")
+        if st.sidebar.button("🔧 Go to Settings"):
+            st.switch_page("pages/3_Settings.py")
+        st.stop()
+
+# Show current session status
+st.sidebar.success(f"✅ Active Session: **{current_session}**")
+if st.sidebar.button("🔧 Change Session"):
+    st.switch_page("pages/3_Settings.py")
+
+# Determine worksheet names based on current session
+worksheet_name = f"{current_session}_match_results"
+player_names_worksheet = f"{current_session}_player_names"
 
 try:
     df = conn.read(worksheet=worksheet_name)
     
-    # Handle empty worksheet (this is normal for new tournaments)
+    # Handle empty worksheet (this is normal for new sessions)
     if df.empty:
-        if mode == "Tournament Mode":
-            st.info(f"📋 Tournament worksheet '{worksheet_name}' is empty. This is normal for a new tournament - you can start entering match results below!")
-            # Create an empty dataframe with the expected columns for tournament mode
-            df = pd.DataFrame(columns=["date", "Player1", "Player2", "Score1", "Score2", "match_number_total", "match_number_day"])
-        else:
-            st.error(f"No data found in worksheet '{worksheet_name}'. Please check if the worksheet exists and contains data.")
-            st.stop()
+        st.info(f"📋 Session worksheet '{worksheet_name}' is empty. This is normal for a new session - you can start entering match results below!")
+        # Create an empty dataframe with the expected columns
+        df = pd.DataFrame(columns=["date", "Player1", "Player2", "Score1", "Score2", "match_number_total", "match_number_day"])
             
 except Exception as e:
-    if mode == "Tournament Mode":
-        st.info(f"📋 Tournament worksheet '{worksheet_name}' doesn't exist yet. This is normal for a new tournament - you can start entering match results below!")
-        # Create an empty dataframe with the expected columns for tournament mode
-        df = pd.DataFrame(columns=["date", "Player1", "Player2", "Score1", "Score2", "match_number_total", "match_number_day"])
-    else:
-        st.error(f"Error loading worksheet '{worksheet_name}': {str(e)}")
-        st.stop()
+    st.info(f"📋 Session worksheet '{worksheet_name}' doesn't exist yet. This is normal for a new session - you can start entering match results below!")
+    # Create an empty dataframe with the expected columns
+    df = pd.DataFrame(columns=["date", "Player1", "Player2", "Score1", "Score2", "match_number_total", "match_number_day"])
 
 # Only process data if dataframe is not empty
 if not df.empty:
@@ -75,13 +120,13 @@ with online_form:
 
     def reset_session_state():
         """Helper function to reset session state."""
-        st.session_state["player1_name"] = player_names[
-            0
-        ]  # Default to the first player
+        if player_names:
+            st.session_state["player1_name"] = player_names[0]  # Default to the first player
+            st.session_state["player2_name"] = player_names[min(3, len(player_names) - 1)]  # Default to the fourth player or last available
+        else:
+            st.session_state["player1_name"] = "Player 1"
+            st.session_state["player2_name"] = "Player 2"
         st.session_state["player1_score"] = 0
-        st.session_state["player2_name"] = player_names[
-            3
-        ]  # Default to the first player
         st.session_state["player2_score"] = 0
         st.session_state["matchday_input"] = date.today()
         st.session_state["data_written"] = False
@@ -91,15 +136,17 @@ with online_form:
         if "data_written" not in st.session_state:
             st.session_state["data_written"] = False
         if "player1_name" not in st.session_state:
-            st.session_state["player1_name"] = player_names[
-                0
-            ]  # Default to the first player
+            if player_names:
+                st.session_state["player1_name"] = player_names[0]  # Default to the first player
+            else:
+                st.session_state["player1_name"] = "Player 1"
         if "player1_score" not in st.session_state:
             st.session_state["player1_score"] = 0
         if "player2_name" not in st.session_state:
-            st.session_state["player2_name"] = player_names[
-                3
-            ]  # Default to the first player
+            if player_names:
+                st.session_state["player2_name"] = player_names[min(3, len(player_names) - 1)]  # Default to the fourth player or last available
+            else:
+                st.session_state["player2_name"] = "Player 2"
         if "player2_score" not in st.session_state:
             st.session_state["player2_score"] = 0
         if "matchday_input" not in st.session_state:
@@ -116,12 +163,19 @@ with online_form:
             st.title("Log Your Match Results")
 
             # Widgets with session state management
-            player1_name = st.selectbox(
-                "Player 1",
-                player_names,
-                index=player_names.index(st.session_state["player1_name"]),
-                key="player1_name",
-            )
+            if player_names:
+                player1_name = st.selectbox(
+                    "Player 1",
+                    player_names,
+                    index=player_names.index(st.session_state["player1_name"]) if st.session_state["player1_name"] in player_names else 0,
+                    key="player1_name",
+                )
+            else:
+                player1_name = st.text_input(
+                    "Player 1",
+                    value=st.session_state["player1_name"],
+                    key="player1_name",
+                )
             player1_score = st.number_input(
                 "Player 1 Score",
                 min_value=0,
@@ -129,12 +183,19 @@ with online_form:
                 value=st.session_state["player1_score"],
                 key="player1_score",
             )
-            player2_name = st.selectbox(
-                "Player 2",
-                player_names,
-                index=player_names.index(st.session_state["player2_name"]),
-                key="player2_name",
-            )
+            if player_names:
+                player2_name = st.selectbox(
+                    "Player 2",
+                    player_names,
+                    index=player_names.index(st.session_state["player2_name"]) if st.session_state["player2_name"] in player_names else 0,
+                    key="player2_name",
+                )
+            else:
+                player2_name = st.text_input(
+                    "Player 2",
+                    value=st.session_state["player2_name"],
+                    key="player2_name",
+                )
             player2_score = st.number_input(
                 "Player 2 Score",
                 min_value=0,
@@ -188,7 +249,7 @@ with online_form:
 
 with show_me_the_list:
     st.header("🏓 Match Results Management")
-    st.markdown(f"**Current Mode:** {mode}")
+    st.markdown(f"**Current Session:** {current_session}")
     st.markdown(f"**Managing matches for:** `{worksheet_name}`")
     
     # Display current matches
@@ -245,12 +306,19 @@ with show_me_the_list:
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    edit_player1 = st.selectbox(
-                        "Player 1",
-                        options=player_names,
-                        index=player_names.index(match_row["Player1"]) if match_row["Player1"] in player_names else 0,
-                        key="edit_player1"
-                    )
+                    if player_names:
+                        edit_player1 = st.selectbox(
+                            "Player 1",
+                            options=player_names,
+                            index=player_names.index(match_row["Player1"]) if match_row["Player1"] in player_names else 0,
+                            key="edit_player1"
+                        )
+                    else:
+                        edit_player1 = st.text_input(
+                            "Player 1",
+                            value=match_row["Player1"],
+                            key="edit_player1"
+                        )
                     edit_score1 = st.number_input(
                         "Player 1 Score",
                         min_value=0,
@@ -258,12 +326,19 @@ with show_me_the_list:
                         key="edit_score1"
                     )
                 with col2:
-                    edit_player2 = st.selectbox(
-                        "Player 2",
-                        options=player_names,
-                        index=player_names.index(match_row["Player2"]) if match_row["Player2"] in player_names else 0,
-                        key="edit_player2"
-                    )
+                    if player_names:
+                        edit_player2 = st.selectbox(
+                            "Player 2",
+                            options=player_names,
+                            index=player_names.index(match_row["Player2"]) if match_row["Player2"] in player_names else 0,
+                            key="edit_player2"
+                        )
+                    else:
+                        edit_player2 = st.text_input(
+                            "Player 2",
+                            value=match_row["Player2"],
+                            key="edit_player2"
+                        )
                     edit_score2 = st.number_input(
                         "Player 2 Score",
                         min_value=0,
@@ -437,7 +512,7 @@ with show_me_the_list:
 
 with player_management:
     st.header("🎾 Player Management")
-    st.markdown(f"**Current Mode:** {mode}")
+    st.markdown(f"**Current Session:** {current_session}")
     st.markdown(f"**Managing players for:** `{player_names_worksheet}`")
     
     # Display current players
