@@ -71,21 +71,21 @@ with tab1:
     st.markdown("Create and manage different sessions (tournaments, seasons, events)")
 
     # Function to refresh session data after changes
+    @st.cache_data(ttl=30)  # Cache for 30 seconds
+    def get_cached_session_data():
+        """Get session data with caching to reduce API calls"""
+        return conn.read(worksheet="sessions", usecols=None, nrows=None)
+
     def refresh_session_data():
         """Refresh session data from Google Sheets after making changes"""
         try:
-            # Clear all Streamlit caches to force fresh data
-            st.cache_data.clear()
-            if hasattr(st.cache_resource, 'clear'):
-                st.cache_resource.clear()
+            # Only clear cache when absolutely necessary
+            if st.session_state.get('force_refresh_sessions', False):
+                st.cache_data.clear()
+                st.session_state.force_refresh_sessions = False
             
-            # Force fresh read with explicit parameters
-            sessions_df = conn.read(
-                worksheet="sessions", 
-                usecols=None, 
-                nrows=None,
-                ttl=0  # No caching
-            )
+            # Use cached read
+            sessions_df = get_cached_session_data()
             
             if sessions_df.empty or "session_name" not in sessions_df.columns:
                 return pd.DataFrame(columns=["session_name", "active"]), []
@@ -271,6 +271,9 @@ with tab1:
                         # Set as current session
                         st.session_state.current_session = clean_session_name
                         
+                        # Clear cache to show new session immediately
+                        st.cache_data.clear()
+                        
                         # Refresh session data after creation
                         sessions_df, existing_sessions = refresh_session_data()
                         
@@ -302,11 +305,8 @@ with tab1:
         
         if st.button("🎾 Set Active Session", type="primary"):
             try:
-                # Force fresh read by clearing any potential cache
-                st.cache_data.clear()
-                
-                # Read FRESH sessions data with explicit parameters
-                fresh_sessions_df = conn.read(worksheet="sessions", usecols=None, nrows=None)
+                # Use cached session data to avoid rate limits
+                fresh_sessions_df = get_cached_session_data()
                 
                 # Use the fresh data as the source of truth
                 actual_sessions = fresh_sessions_df["session_name"].tolist() if "session_name" in fresh_sessions_df.columns else []
@@ -332,6 +332,9 @@ with tab1:
                 
                 # Also update session state for immediate effect
                 st.session_state.current_session = selected_session
+                
+                # Clear cache to show changes immediately
+                st.cache_data.clear()
                 
                 # Refresh session data after update
                 sessions_df, existing_sessions = refresh_session_data()
@@ -447,6 +450,9 @@ with tab1:
                             st.session_state.delete_worksheets_warning = f"⚠️ Could not clear worksheets: {', '.join(worksheets_failed)}"
                             st.session_state.delete_worksheets_info = "📝 These worksheets may need to be manually deleted from Google Sheets"
                         
+                        # Clear cache to show changes immediately
+                        st.cache_data.clear()
+                        
                         # Refresh session data after deletion
                         sessions_df, existing_sessions = refresh_session_data()
                         
@@ -542,8 +548,8 @@ with tab2:
                             # Update the worksheet
                             conn.update(worksheet=player_names_worksheet, data=updated_players_df)
                             
-                            # Clear cache and show success
-                            st.cache_data.clear()
+                            # Mark for refresh on next load
+                            st.session_state.force_refresh_sessions = True
                             st.success(f"✅ Player '{new_player_name}' added successfully!")
                             st.info("🔄 Page will refresh to show the updated player list.")
                             st.rerun()
@@ -770,7 +776,7 @@ with tab3:
                 worksheet_name = f"{current_session}_match_results"
                 
                 try:
-                    df = conn.read(worksheet=worksheet_name, ttl=0)
+                    df = conn.read(worksheet=worksheet_name)
                     
                     if df.empty:
                         st.info("No matches found for this session.")
@@ -780,7 +786,7 @@ with tab3:
                         # Load player names for dropdowns
                         player_names_worksheet = f"{current_session}_player_names"
                         try:
-                            players_df = conn.read(worksheet=player_names_worksheet, ttl=0)
+                            players_df = conn.read(worksheet=player_names_worksheet)
                             player_names = players_df["player_names"].tolist() if not players_df.empty and "player_names" in players_df.columns else []
                         except:
                             player_names = []
