@@ -38,7 +38,7 @@ if not current_session:
                         st.sidebar.error("❌ No sessions found!")
                         st.sidebar.markdown("**Please go to Settings to create a session:**")
                         if st.sidebar.button("🔧 Go to Settings"):
-                            st.switch_page("pages/3_Settings.py")
+                            st.switch_page("pages/4_Settings.py")
                         st.stop()
             else:
                 # No active column, auto-select first available
@@ -52,27 +52,27 @@ if not current_session:
                     st.sidebar.error("❌ No sessions found!")
                     st.sidebar.markdown("**Please go to Settings to create a session:**")
                     if st.sidebar.button("🔧 Go to Settings"):
-                        st.switch_page("pages/3_Settings.py")
+                        st.switch_page("pages/4_Settings.py")
                     st.stop()
         else:
             # Sessions worksheet exists but has no data
             st.sidebar.error("❌ No sessions found!")
             st.sidebar.markdown("**Please go to Settings to create a session:**")
             if st.sidebar.button("🔧 Go to Settings"):
-                st.switch_page("pages/3_Settings.py")
+                st.switch_page("pages/4_Settings.py")
             st.stop()
     except Exception:
         # Sessions worksheet doesn't exist
         st.sidebar.error("❌ No sessions found!")
         st.sidebar.markdown("**Please go to Settings to create your first session:**")
         if st.sidebar.button("🔧 Go to Settings"):
-            st.switch_page("pages/3_Settings.py")
+            st.switch_page("pages/4_Settings.py")
         st.stop()
 
 # Show current session status
 st.sidebar.success(f"✅ Active Session: **{current_session}**")
 if st.sidebar.button("🔧 Change Session"):
-    st.switch_page("pages/3_Settings.py")
+    st.switch_page("pages/4_Settings.py")
 
 # Determine worksheet names based on current session
 worksheet_name = f"{current_session}_match_results"
@@ -331,7 +331,7 @@ with rankings:
             # Calculate metrics
             avg_points = total_points / games if games > 0 else 0
             win_rate = wins / games if games > 0 else 0
-            multiplier = 1 + 2 * (games / (games + 5)) if games > 0 else 1
+            multiplier = 1 + 2 * ((games-1) / (games + 4)) if games > 0 else 1
             
             # Score formula: (P+(2*S/SP))*(1+(SP/(SP+5)))
             if games > 0:
@@ -373,12 +373,10 @@ with rankings:
         # Display rankings table
         st.subheader("Player Rankings")
         st.markdown("""
-        **Legend:**
-        - **Matches**: Total games played
-        - **Win Rate**: Percentage of games won
-        - **Avg Points**: Average points scored per game
-        - **Multiplier**: Activity bonus = (1+2x(Matches/(Matches+5)))
-        - **Score**: Ranking Score = (Avg Points + (2×Win Rate/100)) × Multiplier
+        **Folgende Werte fließen in deinen Score ein:**
+        - **Avg Points:** Mehr mehr Punkte du im Schnitt Pro Spiel machst, desto besser. Das heißt auch wenn du das Spiel verlierst, geht es um jeden Punkt, den du machst.
+        - **Win Rate:** Pro Sieg bekommst du 2 Punkte auf deine erzielten Satzpunkte oben drauf. D.h. wenn du einen Satz 15:13 gewinnst, bekommst du 17 Punkte gutgeschireben, dein Gegner 13.
+        - **Multiplier:** Je mehr Spiele du gespielt hast, desto höher ist dein Multiplier. Nach dem ersten Spiel ist er bei 1 und wenn du sehr viele Spiele gespielt hast, liegt er maximal bei 3.
         """)
         
         # Style the dataframe
@@ -395,6 +393,12 @@ with rankings:
         )
         
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
+        
+        st.markdown("""
+        **Genaue Score Berechnung:**
+        - **Multiplier**: Activity bonus = (1+2x((Matches-1)/(Matches+4)))
+        - **Score**: Ranking Score = (Avg Points + (2×Win Rate/100)) × Multiplier
+        """)
         
         # Additional insights
         if len(rankings_df) > 1:

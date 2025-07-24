@@ -43,7 +43,7 @@ def main():
                             st.sidebar.error("❌ No sessions found!")
                             st.sidebar.markdown("**Please go to Settings to create a session:**")
                             if st.sidebar.button("🔧 Go to Settings"):
-                                st.switch_page("pages/3_Settings.py")
+                                st.switch_page("pages/4_Settings.py")
                             st.stop()
                 else:
                     # No active column, auto-select first available
@@ -57,27 +57,27 @@ def main():
                         st.sidebar.error("❌ No sessions found!")
                         st.sidebar.markdown("**Please go to Settings to create a session:**")
                         if st.sidebar.button("🔧 Go to Settings"):
-                            st.switch_page("pages/3_Settings.py")
+                            st.switch_page("pages/4_Settings.py")
                         st.stop()
             else:
                 # Sessions worksheet exists but has no data
                 st.sidebar.error("❌ No sessions found!")
                 st.sidebar.markdown("**Please go to Settings to create a session:**")
                 if st.sidebar.button("🔧 Go to Settings"):
-                    st.switch_page("pages/3_Settings.py")
+                    st.switch_page("pages/4_Settings.py")
                 st.stop()
         except Exception:
             # Sessions worksheet doesn't exist
             st.sidebar.error("❌ No sessions found!")
             st.sidebar.markdown("**Please go to Settings to create your first session:**")
             if st.sidebar.button("🔧 Go to Settings"):
-                st.switch_page("pages/3_Settings.py")
+                st.switch_page("pages/4_Settings.py")
             st.stop()
     
     # Show current session status
     st.sidebar.success(f"✅ Active Session: **{current_session}**")
     if st.sidebar.button("🔧 Change Session"):
-        st.switch_page("pages/3_Settings.py")
+        st.switch_page("pages/4_Settings.py")
     
     # Determine worksheet name based on current session
     worksheet_name = f"{current_session}_match_results"
