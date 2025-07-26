@@ -75,13 +75,13 @@ with online_form:
 
     def reset_session_state():
         """Helper function to reset session state."""
-        st.session_state["player1_name"] = player_names[
-            0
-        ]  # Default to the first player
+        if player_names:
+            st.session_state["player1_name"] = player_names[0]
+            st.session_state["player2_name"] = player_names[min(3, len(player_names) - 1)]
+        else:
+            st.session_state["player1_name"] = ""
+            st.session_state["player2_name"] = ""
         st.session_state["player1_score"] = 0
-        st.session_state["player2_name"] = player_names[
-            3
-        ]  # Default to the first player
         st.session_state["player2_score"] = 0
         st.session_state["matchday_input"] = date.today()
         st.session_state["data_written"] = False
@@ -91,15 +91,17 @@ with online_form:
         if "data_written" not in st.session_state:
             st.session_state["data_written"] = False
         if "player1_name" not in st.session_state:
-            st.session_state["player1_name"] = player_names[
-                0
-            ]  # Default to the first player
+            if player_names:
+                st.session_state["player1_name"] = player_names[0]
+            else:
+                st.session_state["player1_name"] = ""
         if "player1_score" not in st.session_state:
             st.session_state["player1_score"] = 0
         if "player2_name" not in st.session_state:
-            st.session_state["player2_name"] = player_names[
-                3
-            ]  # Default to the first player
+            if player_names:
+                st.session_state["player2_name"] = player_names[min(3, len(player_names) - 1)]
+            else:
+                st.session_state["player2_name"] = ""
         if "player2_score" not in st.session_state:
             st.session_state["player2_score"] = 0
         if "matchday_input" not in st.session_state:
