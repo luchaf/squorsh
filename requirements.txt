@@ -16,6 +16,8 @@ Pillow
 pytesseract
 fuzzywuzzy
 st-gsheets-connection
+google-auth
+gspread
 glicko2
 trueskill
 statsmodels

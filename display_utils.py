@@ -1049,17 +1049,26 @@ def display_predictive_analytics(df_filtered: pd.DataFrame, metrics: Dict):
     # Upset Alert System
     st.subheader("🚨 Upset Alert System")
     upset_df = calculate_upset_potential(df_filtered, metrics['elo_ratings'])
-    if not upset_df.empty:
+    if not upset_df.empty and 'Upset Index' in upset_df.columns:
+        # Format only columns that exist
+        format_dict = {}
+        if 'Favorite Win %' in upset_df.columns:
+            format_dict['Favorite Win %'] = '{:.1f}%'
+        if 'Upset Probability' in upset_df.columns:
+            format_dict['Upset Probability'] = '{:.1f}%'
+        if 'Underdog Form' in upset_df.columns:
+            format_dict['Underdog Form'] = '{:.2f}'
+        if 'Favorite Struggles' in upset_df.columns:
+            format_dict['Favorite Struggles'] = '{:.2f}'
+        if 'Upset Index' in upset_df.columns:
+            format_dict['Upset Index'] = '{:.1f}'
+        
         st.dataframe(
-            upset_df.head(10).style.format({
-                'Favorite Win %': '{:.1f}%',
-                'Upset Probability': '{:.1f}%',
-                'Underdog Form': '{:.2f}',
-                'Favorite Struggles': '{:.2f}',
-                'Upset Index': '{:.1f}'
-            }),
+            upset_df.head(10).style.format(format_dict),
             use_container_width=True
         )
+    else:
+        st.info("🟢 No high upset potential detected. All matches look predictable!")
     
     # Performance Trajectory
     st.subheader("📈 Performance Trajectory Analysis")
